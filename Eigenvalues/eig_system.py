@@ -31,8 +31,8 @@ def matrix_system(q, N, alphas, K, cosine=True):
         N = M
     diag = [4 * (k**2) for k in range(N)]  # diagonal of A.
     A = _np.diag(diag, 0)
-    for k in K:
-        a = q * alphas[k] * _np.ones(N - k)  # defines the off-diagonal term
-        A = A + _np.diag(a, k) + _np.diag(a, -k)  # adds off-diagonal arrays
+    for k in range(len(K)):
+        a = q * alphas[k] * _np.ones(N - K[k])  # defines the off-diagonal term
+        A = A + _np.diag(a, K[k]) + _np.diag(a, -K[k])  # adds off-diagonals
     return A
 
