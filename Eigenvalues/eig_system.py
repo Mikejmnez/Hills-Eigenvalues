@@ -36,3 +36,40 @@ def matrix_system(q, N, alphas, K, cosine=True):
         A = A + _np.diag(a, K[k]) + _np.diag(a, -K[k])  # adds off-diagonals
     return A
 
+
+def eig_pairs(A):
+    """ Calculates the characteristic value (eigenvalue) and the Fourier
+    coefficients of Matrix A (particular Hills equation). Both eigenvals and
+    Eigenvectors are sorted in ascending order.
+
+    Input:
+        A: Matrix, output from matrix_system.
+
+    Output:
+        w: sorted eigenvalues.
+    """
+    w, V = LA.eig(A)  # calculates the eigenvalue and eigenvector
+    ord_w, V = order_check(w, V)
+    return w
+
+
+def order_check(a, v):
+    """ Check the ordering of the eigenvalue array, from smaller to larger. If
+    true, return a unchanged. Ordering also matters if a is complex. If a is
+    complex, ordering again is first set according to real(a). If two
+    eigenvalues are complex conjugates, then ordering is in accordance to the
+    sign of complex(a). Negative sign is first.
+    """
+    if a.imag.any() == 0:
+        ordered_a = a
+        nv = v
+    else:
+        Ind = _np.argsort(_np.round(a, 1))  # sorting through 5 decimals
+        ordered_a = a[Ind]
+        nv = 0 * _np.copy(v)
+        for k in range(len(Ind)):
+            nv[:, k] = v[:, Ind[k]]
+    return ordered_a, nv
+
+
+
