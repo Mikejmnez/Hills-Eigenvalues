@@ -50,7 +50,7 @@ def eig_pairs(A):
     """
     w, V = LA.eig(A)  # calculates the eigenvalue and eigenvector
     ord_w, V = order_check(w, V)
-    return w
+    return ord_w
 
 
 def order_check(a, v):
@@ -64,7 +64,7 @@ def order_check(a, v):
         ordered_a = a
         nv = v
     else:
-        Ind = _np.argsort(_np.round(a, 1))  # sorting through 5 decimals
+        Ind = _np.argsort(_np.round(a, 1))  # sorting through 1 decimal
         ordered_a = a[Ind]
         nv = 0 * _np.copy(v)
         for k in range(len(Ind)):
