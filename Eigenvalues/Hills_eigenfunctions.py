@@ -30,7 +30,7 @@ def A_coefficients(q, N, alphas, K, cosine=True):
     if q.imag.any() == 0:
         raise Warning("q must be imaginary")
     for n in range(N):
-        a, A = eig_pairs(matrix_system(q[0], N, alphas, K, cosine))
+        a = eig_pairs(matrix_system(q[0], N, alphas, K, cosine))
         a = [a[n]]  # makes a list of the nth eigenvalue
         # As = Anorm(A[:, n], type, period)
         # As = As[_np.newaxis, :]
