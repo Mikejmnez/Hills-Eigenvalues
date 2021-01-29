@@ -2,7 +2,7 @@ from numpy import linalg as LA
 import numpy as _np
 
 
-def matrix_system(q, N, alphas, cosine=True, K):
+def matrix_system(q, N, alphas, K, cosine=True):
     ''' Creates a Floquet-Fourier-Hill matrix of order NxN. The size N is
     determined (for now) outside, but it should be larger than the order of
     approximation of the Fourier series.
@@ -30,9 +30,9 @@ def matrix_system(q, N, alphas, cosine=True, K):
     if M > N:  # this shouldn't happen, but if it does just increase N.
         N = M
     diag = [4 * (k**2) for k in range(N)]  # diagonal of A.
-    A = np.diag(A, 0)
+    A = _np.diag(diag, 0)
     for k in K:
-        a = q * K[k] * np.ones(N - k)  # defines the off-diagonal term
-        A = A + np.diag(a, k) + np.diag(a, -k)  # adds the off-diagonal arrays
+        a = q * K[k] * _np.ones(N - k)  # defines the off-diagonal term
+        A = A + _np.diag(a, k) + _np.diag(a, -k)  # adds off-diagonal arrays
     return A
 
