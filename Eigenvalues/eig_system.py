@@ -58,7 +58,8 @@ def FFH_matrix(q, N, gammas, K):
     A = _np.diag(diag, 0)  # initialize matrix
     for k in range(len(K)):
         a = 2 * q * gammas[k] * _np.ones((2 * N) + 1 - K[k])
-        A = A + _np.diag(a, K[k]) + _np.diag(a, -K[k])
+        ac = 2 * q * _np.conjugate(gammas[k]) * _np.ones((2 * N) + 1 - K[k])
+        A = A + _np.diag(ac, K[k]) + _np.diag(a, -K[k])
     return A
 
 
