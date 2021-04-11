@@ -3,7 +3,7 @@ import numpy as _np
 
 
 def matrix_system(q, N, alphas, K, cosine=True):
-    ''' Creates a Floquet-Fourier-Hill matrix of order NxN. The size N is
+    ''' Creates a matrix of order NxN. The size N is
     determined (for now) outside, but it should be larger than the order of
     approximation of the Fourier series.
 
@@ -34,6 +34,31 @@ def matrix_system(q, N, alphas, K, cosine=True):
     for k in range(len(K)):
         a = q * alphas[k] * _np.ones(N - K[k])  # defines the off-diagonal term
         A = A + _np.diag(a, K[k]) + _np.diag(a, -K[k])  # adds off-diagonals
+    return A
+
+
+def FFH_matrix(q, N, gammas, K):
+    """ Creates a matrix of order (2N+1)x(2N+1) following Floquet-Fourier-Hill
+    method.
+    Input:
+        q: 1d-numpy array. Cannonical parameter, purely imaginary.
+        N: Minimum size of matrix (2N+1).
+        gammas: 1d numpy array. Monotonically decreasing (complex) truncated
+            Fourier coefficients a_m -ib_m. Length(gammas) = M.
+        K: range(1, M), ordering of Fourier coefficients begining with m=1.
+    Output:
+        A: (2N+1)x(2N+1) matrix. Main diagonal is purely real, off diagonals
+            purely imaginary.
+    """
+    M = len(gammas)  # Truncated Fourier coefficients (decreasing)
+    if M > N:
+        N = M
+    diag = [4 * (k**2) for k in range(N + 1)]
+    diag = diag[::-1] + diag[1:]
+    A = _np.diag(diag, 0)  # initialize matrix
+    for k in range(len(K)):
+        a = 2 * q * gammas[k] * _np.ones((2 * N) + 1 - K[k])
+        A = A + _np.diag(a, K[k]) + _np.diag(a, -K[k])
     return A
 
 
