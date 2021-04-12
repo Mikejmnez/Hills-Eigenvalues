@@ -30,6 +30,9 @@ def matrix_system(q, N, coeffs, K, symmetry='None', case='None'):
     M = len(coeffs)
     if M > N:  # this shouldn't happen, but if it does just increase N.
         N = M
+    if symmetry not in ['None', 'even', 'odd']:
+        raise Warning("symmetry argument not recognized. Acceptable options"
+                      "are: `None`, `even` and `odd`.")
     if symmetry == 'None':
         A = FFH_matrix(q, N, coeffs, K)
     elif symmetry == 'even':
