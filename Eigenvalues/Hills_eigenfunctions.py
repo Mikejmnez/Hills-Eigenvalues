@@ -41,6 +41,9 @@ def A_coefficients(q, N, alphas, K, cosine=True):
             # nAs = nA[_np.newaxis, :]
             # As = _np.append(As, nAs, axis=0)
         # As = Fcoeffs(As, n, q, flag=imag)
-        vals.update({'a' + str(2 * n): _np.array(a)})
+        if cosine is True:
+            vals.update({'a' + str(2 * n): _np.array(a)})
+        else:
+            vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
         # vals.update({'A' + str(2 * n): As})
     return vals
