@@ -61,6 +61,10 @@ def even_matrix(q, N, alphas, K, case='None'):
         K: range(1, M, d). Represents the ordering of Fourier coefficients
             alphas when writing the Fourier sum. if d=1, then a sum of the form
             cos(2*y) + cos(4*y) + .... If d=2 sum is: cos(2*y) + cos(6*y).
+        case: `None` (default), 'mathieu'. If mathieu, the matrix is modified
+            by introducing a factor of sqrt(2) on the first element of the
+            first off-diagonal row and column in accordance to Mathieu's
+            eigenvalue matrix
     Output:
         A: nd-array. Square matrix with off-diagonal terms that are purely imag
             and a purely reakl diagonal term that increases with the size of A.
@@ -74,6 +78,9 @@ def even_matrix(q, N, alphas, K, case='None'):
     for k in range(len(K)):
         a = q * alphas[k] * _np.ones(N - K[k])  # defines the off-diagonal term
         A = A + _np.diag(a, K[k]) + _np.diag(a, -K[k])  # adds off-diagonals
+    if case == 'mathieu':
+        A[0, 1] = A[0, 1] * _np.sqrt(2)
+        A[1, 0] = A[1, 0] * _np.sqrt(2)
     return A
 
 
@@ -104,7 +111,7 @@ def odd_matrix(q, N, betas, K):
     M = len(betas)
     if M > N:  # this shouldn't happen, but if it does just increase N.
         N = M
-    diag = [4 * (k**2) for k in range(N)]  # diagonal of A.
+    diag = [4 * (k**2) for k in range(1, N + 1)]  # diagonal of A.
     A = _np.diag(diag, 0)
     for k in range(len(K)):
         a = q * betas[k] * _np.ones(N - K[k])  # defines the off-diagonal term
