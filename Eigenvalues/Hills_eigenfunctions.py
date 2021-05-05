@@ -30,16 +30,16 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
     if q.imag.any() == 0:
         raise Warning("q must be imaginary")
     for n in range(N):
-        a = eig_pairs(matrix_system(q[0], N, coeffs, K, symmetry, case))
+        a, A = eig_pairs(matrix_system(q[0], N, coeffs, K, symmetry, case))
         a = [a[n]]  # makes a list of the nth eigenvalue
         # As = Anorm(A[:, n], type, period)
-        # As = As[_np.newaxis, :]
+        As = A[_np.newaxis, :]
         for k in range(1, len(q)):
-            an = eig_pairs(matrix_system(q[k], N, coeffs, K, symmetry, case))
+            an, nA = eig_pairs(matrix_system(q[k], N, coeffs, K, symmetry, case))
             a.append(an[n])
             # nA = Anorm(A[:, n], type, period)
-            # nAs = nA[_np.newaxis, :]
-            # As = _np.append(As, nAs, axis=0)
+            nAs = nA[_np.newaxis, :]
+            As = _np.append(As, nAs, axis=0)
         # As = Fcoeffs(As, n, q, flag=imag)
         if symmetry is 'None':
             vals.update({'a' + str(2 * n): _np.array(a)})
@@ -47,5 +47,5 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
             vals.update({'a' + str(2 * n): _np.array(a)})
         elif symmetry is 'odd':
             vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
-        # vals.update({'A' + str(2 * n): As})
+        vals.update({'A' + str(2 * n): As})
     return vals
