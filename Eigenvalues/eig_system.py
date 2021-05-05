@@ -158,7 +158,7 @@ def eig_pairs(A):
     """
     w, V = LA.eig(A)  # calculates the eigenvalue and eigenvector
     ord_w, V = order_check(w, V)
-    return ord_w
+    return ord_w, V
 
 
 def order_check(a, v):
