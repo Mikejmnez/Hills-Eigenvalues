@@ -33,12 +33,12 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
         a, A = eig_pairs(matrix_system(q[0], N, coeffs, K, symmetry, case))
         a = [a[n]]  # makes a list of the nth eigenvalue
         # As = Anorm(A[:, n], type, period)
-        As = A[_np.newaxis, :]
+        As = A[_np.newaxis, :, n]
         for k in range(1, len(q)):
             an, nA = eig_pairs(matrix_system(q[k], N, coeffs, K, symmetry, case))
             a.append(an[n])
             # nA = Anorm(A[:, n], type, period)
-            nAs = nA[_np.newaxis, :]
+            nAs = nA[_np.newaxis, :, n]
             As = _np.append(As, nAs, axis=0)
         # As = Fcoeffs(As, n, q, flag=imag)
         if symmetry is 'None':
