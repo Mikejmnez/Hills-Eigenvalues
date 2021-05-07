@@ -32,13 +32,13 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
     for n in range(N):
         a, A = eig_pairs(matrix_system(q[0], N, coeffs, K, symmetry, case))
         a = [a[n]]  # makes a list of the nth eigenvalue
-        # As = Anorm(A[:, n], type, period)
-        As = A[_np.newaxis, :, n]
+        As = Anorm(A[:, n], case)
+        As = As[_np.newaxis, :]
         for k in range(1, len(q)):
             an, nA = eig_pairs(matrix_system(q[k], N, coeffs, K, symmetry, case))
             a.append(an[n])
-            # nA = Anorm(A[:, n], type, period)
-            nAs = nA[_np.newaxis, :, n]
+            nA = Anorm(A[:, n], case)
+            nAs = nA[_np.newaxis, :]
             As = _np.append(As, nAs, axis=0)
         # As = Fcoeffs(As, n, q, flag=imag)
         if symmetry is 'None':
@@ -49,3 +49,27 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
             vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
         vals.update({'A' + str(2 * n): As})
     return vals
+
+
+def Anorm(A, case='None'):
+    """ Normalization of eigenvectors in accordance to Mathieu functions.
+    Default is for that associated with ce_{2n}(q, z).
+    Input:
+        A: 1d-array. len(A) = N, N being the number of Fourier coefficients.
+        type: str, default `ce2n`. Normalization for other functions is
+        different.
+        case: str, 'None' (default), or 'Mathieu'.
+    Output:
+        A: 1d-array. Normalized eigenvector.
+    """
+    if case == "Mathieu":
+        # if flag is True:
+        #     norm = 1
+        # else:
+        A0star = A[0]
+        Astar = A[1:]
+        norm = _np.sqrt((2 * (A[0] * A0star)) + _np.sum(A[1:] * Astar))
+    else:
+        norm = _np.sum(A ** 2)
+    A = A / norm
+    return A
