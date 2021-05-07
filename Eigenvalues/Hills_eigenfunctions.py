@@ -35,7 +35,7 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
         As = Anorm(A[:, n], case)
         As = As[_np.newaxis, :]
         for k in range(1, len(q)):
-            an, nA = eig_pairs(matrix_system(q[k], N, coeffs, K, symmetry, case))
+            an, A = eig_pairs(matrix_system(q[k], N, coeffs, K, symmetry, case))
             a.append(an[n])
             nA = Anorm(A[:, n], case)
             nAs = nA[_np.newaxis, :]
