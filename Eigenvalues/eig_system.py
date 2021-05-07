@@ -78,7 +78,7 @@ def even_matrix(q, N, alphas, K, case='None'):
     for k in range(len(K)):
         a = q * alphas[k] * _np.ones(N - K[k])  # defines the off-diagonal term
         A = A + _np.diag(a, K[k]) + _np.diag(a, -K[k])  # adds off-diagonals
-    if case == 'mathieu':
+    if case == 'Mathieu':
         A[0, 1] = A[0, 1] * _np.sqrt(2)
         A[1, 0] = A[1, 0] * _np.sqrt(2)
     return A
