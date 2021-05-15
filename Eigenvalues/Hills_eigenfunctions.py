@@ -71,6 +71,8 @@ def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
     # Estimate limiting value for small q (pos or neg) and correct.
     if case is "Mathieu":  # cosine jet
         As = cCoeffs(As, n, q)
+    if case is 'linear':
+        As = linCoeffs(As, n, q)
     return As
 
 
@@ -266,8 +268,20 @@ def linCoeffs(A, n, q):
         if q.imag[-1] > qs[0]:
             ll = _np.where(q.imag <= qs[0])[0]
             if n == 0:
-                for k in range(N):
-                    A[ll[-1] + 1:, k] = -A[ll[-1] + 1:, k]
+                A[ll[-1] + 1:, 0].imag = -A[ll[-1] + 1:, 0].imag
+                A[ll[-1] + 1:, 1].real = -A[ll[-1] + 1:, 1].real
+                A[ll[-1] + 1:, 2].imag = -A[ll[-1] + 1:, 2].imag
+                A[ll[-1] + 1:, 3].real = -A[ll[-1] + 1:, 3].real
+                A[ll[-1] + 1:, 4].imag = -A[ll[-1] + 1:, 4].imag
+                A[ll[-1] + 1:, 5].real = -A[ll[-1] + 1:, 5].real
+            if n == 1:
+                # for k in range(N):
+                A[ll[-1] + 1:, 0].real = -A[ll[-1] + 1:, 0].real
+                A[ll[-1] + 1:, 1].imag = -A[ll[-1] + 1:, 1].imag
+                A[ll[-1] + 1:, 2].real = -A[ll[-1] + 1:, 2].real
+                A[ll[-1] + 1:, 3].imag = -A[ll[-1] + 1:, 3].imag
+                A[ll[-1] + 1:, 4].real = -A[ll[-1] + 1:, 4].real
+                A[ll[-1] + 1:, 5].imag = -A[ll[-1] + 1:, 5].imag
     return A
 
 
@@ -287,6 +301,6 @@ def Anorm(A, case='None'):
         Astar = A[1:]
         norm = _np.sqrt((2 * (A[0] * A0star)) + _np.sum(A[1:] * Astar))
     else:
-        norm = _np.sum(A ** 2)
+        norm = _np.sqrt(_np.sum(A ** 2))
     A = A / norm
     return A
