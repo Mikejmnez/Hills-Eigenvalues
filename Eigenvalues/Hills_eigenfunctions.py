@@ -71,8 +71,6 @@ def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
     # Estimate limiting value for small q (pos or neg) and correct.
     if case is "Mathieu":  # cosine jet
         As = cCoeffs(As, n, q)
-    else:
-        As = 0
     return As
 
 
@@ -249,6 +247,30 @@ def cCoeffs(A, n, q):
     return A
 
 
+def linCoeffs(A, n, q):
+    '''Correct the behavior of the Fourier coefficients as a function of
+    parameter (purely imaginary). The Fourier coefficients are complex.
+    This is the case of a linear (triangular)-jet.
+    Input:
+        A: nd-array. Fourier coefficients (eigenvector) with real and imaginary
+            components.
+        n: int, index of the eigenvector -> n associated with ce_{2n}
+        q: complex, value of the parameter. For now assumed to span values
+            before the second branch point q<16i.
+    Output:
+        A: nd-array. Corrected Fourier coefficient.
+    '''
+    qs = [2.171671, 22.152152]
+    N = len(A[0, :])
+    if n < 2 and q[0].imag < qs[0]:
+        if q.imag[-1] > qs[0]:
+            ll = _np.where(q.imag <= qs[0])[0]
+            if n == 0:
+                for k in range(N):
+                    A[ll[-1] + 1:, k] = -A[ll[-1] + 1:, k]
+    return A
+
+
 def Anorm(A, case='None'):
     """ Normalization of eigenvectors in accordance to Mathieu functions.
     Default is for that associated with ce_{2n}(q, z).
@@ -261,9 +283,6 @@ def Anorm(A, case='None'):
         A: 1d-array. Normalized eigenvector.
     """
     if case == "Mathieu":
-        # if flag is True:
-        #     norm = 1
-        # else:
         A0star = A[0]
         Astar = A[1:]
         norm = _np.sqrt((2 * (A[0] * A0star)) + _np.sum(A[1:] * Astar))
