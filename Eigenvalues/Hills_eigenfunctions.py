@@ -37,10 +37,10 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
         for k in range(1, len(q)):
             an, A = eig_pairs(matrix_system(q[k], N, coeffs, K, symmetry, case))
             a.append(an[n])
-            nA = Anorm(A[:, n], case)
+            nA = Anorm(A[:, n], case=case)
             nAs = nA[_np.newaxis, :]
             As = _np.append(As, nAs, axis=0)
-        # As = Fcoeffs(As, n, q, flag=imag)
+        As = Fcoeffs(As, n, q, case)
         if symmetry is 'None':
             vals.update({'a' + str(2 * n): _np.array(a)})
         elif symmetry is 'even':
@@ -49,6 +49,204 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
             vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
         vals.update({'A' + str(2 * n): As})
     return vals
+
+
+def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
+    """ Returns the Fourier coefficient of the Mathieu functions for given
+    parameter q. Makes sure the coefficients are continuous (in q). Numerical
+    routines for estimating eigenvectors might converge in different signs
+    for the eigenvectors for different (neighboring) values of q. In case where
+    q is purely imaginary, eigenvectors need to be rotated, so that these
+    satisfy certain relations across branch points.
+        Input:
+            As: 2d array. Eigenvector shape(As)=Nq, N, as a function of q and
+                containing N entries, each associated with a Fourier
+                coefficient.
+            n: int. Eigenvalue index. If n=0, eigenvalue is a0. n=1, eigenvalue
+            is a2.
+            q: array, real or imag. Default is q=0.00001j, imaginary.
+        Output:
+            Corrected Eigenvector with same shape as original
+    """
+    # Estimate limiting value for small q (pos or neg) and correct.
+    if case is "Mathieu":  # cosine jet
+        As = cCoeffs(As, n, q)
+    else:
+        As = 0
+    return As
+
+
+def cCoeffs(A, n, q):
+    '''Correct the behavior of the Fourier coefficients as a function of
+    parameter (purely imaginary). The Fourier coefficients are complex.
+    This is the case of a cosine-jet (Mathieu equation)
+    Input:
+        A: nd-array. Fourier coefficients (eigenvector) with real and imaginary
+            components.
+        n: int, index of the eigenvector -> n associated with ce_{2n}
+        q: complex, value of the parameter. For now assumed to span values
+            before the second branch point q<16i.
+    Output:
+        A: nd-array. Corrected Fourier coefficient.
+    '''
+    qs = [1.466466, 16.466466,
+          47.797797, 95.4654654,
+          159.469469, 239.809809,
+          336.468468, 452.972972,
+          578.813813, 724.434434,
+          885.195195]
+    N = len(A[0, :])
+    if n < 2 and q[0].imag < qs[0]:
+        if q.imag[-1] > qs[0]:
+            ll = _np.where(q.imag <= qs[0])[0]
+            if n == 0:
+                for k in range(N):
+                    A[ll[-1] + 1:, k] = -A[ll[-1] + 1:, k]
+    if n in [2, 3] and q[0].imag < qs[1]:
+        if q.imag[-1] > qs[1]:
+            ll = _np.where(q.imag <= qs[1])[0]
+            if n == 2:
+                for k in range(N):
+                    A[ll[-1] + 1:, k] = -A[ll[-1] + 1:, k]
+                mm = _np.where(A[:, 0].real > 0)[0]  # never changes sign
+                A[mm, :] = -A[mm, :]
+    if n in [4, 5] and q[0].imag < qs[2]:
+        if q.imag[-1] > qs[2]:
+            ll = _np.where(q.imag <= qs[2])[0]
+            if n == 4:
+                for k in range(N):
+                    A[ll[-1] + 1:, k] = - A[ll[-1] + 1:, k]
+                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
+                A[mm, :] = -A[mm, :]
+    if n in [6, 7] and q[0].imag < qs[3]:
+        if q.imag[-1] > qs[3]:
+            ll = _np.where(q.imag <= qs[3])[0]
+            if n == 6:
+                mm = _np.where(A[:, 0].real > 0)[0]  # always negative
+                A[mm, :] = -A[mm, :]
+            if n == 7:
+                for k in range(N):
+                    As = A[ll[-1] - 1, k]
+                    for m in _np.arange(ll[-1], ll[-1] + 2):
+                        if k % 2 == 0:
+                            if _np.sign(A[m, k].imag) != _np.sign(As.imag):
+                                A[m, k] = -A[m, k]
+                        else:
+                            if _np.sign(A[m, k].real) != _np.sign(As.real):
+                                A[m, k] = -A[m, k]
+    if n in [8, 9] and q[0].imag < qs[4]:
+        if q[-1].imag > qs[4]:
+            ll = _np.where(q.imag <= qs[4])[0]
+            if n == 8:
+                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
+                A[mm, :] = -A[mm, :]
+            if n == 9:
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+    if n in [10, 11] and q[0].imag < qs[5]:
+        if q[-1].imag > qs[5]:
+            ll = _np.where(q.imag <= qs[5])[0]
+            if n == 10:
+                mm = _np.where(A[:, 0].real > 0)[0]  # always negative
+                A[mm, :] = -A[mm, :]
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+            if n == 11:
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+    if n in [12, 13] and q[0].imag < qs[6]:
+        if q[-1].imag > qs[6]:
+            ll = _np.where(q.imag <= qs[6])[0]
+            if n == 12:
+                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
+                A[mm, :] = -A[mm, :]
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+            if n == 13:
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+    if n in [14, 15] and q[0].imag < qs[7]:
+        if q[-1].imag > qs[7]:
+            ll = _np.where(q.imag <= qs[7])[0]
+            if n == 14:
+                mm = _np.where(A[:, 0].real > 0)[0]  # always negative
+                A[mm, :] = -A[mm, :]
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+            if n == 15:
+                mm = _np.where(A[:, 0].real > 0)[0]  # always negative
+                A[mm, :] = -A[mm, :]
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+    if n in [16, 17] and q[0].imag < qs[8]:
+        if q[-1].imag > qs[8]:
+            ll = _np.where(q.imag <= qs[8])[0]
+            if n == 16:
+                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
+                A[mm, :] = -A[mm, :]
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+            if n == 17:
+                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
+                A[mm, :] = -A[mm, :]
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+    if n in [18, 19] and q[0].imag < qs[9]:
+        if q[-1].imag > qs[9]:
+            ll = _np.where(q.imag <= qs[9])[0]
+            if n == 18:
+                mm = _np.where(A[:, 0].real > 0)[0]  # always negative
+                A[mm, :] = -A[mm, :]
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+            if n == 19:
+                mm = _np.where(A[:, 0].real > 0)[0]  # always negative
+                A[mm, :] = -A[mm, :]
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+    if n in [20, 21] and q[0].imag < qs[10]:
+        if q[-1].imag > qs[10]:
+            ll = _np.where(q.imag <= qs[10])[0]
+            if n == 20:
+                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
+                A[mm, :] = -A[mm, :]
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+            if n == 21:
+                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
+                A[mm, :] = -A[mm, :]
+                for k in range(N):
+                    As = abs(A[:ll[-1] + 1, k])  # before EP
+                    sign = (1j)**(n - k)  # before EP
+                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+    # if q.imag[-1] >= qs[-1]:
+    #     raise ValueError("Not yet implemented for values of Mathieu`s"
+    #                      "canonical parameter q>95i")
+    return A
 
 
 def Anorm(A, case='None'):
