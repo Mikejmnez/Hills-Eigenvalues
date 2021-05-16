@@ -279,24 +279,24 @@ def linCoeffs(A, n, q):
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
                     else:
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                mm = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+                A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
     if n in [2, 3] and q[0].imag < qs[1]:
         if q.imag[-1] > qs[1]:
             ll = _np.where(q.imag <= qs[1])[0]
             if n == 2:
                 A[ll[-1], :] = -A[ll[-1], :]
-                A[ll[-1] + 1:, 0].imag = -A[ll[-1] + 1:, 0].imag
-                A[ll[-1] + 1:, 1].real = -A[ll[-1] + 1:, 1].real
-                A[ll[-1] + 1:, 2].imag = -A[ll[-1] + 1:, 2].imag
-                A[ll[-1] + 1:, 3].real = -A[ll[-1] + 1:, 3].real
-                A[ll[-1] + 1:, 4].imag = -A[ll[-1] + 1:, 4].imag
-                A[ll[-1] + 1:, 5].real = -A[ll[-1] + 1:, 5].real
+                for k in range(N):
+                    if k % 2 == 0:  # even
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
             if n == 3:
-                A[ll[-1] + 1:, 0].real = -A[ll[-1] + 1:, 0].real
-                A[ll[-1] + 1:, 1].imag = -A[ll[-1] + 1:, 1].imag
-                A[ll[-1] + 1:, 2].real = -A[ll[-1] + 1:, 2].real
-                A[ll[-1] + 1:, 3].imag = -A[ll[-1] + 1:, 3].imag
-                A[ll[-1] + 1:, 4].real = -A[ll[-1] + 1:, 4].real
-                A[ll[-1] + 1:, 5].imag = -A[ll[-1] + 1:, 5].imag
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                    else:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
     return A
 
 
