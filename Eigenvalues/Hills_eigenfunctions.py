@@ -41,13 +41,12 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
             nAs = nA[_np.newaxis, :]
             As = _np.append(As, nAs, axis=0)
         As = Fcoeffs(As, n, q, case)
-        if symmetry is 'None':
+        if symmetry in ['None', 'even']:
             vals.update({'a' + str(2 * n): _np.array(a)})
-        elif symmetry is 'even':
-            vals.update({'a' + str(2 * n): _np.array(a)})
+            vals.update({'A' + str(2 * n): As})
         elif symmetry is 'odd':
             vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
-        vals.update({'A' + str(2 * n): As})
+            vals.update({'B' + str(2 * (n + 1)): As})
     return vals
 
 
