@@ -354,7 +354,7 @@ def sqrCoeffs(A, n, q):
         A: nd-array. Corrected Fourier coefficient.
     '''
     qs = [3.386386, 23.207207,
-          52.086086, 86 - 87]
+          52.086086, 86.723723]
     N = len(A[0, :])
     if n < 2 and q[0].imag < qs[0]:
         if q.imag[-1] > qs[0]:
