@@ -75,6 +75,8 @@ def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
         As = linCoeffs(As, n, q)
     if case is 'square':
         As = sqrCoeffs(As, n, q)
+    if case is 'step':  # sine flow, associated with odd symmetry
+        As = stepCoeffs(As, n, q)
     return As
 
 
@@ -458,6 +460,24 @@ def sqrCoeffs(A, n, q):
                     else:
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
     return A
+
+
+def stepCoeffs(B, n, q):
+    '''Correct the behavior of the Fourier coefficients as a function of
+    parameter (purely imaginary). The Fourier coefficients are complex.
+    This is the case of a step-jet, associated with an odd-eigenfunction
+    Input:
+        B: nd-array. Fourier coefficients (eigenvector) with real and imaginary
+            components.
+        n: int, index of the eigenvector -> n associated with se_{2n}
+        q: complex, value of the parameter. For now assumed to span values
+            before the second branch point q<16i.
+    Output:
+        A: nd-array. Corrected Fourier coefficient.
+    '''
+    qs = []
+    N = len(B[0, :])
+    return B
 
 
 def Anorm(A, case='None'):
