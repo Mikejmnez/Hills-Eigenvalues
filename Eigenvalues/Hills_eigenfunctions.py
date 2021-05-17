@@ -475,7 +475,7 @@ def stepCoeffs(B, n, q):
     Output:
         A: nd-array. Corrected Fourier coefficient.
     '''
-    qs = []
+    qs = [5.525525]
     N = len(B[0, :])
     return B
 
