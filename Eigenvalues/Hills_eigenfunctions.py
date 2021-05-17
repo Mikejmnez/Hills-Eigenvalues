@@ -451,24 +451,12 @@ def sqrCoeffs(A, n, q):
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
                     else:
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-                # A[ll[-1] + 1:, 0].imag = -A[ll[-1] + 1:, 0].imag
-                # A[ll[-1] + 1:, 1].real = -A[ll[-1] + 1:, 1].real
-                # A[ll[-1] + 1:, 2].imag = -A[ll[-1] + 1:, 2].imag
-                # A[ll[-1] + 1:, 3].real = -A[ll[-1] + 1:, 3].real
-                # A[ll[-1] + 1:, 4].imag = -A[ll[-1] + 1:, 4].imag
-                # A[ll[-1] + 1:, 5].real = -A[ll[-1] + 1:, 5].real
             if n == 11:
                 for k in range(N):
                     if k % 2 == 0:
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
                     else:
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                # A[ll[-1] + 1:, 0].real = -A[ll[-1] + 1:, 0].real
-                # A[ll[-1] + 1:, 1].imag = -A[ll[-1] + 1:, 1].imag
-                # A[ll[-1] + 1:, 2].real = -A[ll[-1] + 1:, 2].real
-                # A[ll[-1] + 1:, 3].imag = -A[ll[-1] + 1:, 3].imag
-                # A[ll[-1] + 1:, 4].real = -A[ll[-1] + 1:, 4].real
-                # A[ll[-1] + 1:, 5].imag = -A[ll[-1] + 1:, 5].imag
     return A
 
 
