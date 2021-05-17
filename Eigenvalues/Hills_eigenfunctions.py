@@ -321,12 +321,20 @@ def linCoeffs(A, n, q):
         if q.imag[-1] > qs[3]:
             ll = _np.where(q.imag <= qs[3])[0]
             if n == 6:
-                A[ll[-1], :] = -A[ll[-1], :]
-                A[ll[-1] + 1:, 0].imag = -A[ll[-1] + 1:, 0].imag
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
             if n == 7:
+                A[ll[-1] - 1:ll[-1] + 1, :] = -A[ll[-1] - 1:ll[-1] + 1, :]
                 mm = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
                 A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
-                A[ll[-1] + 1:, 0].imag = -A[ll[-1] + 1:, 0].imag
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
     return A
 
 
