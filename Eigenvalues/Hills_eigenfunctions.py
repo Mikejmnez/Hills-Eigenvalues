@@ -74,7 +74,7 @@ def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
     if case is 'linear':
         As = linCoeffs(As, n, q)
     if case is 'square':
-        As = 0
+        As = sqrCoeffs(As, n, q)
     return As
 
 
@@ -337,6 +337,24 @@ def linCoeffs(A, n, q):
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
                     else:
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+    return A
+
+
+def sqrCoeffs(A, n, q):
+    '''Correct the behavior of the Fourier coefficients as a function of
+    parameter (purely imaginary). The Fourier coefficients are complex.
+    This is the case of a square-jet.
+    Input:
+        A: nd-array. Fourier coefficients (eigenvector) with real and imaginary
+            components.
+        n: int, index of the eigenvector -> n associated with ce_{2n}
+        q: complex, value of the parameter. For now assumed to span values
+            before the second branch point q<16i.
+    Output:
+        A: nd-array. Corrected Fourier coefficient.
+    '''
+    qs = []
+    N = len(A[0, :])
     return A
 
 
