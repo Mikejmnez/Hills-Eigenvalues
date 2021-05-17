@@ -73,6 +73,8 @@ def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
         As = cCoeffs(As, n, q)
     if case is 'linear':
         As = linCoeffs(As, n, q)
+    if case is 'square':
+        As = 0
     return As
 
 
