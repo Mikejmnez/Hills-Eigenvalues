@@ -355,7 +355,7 @@ def sqrCoeffs(A, n, q):
     '''
     qs = [3.386386, 23.207207,
           52.086086, 86.723723,
-          125.530530]
+          125.530530, 167.591591]
     N = len(A[0, :])
     if n < 2 and q[0].imag < qs[0]:
         if q.imag[-1] > qs[0]:
@@ -429,9 +429,17 @@ def sqrCoeffs(A, n, q):
         if q.imag[-1] > qs[4]:
             ll = _np.where(q.imag <= qs[4])[0]
             if n == 8:
-                A[ll[-1] + 1:, 0].imag = -A[ll[-1] + 1:, 0].imag
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
             if n == 9:
-                A[ll[-1] + 1:, 0].real = -A[ll[-1] + 1:, 0].real
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                    else:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
             mm = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
             A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
     return A
