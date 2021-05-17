@@ -353,7 +353,7 @@ def sqrCoeffs(A, n, q):
     Output:
         A: nd-array. Corrected Fourier coefficient.
     '''
-    qs = []
+    qs = [3.386386]
     N = len(A[0, :])
     return A
 
