@@ -354,7 +354,8 @@ def sqrCoeffs(A, n, q):
         A: nd-array. Corrected Fourier coefficient.
     '''
     qs = [3.386386, 23.207207,
-          52.086086, 86.723723]
+          52.086086, 86.723723,
+          126 - 127]
     N = len(A[0, :])
     if n < 2 and q[0].imag < qs[0]:
         if q.imag[-1] > qs[0]:
@@ -416,26 +417,23 @@ def sqrCoeffs(A, n, q):
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
                     else:
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-                # A[ll[-1] + 1:, 0].imag = -A[ll[-1] + 1:, 0].imag
-                # A[ll[-1] + 1:, 1].real = -A[ll[-1] + 1:, 1].real
-                # A[ll[-1] + 1:, 2].imag = -A[ll[-1] + 1:, 2].imag
-                # A[ll[-1] + 1:, 3].real = -A[ll[-1] + 1:, 3].real
-                # A[ll[-1] + 1:, 4].imag = -A[ll[-1] + 1:, 4].imag
-                # A[ll[-1] + 1:, 5].real = -A[ll[-1] + 1:, 5].real
             if n == 7:
                 for k in range(N):
                     if k % 2 == 0:
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
                     else:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, 0].imag
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
                 mm = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
                 A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
-                # A[ll[-1] + 1:, 0].real = -A[ll[-1] + 1:, 0].real
-                # A[ll[-1] + 1:, 1].imag = -A[ll[-1] + 1:, 1].imag
-                # A[ll[-1] + 1:, 2].real = -A[ll[-1] + 1:, 2].real
-                # A[ll[-1] + 1:, 3].imag = -A[ll[-1] + 1:, 3].imag
-                # A[ll[-1] + 1:, 4].real = -A[ll[-1] + 1:, 4].real
-                # A[ll[-1] + 1:, 5].imag = -A[ll[-1] + 1:, 5].imag
+    if n in [8, 9] and q[0].imag < qs[4]:
+        if q.imag[-1] > qs[4]:
+            ll = _np.where(q.imag <= qs[4])[0]
+            if n == 8:
+                A[ll[-1] + 1:, 0].imag = -A[ll[-1] + 1:, 0].imag
+            if n == 9:
+                A[ll[-1] + 1:, 0].real = -A[ll[-1] + 1:, 0].real
+            mm = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+            A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
     return A
 
 
