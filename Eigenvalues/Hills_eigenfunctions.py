@@ -493,6 +493,23 @@ def stepCoeffs(B, n, q):
                         B[ll[-1] + 1:, k].real = -B[ll[-1] + 1:, k].real
                     else:
                         B[ll[-1] + 1:, k].imag = -B[ll[-1] + 1:, k].imag
+    if n in [2, 3] and q[0].imag < qs[1]:
+        if q.imag[-1] > qs[1]:
+            ll = _np.where(q.imag <= qs[1])[0]
+            if n == 2:
+                for k in range(N):
+                    if k % 2 == 0:
+                        B[ll[-1] + 1:, k].real = -B[ll[-1] + 1:, k].real
+                        # B[ll[-1] + 1, k] = -B[ll[-1] + 1, k]
+                    else:
+                        B[ll[-1] + 1:, k].imag = -B[ll[-1] + 1:, k].imag
+                    B[ll[-1] + 1, k] = -B[ll[-1] + 1, k]
+            elif n == 3:
+                for k in range(N):
+                    if k % 2 == 0:
+                        B[ll[-1] + 1:, k].real = -B[ll[-1] + 1:, k].real
+                    else:
+                        B[ll[-1] + 1:, k].imag = -B[ll[-1] + 1:, k].imag
     return B
 
 
