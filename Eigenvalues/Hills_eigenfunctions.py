@@ -544,6 +544,7 @@ def stepCoeffs(B, n, q):
             elif n == 7:
                 nn = _np.where(B[:ll[-1], n] < 0)[0]  # should be > 0.
                 B[nn, :] = - B[nn, :]
+                B[ll[-1], :] = -B[ll[-1], :]
     return B
 
 
