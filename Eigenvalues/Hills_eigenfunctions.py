@@ -504,6 +504,8 @@ def stepCoeffs(B, n, q):
                     else:
                         B[ll[-1] + 1:, k].imag = -B[ll[-1] + 1:, k].imag
                     B[ll[-1] + 1, k] = -B[ll[-1] + 1, k]
+                mm = _np.where(B[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                B[mm + ll[-1] + 1, :] = -B[mm + ll[-1] + 1, :]
             elif n == 3:
                 for k in range(N):
                     if k % 2 == 0:
