@@ -40,7 +40,7 @@ class eigenfunctions:
         if Ncut != 0:
             N = Ncut
         LEN = range(N)
-        for n in leng:
+        for n in LEN:
             terms = [_np.cos((2*k)*x)*(As['A'+str(2*n)][0, k]) for k in LEN]
             vals.update({'phi' + str(2 * n): + _np.sum(terms, axis=0)})
             vals.update({'phi' + str(2 * n):
@@ -49,10 +49,10 @@ class eigenfunctions:
         for i in range(1, len(q)):
             for n in LEN:
                 terms = [_np.cos((2*k)*x)*(As['A'+str(2*n)][i, k]) for k in LEN]
-                phi = np.sum(terms, axis=0)
+                phi = _np.sum(terms, axis=0)
                 phi = phi[_np.newaxis, :]
-                phi = _np.append(vals['phi' + str(2 * n)], ce, axis=0)
-                vals.update({'phi' + str(2 * n): ce})
+                phi = _np.append(vals['phi' + str(2 * n)], phi, axis=0)
+                vals.update({'phi' + str(2 * n): phi})
         return vals
 
 
