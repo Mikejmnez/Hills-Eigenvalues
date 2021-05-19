@@ -6,6 +6,38 @@ import numpy as _np
 from eig_system import matrix_system, eig_pairs
 
 
+class eigenfunctions:
+
+    def __init__(self, q, N, coeffs, K, symmetry, case):
+        self._q = q
+        self._N = N
+        self._coeffs = coeffs
+        self._K = K
+        self._symmetry = symmetry
+        self._case = case
+
+    @classmethod
+    def phi_even(
+        cls,
+        q,
+        x,
+        N,
+        coeffs,
+        K,
+        symmetry='None',
+        case='None',
+        As = None,
+        Ncut=0,
+    ):
+        """Even eigenfunctions that solves Hill's equation associated with
+        the case where Neumann BC and coeffs are associated with a purely
+        cosine Fourier series. Simplest case is that of Mathieu's ce_2n
+        associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
+        """
+        pass
+
+
+
 def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
