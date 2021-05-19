@@ -557,6 +557,15 @@ def stepCoeffs(B, n, q):
                         B[ll[-1] + 1:, k].real = -B[ll[-1] + 1:, k].real
                     else:
                         B[ll[-1] + 1:, k].imag = -B[ll[-1] + 1:, k].imag
+    if n in [8, 9] and q[0].imag < qs[4]:
+        if q.imag[-1] > qs[4]:
+            ll = _np.where(q.imag <= qs[4])[0]
+            if n == 8:
+                nn = _np.where(B[:ll[-1], n] < 0)[0]  # should be > 0.
+                B[nn, :] = - B[nn, :]
+            elif n == 9:
+                nn = _np.where(B[:ll[-1], n] < 0)[0]  # should be > 0.
+                B[nn, :] = - B[nn, :]
     return B
 
 
