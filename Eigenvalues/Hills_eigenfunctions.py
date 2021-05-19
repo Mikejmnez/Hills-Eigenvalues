@@ -26,7 +26,7 @@ class eigenfunctions:
         K,
         symmetry='None',
         case='None',
-        As = None,
+        As=None,
         Ncut=0,
     ):
         """Even eigenfunctions that solves Hill's equation associated with
@@ -34,8 +34,18 @@ class eigenfunctions:
         cosine Fourier series. Simplest case is that of Mathieu's ce_2n
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
+        if As is None:
+            As = A_coefficients(q, N, coeffs, K, symmetry, case)
+        vals = {}
+        if Ncut != 0:
+            N = Ncut
+        leng = range(N)
+        for n in leng:
+            terms = [_np.cos((2*k)*x)*(As['A'+str(2*n)][0, k]) for k in leng]
+            vals.update({'phi' + str(2 * n): + _np.sum(terms, axis=0)})
+            vals.update({'phi' + str(2 * n):
+                         vals['phi' + str(2 * n)][_np.newaxis, :]})
         pass
-
 
 
 def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
@@ -595,9 +605,20 @@ def stepCoeffs(B, n, q):
             if n == 8:
                 nn = _np.where(B[:ll[-1], n] < 0)[0]  # should be > 0.
                 B[nn, :] = - B[nn, :]
+                for k in range(N):
+                    if k % 2 == 0:
+                        B[ll[-1] + 1:, k].imag = -B[ll[-1] + 1:, k].imag
+                    else:
+                        B[ll[-1] + 1:, k].real = -B[ll[-1] + 1:, k].real
             elif n == 9:
                 nn = _np.where(B[:ll[-1], n] < 0)[0]  # should be > 0.
                 B[nn, :] = - B[nn, :]
+                B[ll[-1], :] = -B[ll[-1], :]
+                for k in range(N):
+                    if k % 2 == 0:
+                        B[ll[-1] + 1:, k].real = -B[ll[-1] + 1:, k].real
+                    else:
+                        B[ll[-1] + 1:, k].imag = -B[ll[-1] + 1:, k].imag
     return B
 
 
