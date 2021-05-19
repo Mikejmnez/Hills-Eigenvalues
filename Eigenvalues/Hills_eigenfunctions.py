@@ -475,7 +475,7 @@ def stepCoeffs(B, n, q):
         A: nd-array. Corrected Fourier coefficient.
     '''
     qs = [5.525525, 33.860860,
-          78.102602]
+          78.102602, 145.605605]
     N = len(B[0, :])
     if n < 2 and q[0].imag < qs[0]:
         if q.imag[-1] > qs[0]:
@@ -519,9 +519,21 @@ def stepCoeffs(B, n, q):
             if n == 4:
                 nn = _np.where(B[:ll[-1], n] < 0)[0]  # should be > 0.
                 B[nn, :] = - B[nn, :]
+                for k in range(N):
+                    if k % 2 == 0:
+                        B[ll[-1] + 1:, k].imag = -B[ll[-1] + 1:, k].imag
+                    else:
+                        B[ll[-1] + 1:, k].real = -B[ll[-1] + 1:, k].real
+                mm = _np.where(B[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+                B[mm + ll[-1] + 1, :] = -B[mm + ll[-1] + 1, :]
             if n == 5:
                 nn = _np.where(B[:ll[-1], n] < 0)[0]  # should be > 0.
                 B[nn, :] = - B[nn, :]
+                for k in range(N):
+                    if k % 2 == 0:
+                        B[ll[-1] + 1:, k].real = -B[ll[-1] + 1:, k].real
+                    else:
+                        B[ll[-1] + 1:, k].imag = -B[ll[-1] + 1:, k].imag
     return B
 
 
