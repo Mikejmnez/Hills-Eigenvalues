@@ -642,7 +642,18 @@ def gaussCoeffs(As, n, q):
     This is the case of a narrow gaussian-jet, associated with an even
     eigenfunction. In this case there are not Exceptional Points, hence no
     symmetry of the Fourier coefficients.
+
+    In this case, the only requirement is that the q-dependence of As is
+    continuous (smooth), i.e. there are not (sign) jumps in q over what
+    looks like EPs.
     '''
+    N = len(As[0, :])
+    for n in range(N):
+        mm = _np.where(As[:, n].real < 0)[0]  # should always be > 0
+        As[mm, :] = - As[mm, :]
+    if n == 1:
+        mm = _np.where(As[:, n].real == _np.max(As[:, n].real))[0]  # EP-like
+        As[mm + 1:, 0].imag = - As[mm + 1:, 0].imag
     return As
 
 
