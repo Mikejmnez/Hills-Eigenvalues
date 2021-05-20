@@ -126,6 +126,8 @@ def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
         As = sqrCoeffs(As, n, q)
     if case is 'step':  # sine flow, associated with odd symmetry
         As = stepCoeffs(As, n, q)
+    if case is 'gaussian':
+        As = gaussCoeffs(As, n, q)
     return As
 
 
@@ -632,6 +634,16 @@ def stepCoeffs(B, n, q):
                 mm = _np.where(B[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
                 B[mm + ll[-1] + 1, :] = -B[mm + ll[-1] + 1, :]
     return B
+
+
+def gaussCoeffs(As, n, q):
+    '''Correct the behavior of the Fourier coefficients as a function of
+    parameter (purely imaginary). The Fourier coefficients are complex.
+    This is the case of a narrow gaussian-jet, associated with an even
+    eigenfunction. In this case there are not Exceptional Points, hence no
+    symmetry of the Fourier coefficients.
+    '''
+    return As
 
 
 def Anorm(A, case='None'):
