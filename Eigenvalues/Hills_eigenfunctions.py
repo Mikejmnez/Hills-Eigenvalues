@@ -647,6 +647,8 @@ def gaussCoeffs(As, n, q):
     continuous (smooth), i.e. there are not (sign) jumps in q over what
     looks like EPs.
     '''
+    # Define crossing of Eigenvalues.
+    qs = [36.008508]
     mm = _np.where(As[:, n].real < 0)[0]  # should always be > 0
     if len(mm) > 0:
         As[mm, :] = - As[mm, :]
