@@ -647,13 +647,52 @@ def gaussCoeffs(As, n, q):
     continuous (smooth), i.e. there are not (sign) jumps in q over what
     looks like EPs.
     '''
-    N = len(As[0, :])
-    for n in range(N):
-        mm = _np.where(As[:, n].real < 0)[0]  # should always be > 0
+    mm = _np.where(As[:, n].real < 0)[0]  # should always be > 0
+    if len(mm) > 0:
         As[mm, :] = - As[mm, :]
-    if n == 1:
-        mm = _np.where(As[:, n].real == _np.max(As[:, n].real))[0]  # EP-like
+    if n == 1:  # Only one maxima as only interacts with single eigvect
+        mm = _np.where(As[:, n].real == _np.max(As[:, n].real))[0][0]  # EP-ish
         As[mm + 1:, 0].imag = - As[mm + 1:, 0].imag
+        As[mm + 1:, 2].real = -As[mm + 1:, 2].real
+        As[mm + 1:, 4].imag = -As[mm + 1:, 4].imag
+        As[mm + 1:, 5].imag = -As[mm + 1:, 5].imag
+        As[mm + 1:, 6].imag = -As[mm + 1:, 6].imag
+        As[mm + 1:, 7].imag = -As[mm + 1:, 7].imag
+        As[mm + 1:, 8].imag = -As[mm + 1:, 8].imag
+        As[mm + 1:, 9].imag = -As[mm + 1:, 9].imag
+        As[mm + 1:, 10].imag = -As[mm + 1:, 10].imag
+        As[mm + 1:, 11].imag = - As[mm + 1:, 11].imag
+        As[mm + 1:, 12].imag = - As[mm + 1:, 12].imag
+    if n == 2:
+        # Identify the two maxima (like two EPs).
+        mm = _np.where(As[:, n].real == _np.max(As[:, n].real))[0][0]  # EP-ish
+        nn = _np.where(As[:, n + 1].real == _np.max(As[:, n + 1].real))[0][0]
+        As[mm + 1:, 0].real = - As[mm + 1:, 0].real
+        As[mm + 1:, 2].imag = - As[mm + 1:, 2].imag
+        As[mm + 1:, 4].real = - As[mm + 1:, 4].real
+        As[mm + 1:, 5].real = - As[mm + 1:, 5].real
+        As[mm + 1:, 6].real = - As[mm + 1:, 6].real
+        As[mm + 1:, 7].real = - As[mm + 1:, 7].real
+        As[mm + 1:, 8].real = - As[mm + 1:, 8].real
+        As[mm + 1:, 9].real = - As[mm + 1:, 9].real
+        As[mm + 1:, 10].real = - As[mm + 1:, 10].real
+        As[mm + 1:, 11].real = - As[mm + 1:, 11].real
+        As[mm + 1:, 12].real = - As[mm + 1:, 12].real
+
+        As[nn:, 0].imag = - As[nn:, 0].imag
+        As[nn:, 1].imag = - As[nn:, 1].imag
+        As[nn:, 2].imag = - As[nn:, 2].imag
+        As[nn:, 3].real = - As[nn:, 3].real
+        As[nn:, 4] = - As[nn:, 4]
+        As[nn:, 5].imag = - As[nn:, 5].imag
+    if n == 3:
+        mm = _np.where(As[:, n].real == _np.max(As[:, n].real))[0][0]  # EP-ish
+        nn = _np.where(As[:, n + 1].real == _np.max(As[:, n + 1].real))[0][0]
+        As[mm + 1:, 0].real = - As[mm + 1:, 0].real
+        As[mm + 1:, 1].real = - As[mm + 1:, 1].real
+        As[mm + 1:, 2].real = - As[mm + 1:, 2].real
+        As[mm + 1:, 3].imag = - As[mm + 1:, 3].imag
+
     return As
 
 
