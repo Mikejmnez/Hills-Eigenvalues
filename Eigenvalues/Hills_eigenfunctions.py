@@ -648,7 +648,10 @@ def gaussCoeffs(As, n, q):
     looks like EPs.
     '''
     # Define crossing of Eigenvalues.
-    qs = [36.008508]
+    qs = [-1, 36.008508, 70.293793,
+          114.818818, 175.898898,
+          260.515515, 379.465965,
+          553.160660, 788.364864]
     mm = _np.where(As[:, n].real < 0)[0]  # should always be > 0
     if len(mm) > 0:
         As[mm, :] = - As[mm, :]
