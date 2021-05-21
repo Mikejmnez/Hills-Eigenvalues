@@ -3,6 +3,7 @@ defines a class of eigenfunctions for Hill's equation
 """
 
 import numpy as _np
+import copy
 from eig_system import matrix_system, eig_pairs
 
 
@@ -99,6 +100,10 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
             vals.update({'B' + str(2 * (n + 1)): As})
     if case == 'gaussian':
         vals = reorder(vals, q)
+        for n in range(N):
+            As = copy.deepcopy(vals['A' + str(2 * n)])
+            As = Fcoeffs(As, n, q, case)
+            vals.update({'A' + str(2 * n): As})
     return vals
 
 
@@ -657,19 +662,11 @@ def gaussCoeffs(As, n, q):
     mm = _np.where(As[:, n].real < 0)[0]  # should always be > 0
     if len(mm) > 0:
         As[mm, :] = - As[mm, :]
-    if n == 1:  # Only one maxima as only interacts with single eigvect
-        mm = _np.where(As[:, n].real == _np.max(As[:, n].real))[0][0]  # EP-ish
-        As[mm + 1:, 0].imag = - As[mm + 1:, 0].imag
-        As[mm + 1:, 2].real = -As[mm + 1:, 2].real
-        As[mm + 1:, 4].imag = -As[mm + 1:, 4].imag
-        As[mm + 1:, 5].imag = -As[mm + 1:, 5].imag
-        As[mm + 1:, 6].imag = -As[mm + 1:, 6].imag
-        As[mm + 1:, 7].imag = -As[mm + 1:, 7].imag
-        As[mm + 1:, 8].imag = -As[mm + 1:, 8].imag
-        As[mm + 1:, 9].imag = -As[mm + 1:, 9].imag
-        As[mm + 1:, 10].imag = -As[mm + 1:, 10].imag
-        As[mm + 1:, 11].imag = - As[mm + 1:, 11].imag
-        As[mm + 1:, 12].imag = - As[mm + 1:, 12].imag
+    if n == 1:
+        lll = _np.where(As[:, n].real < 0)[0]
+        As[lll, :] = As[lll, :]
+        mm = _np.where(q.imag <= qs[1])[0][-1]
+        As[mm:, 1].imag = -As[mm:, 1].imag
     return As
 
 
