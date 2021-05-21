@@ -778,3 +778,36 @@ def Anorm(A, case='None'):
         norm = _np.sqrt(_np.sum(A ** 2))
     A = A / norm
     return A
+
+
+def reorder(Avals, Q):
+    """Changes the ordering of the eigenvectors and eigenvalues that are stored
+    within a dictionary, whenever the value of canonical parameter q lies
+    between an interval. This represents the case of a narrow gaussian jet.
+    """
+    import copy
+    qs = [36.008508, 70.293793,
+          114.818818, 175.898898,
+          260.515515, 379.465965,
+          553.160660, 788.364864]
+    Adict = copy.deepcopy(Avals)
+    M = []
+    M.append(_np.where(Q.imag <= qs[0])[0][-1])
+    M.append(_np.where(Q.imag <= qs[1])[0][-1])
+    M.append(_np.where(Q.imag <= qs[2])[0][-1])
+    M.append(_np.where(Q.imag <= qs[3])[0][-1])
+    M.append(_np.where(Q.imag <= qs[4])[0][-1])
+    M.append(_np.where(Q.imag <= qs[5])[0][-1])
+    M.append(_np.where(Q.imag <= qs[6])[0][-1])
+    M.append(_np.where(Q.imag <= qs[7])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A2 = Adict['A2'][M[m] + 1:, :]  # anomalous mode
+        Am = Adict['A' + str(2 * (m + 2))][M[m] + 1:, :]
+        a2 = copy.deepcopy(Adict['a2'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict['a' + str(2 * (m + 2))][M[m] + 1:])
+        Adict['A2'][M[m] + 1:, :] = Am
+        Adict['A' + str(2 * (m + 2))][M[m] + 1:, :] = A2
+        Adict['a2'][M[m] + 1:] = am
+        Adict['a' + str(2 * (m + 2))][M[m] + 1:] = a2
+    return Adict
