@@ -670,93 +670,93 @@ def gaussCoeffs(As, n, q):
         As[mm + 1:, 10].imag = -As[mm + 1:, 10].imag
         As[mm + 1:, 11].imag = - As[mm + 1:, 11].imag
         As[mm + 1:, 12].imag = - As[mm + 1:, 12].imag
-    if n == 2:
-        # Identify the two maxima (like two EPs).
-        mm = _np.where(As[:, n].real == _np.max(As[:, n].real))[0][0]  # EP-ish
-        nn = _np.where(q.imag <= qs[n])[0][-1]
-        As[mm + 1:, 0].real = - As[mm + 1:, 0].real
-        As[mm + 1:, 2].imag = - As[mm + 1:, 2].imag
-        As[mm + 1:, 4].real = - As[mm + 1:, 4].real
-        As[mm + 1:, 5].real = - As[mm + 1:, 5].real
-        As[mm + 1:, 6].real = - As[mm + 1:, 6].real
-        As[mm + 1:, 7].real = - As[mm + 1:, 7].real
-        As[mm + 1:, 8].real = - As[mm + 1:, 8].real
-        As[mm + 1:, 9].real = - As[mm + 1:, 9].real
-        As[mm + 1:, 10].real = - As[mm + 1:, 10].real
-        As[mm + 1:, 11].real = - As[mm + 1:, 11].real
-        As[mm + 1:, 12].real = - As[mm + 1:, 12].real
+    # if n == 2:
+    #     # Identify the two maxima (like two EPs).
+    #     mm = _np.where(As[:, n].real == _np.max(As[:, n].real))[0][0]  # EP-ish
+    #     nn = _np.where(q.imag <= qs[n])[0][-1]
+    #     As[mm + 1:, 0].real = - As[mm + 1:, 0].real
+    #     As[mm + 1:, 2].imag = - As[mm + 1:, 2].imag
+    #     As[mm + 1:, 4].real = - As[mm + 1:, 4].real
+    #     As[mm + 1:, 5].real = - As[mm + 1:, 5].real
+    #     As[mm + 1:, 6].real = - As[mm + 1:, 6].real
+    #     As[mm + 1:, 7].real = - As[mm + 1:, 7].real
+    #     As[mm + 1:, 8].real = - As[mm + 1:, 8].real
+    #     As[mm + 1:, 9].real = - As[mm + 1:, 9].real
+    #     As[mm + 1:, 10].real = - As[mm + 1:, 10].real
+    #     As[mm + 1:, 11].real = - As[mm + 1:, 11].real
+    #     As[mm + 1:, 12].real = - As[mm + 1:, 12].real
 
-        As[nn + 1:, 0].imag = -As[nn + 1:, 0].imag
-        As[nn + 1:, 1].imag = - As[nn + 1:, 1].imag
-        As[nn + 1:, 2].imag = - As[nn + 1:, 2].imag
-        As[nn + 1:, 3].real = - As[nn + 1:, 3].real
-        As[nn + 1:, 4] = -As[nn + 1:, 4]
-        As[nn + 1:, 5].imag = -As[nn + 1:, 5].imag
-        As[nn + 1:, 6].imag = -As[nn + 1:, 6].imag
-        As[nn + 1:, 7].imag = -As[nn + 1:, 7].imag
-        As[nn + 1:, 8].imag = -As[nn + 1:, 8].imag
-        As[nn + 1:, 9].imag = -As[nn + 1:, 9].imag
-        As[nn + 1:, 10].imag = -As[nn + 1:, 10].imag
-        As[nn + 1:, 11].imag = -As[nn + 1:, 11].imag
-        As[nn + 1:, 12].imag = -As[nn + 1:, 12].imag
-        As[nn + 1:, 13].imag = -As[nn + 1:, 13].imag
-        As[nn + 1:, 14] = -As[nn + 1:, 14]
-        As[nn + 1:, 15] = -As[nn + 1:, 15]
-        As[nn + 1:, 16].real = -As[nn + 1:, 16].real
-        As[nn + 1:, 17].real = -As[nn + 1:, 17].real
+    #     As[nn + 1:, 0].imag = -As[nn + 1:, 0].imag
+    #     As[nn + 1:, 1].imag = - As[nn + 1:, 1].imag
+    #     As[nn + 1:, 2].imag = - As[nn + 1:, 2].imag
+    #     As[nn + 1:, 3].real = - As[nn + 1:, 3].real
+    #     As[nn + 1:, 4] = -As[nn + 1:, 4]
+    #     As[nn + 1:, 5].imag = -As[nn + 1:, 5].imag
+    #     As[nn + 1:, 6].imag = -As[nn + 1:, 6].imag
+    #     As[nn + 1:, 7].imag = -As[nn + 1:, 7].imag
+    #     As[nn + 1:, 8].imag = -As[nn + 1:, 8].imag
+    #     As[nn + 1:, 9].imag = -As[nn + 1:, 9].imag
+    #     As[nn + 1:, 10].imag = -As[nn + 1:, 10].imag
+    #     As[nn + 1:, 11].imag = -As[nn + 1:, 11].imag
+    #     As[nn + 1:, 12].imag = -As[nn + 1:, 12].imag
+    #     As[nn + 1:, 13].imag = -As[nn + 1:, 13].imag
+    #     As[nn + 1:, 14] = -As[nn + 1:, 14]
+    #     As[nn + 1:, 15] = -As[nn + 1:, 15]
+    #     As[nn + 1:, 16].real = -As[nn + 1:, 16].real
+    #     As[nn + 1:, 17].real = -As[nn + 1:, 17].real
 
-    if n == 3:
-        mm = _np.where(As[:, n].real == _np.max(As[:, n].real))[0][0]  # EP-ish
-        nn = _np.where(q.imag <= qs[n])[0][-1]  # next EP-like
-        As[mm + 1:, 0].real = - As[mm + 1:, 0].real
-        As[mm + 1:, 1].real = - As[mm + 1:, 1].real
-        As[mm + 1:, 2].real = - As[mm + 1:, 2].real
-        As[mm + 1:, 3].imag = - As[mm + 1:, 3].imag
-        As[mm + 1:, 5].real = - As[mm + 1:, 5].real
-        As[mm + 1:, 6].real = - As[mm + 1:, 6].real
-        As[mm + 1:, 7].real = - As[mm + 1:, 7].real
-        As[mm + 1:, 8].real = - As[mm + 1:, 8].real
-        As[mm + 1:, 9].real = - As[mm + 1:, 9].real
-        As[mm + 1:, 10].real = - As[mm + 1:, 10].real
-        As[mm + 1:, 11].real = - As[mm + 1:, 11].real
-        As[mm + 1:, 12].real = - As[mm + 1:, 12].real
-        As[mm + 1:, 13].real = - As[mm + 1:, 13].real
-        As[mm + 1:, 14].real = - As[mm + 1:, 14].real
-        As[mm + 1:, 15].real = - As[mm + 1:, 15].real
+    # if n == 3:
+    #     mm = _np.where(As[:, n].real == _np.max(As[:, n].real))[0][0]  # EP-ish
+    #     nn = _np.where(q.imag <= qs[n])[0][-1]  # next EP-like
+    #     As[mm + 1:, 0].real = - As[mm + 1:, 0].real
+    #     As[mm + 1:, 1].real = - As[mm + 1:, 1].real
+    #     As[mm + 1:, 2].real = - As[mm + 1:, 2].real
+    #     As[mm + 1:, 3].imag = - As[mm + 1:, 3].imag
+    #     As[mm + 1:, 5].real = - As[mm + 1:, 5].real
+    #     As[mm + 1:, 6].real = - As[mm + 1:, 6].real
+    #     As[mm + 1:, 7].real = - As[mm + 1:, 7].real
+    #     As[mm + 1:, 8].real = - As[mm + 1:, 8].real
+    #     As[mm + 1:, 9].real = - As[mm + 1:, 9].real
+    #     As[mm + 1:, 10].real = - As[mm + 1:, 10].real
+    #     As[mm + 1:, 11].real = - As[mm + 1:, 11].real
+    #     As[mm + 1:, 12].real = - As[mm + 1:, 12].real
+    #     As[mm + 1:, 13].real = - As[mm + 1:, 13].real
+    #     As[mm + 1:, 14].real = - As[mm + 1:, 14].real
+    #     As[mm + 1:, 15].real = - As[mm + 1:, 15].real
 
-        ll = _np.where(As[:, 0].real < 0)[0]
-        As[ll[0]:ll[-1] + 1, 0].real = -As[ll[0]:ll[-1] + 1, 0].real
-        As[ll[0]:ll[-1] + 1, 1].real = -As[ll[0]:ll[-1] + 1, 1].real
-        As[ll[0]:ll[-1] + 1, 2].real = -As[ll[0]:ll[-1] + 1, 2].real
-        As[ll[0]:ll[-1] + 1, 3].imag = -As[ll[0]:ll[-1] + 1, 3].imag
-        As[ll[0]:ll[-1] + 1, 5].real = -As[ll[0]:ll[-1] + 1, 5].real
-        As[ll[0]:ll[-1] + 1, 6].real = -As[ll[0]:ll[-1] + 1, 6].real
-        As[ll[0]:ll[-1] + 1, 7].real = -As[ll[0]:ll[-1] + 1, 7].real
-        As[ll[0]:ll[-1] + 1, 8].real = -As[ll[0]:ll[-1] + 1, 8].real
-        As[ll[0]:ll[-1] + 1, 9].real = -As[ll[0]:ll[-1] + 1, 9].real
-        As[ll[0]:ll[-1] + 1, 10].real = -As[ll[0]:ll[-1] + 1, 10].real
-        As[ll[0]:ll[-1] + 1, 11].real = -As[ll[0]:ll[-1] + 1, 11].real
+    #     ll = _np.where(As[:, 0].real < 0)[0]
+    #     As[ll[0]:ll[-1] + 1, 0].real = -As[ll[0]:ll[-1] + 1, 0].real
+    #     As[ll[0]:ll[-1] + 1, 1].real = -As[ll[0]:ll[-1] + 1, 1].real
+    #     As[ll[0]:ll[-1] + 1, 2].real = -As[ll[0]:ll[-1] + 1, 2].real
+    #     As[ll[0]:ll[-1] + 1, 3].imag = -As[ll[0]:ll[-1] + 1, 3].imag
+    #     As[ll[0]:ll[-1] + 1, 5].real = -As[ll[0]:ll[-1] + 1, 5].real
+    #     As[ll[0]:ll[-1] + 1, 6].real = -As[ll[0]:ll[-1] + 1, 6].real
+    #     As[ll[0]:ll[-1] + 1, 7].real = -As[ll[0]:ll[-1] + 1, 7].real
+    #     As[ll[0]:ll[-1] + 1, 8].real = -As[ll[0]:ll[-1] + 1, 8].real
+    #     As[ll[0]:ll[-1] + 1, 9].real = -As[ll[0]:ll[-1] + 1, 9].real
+    #     As[ll[0]:ll[-1] + 1, 10].real = -As[ll[0]:ll[-1] + 1, 10].real
+    #     As[ll[0]:ll[-1] + 1, 11].real = -As[ll[0]:ll[-1] + 1, 11].real
 
-        As[nn + 1:, 0].imag = - As[nn + 1:, 0].imag
-        As[nn + 1:, 1].imag = - As[nn + 1:, 1].imag
-        As[nn + 1:, 2].imag = - As[nn + 1:, 2].imag
-        As[nn + 1:, 4].real = - As[nn + 1:, 4].real
-        As[nn + 1:, 5] = - As[nn + 1:, 5]
-        As[nn + 1:, 6] = - As[nn + 1:, 6]
-        As[nn + 1:, 7].imag = - As[nn + 1:, 7].imag
-        As[nn + 1:, 8].imag = - As[nn + 1:, 8].imag
-        As[nn + 1:, 9].imag = - As[nn + 1:, 9].imag
-        As[nn + 1:, 10].imag = - As[nn + 1:, 10].imag
-        As[nn + 1:, 11].imag = - As[nn + 1:, 11].imag
-        As[nn + 1:, 12].imag = - As[nn + 1:, 12].imag
-        As[nn + 1:, 13].imag = - As[nn + 1:, 13].imag
-        As[nn + 1:, 14] = -As[nn + 1:, 14]
-        As[nn + 1:, 15] = -As[nn + 1:, 15]
-        As[nn + 1:, 16] = -As[nn + 1:, 16]
-        As[nn + 1:, 17] = -As[nn + 1:, 17]
-        As[nn + 1:, 18].real = -As[nn + 1:, 18].real
-        As[nn + 1:, 19].real = -As[nn + 1:, 19].real
-        As[nn + 1:, 20].real = -As[nn + 1:, 20].real
+    #     As[nn + 1:, 0].imag = - As[nn + 1:, 0].imag
+    #     As[nn + 1:, 1].imag = - As[nn + 1:, 1].imag
+    #     As[nn + 1:, 2].imag = - As[nn + 1:, 2].imag
+    #     As[nn + 1:, 4].real = - As[nn + 1:, 4].real
+    #     As[nn + 1:, 5] = - As[nn + 1:, 5]
+    #     As[nn + 1:, 6] = - As[nn + 1:, 6]
+    #     As[nn + 1:, 7].imag = - As[nn + 1:, 7].imag
+    #     As[nn + 1:, 8].imag = - As[nn + 1:, 8].imag
+    #     As[nn + 1:, 9].imag = - As[nn + 1:, 9].imag
+    #     As[nn + 1:, 10].imag = - As[nn + 1:, 10].imag
+    #     As[nn + 1:, 11].imag = - As[nn + 1:, 11].imag
+    #     As[nn + 1:, 12].imag = - As[nn + 1:, 12].imag
+    #     As[nn + 1:, 13].imag = - As[nn + 1:, 13].imag
+    #     As[nn + 1:, 14] = -As[nn + 1:, 14]
+    #     As[nn + 1:, 15] = -As[nn + 1:, 15]
+    #     As[nn + 1:, 16] = -As[nn + 1:, 16]
+    #     As[nn + 1:, 17] = -As[nn + 1:, 17]
+    #     As[nn + 1:, 18].real = -As[nn + 1:, 18].real
+    #     As[nn + 1:, 19].real = -As[nn + 1:, 19].real
+    #     As[nn + 1:, 20].real = -As[nn + 1:, 20].real
 
     return As
 
