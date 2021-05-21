@@ -97,6 +97,8 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
         elif symmetry is 'odd':
             vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
             vals.update({'B' + str(2 * (n + 1)): As})
+    if case == 'gaussian':
+        vals = reorder(vals, q)
     return vals
 
 
