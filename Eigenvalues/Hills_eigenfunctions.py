@@ -648,7 +648,7 @@ def gaussCoeffs(As, n, q):
     looks like EPs.
     '''
     # Define crossing of Eigenvalues.
-    qs = [-1, 36.008508, 70.293793,
+    qs = [-1, 36.060060, 70.293793,
           114.818818, 175.898898,
           260.515515, 379.465965,
           553.160660, 788.364864]
@@ -697,9 +697,11 @@ def gaussCoeffs(As, n, q):
         As[nn + 1:, 10].imag = -As[nn + 1:, 10].imag
         As[nn + 1:, 11].imag = -As[nn + 1:, 11].imag
         As[nn + 1:, 12].imag = -As[nn + 1:, 12].imag
-        As[nn + 1:, 13] = -As[nn + 1:, 13]
+        As[nn + 1:, 13].imag = -As[nn + 1:, 13].imag
         As[nn + 1:, 14] = -As[nn + 1:, 14]
         As[nn + 1:, 15] = -As[nn + 1:, 15]
+        As[nn + 1:, 16].real = -As[nn + 1:, 16].real
+        As[nn + 1:, 17].real = -As[nn + 1:, 17].real
 
     if n == 3:
         mm = _np.where(As[:, n].real == _np.max(As[:, n].real))[0][0]  # EP-ish
@@ -745,6 +747,14 @@ def gaussCoeffs(As, n, q):
         As[nn + 1:, 10].imag = - As[nn + 1:, 10].imag
         As[nn + 1:, 11].imag = - As[nn + 1:, 11].imag
         As[nn + 1:, 12].imag = - As[nn + 1:, 12].imag
+        As[nn + 1:, 13].imag = - As[nn + 1:, 13].imag
+        As[nn + 1:, 14] = -As[nn + 1:, 14]
+        As[nn + 1:, 15] = -As[nn + 1:, 15]
+        As[nn + 1:, 16] = -As[nn + 1:, 16]
+        As[nn + 1:, 17] = -As[nn + 1:, 17]
+        As[nn + 1:, 18].real = -As[nn + 1:, 18].real
+        As[nn + 1:, 19].real = -As[nn + 1:, 19].real
+        As[nn + 1:, 20].real = -As[nn + 1:, 20].real
 
     return As
 
