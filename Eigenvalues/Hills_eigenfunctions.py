@@ -665,8 +665,22 @@ def gaussCoeffs(As, n, q):
     if n == 1:
         lll = _np.where(As[:, n].real < 0)[0]
         As[lll, :] = As[lll, :]
-        mm = _np.where(q.imag <= qs[1])[0][-1]
+        mm = _np.where(q.imag <= qs[0])[0][-1]
         As[mm:, 1].imag = -As[mm:, 1].imag
+        As[mm:, 3].real = -As[mm:, 3].real
+    if n == 2:
+        mm = _np.where(q.imag <= qs[0])[0][-1]
+        As[mm:, 0].real = -As[mm:, 0].real
+        As[mm:, 2].imag = -As[mm:, 2].imag
+        As[mm:, 4].real = -As[mm:, 4].real
+        As[mm:, 5].real = -As[mm:, 5].real
+        As[mm:, 6].real = -As[mm:, 6].real
+        As[mm:, 7].real = -As[mm:, 7].real
+        As[mm:, 8].real = -As[mm:, 8].real
+        As[mm:, 9].real = -As[mm:, 9].real
+        As[mm:, 10].real = -As[mm:, 10].real
+
+
     return As
 
 
