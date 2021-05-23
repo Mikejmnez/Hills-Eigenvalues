@@ -325,9 +325,10 @@ def linCoeffs(A, n, q):
     Output:
         A: nd-array. Corrected Fourier coefficient.
     '''
-    qs = [2.171671, 22.152152,
-          60.626626, 118.621621,
-          237.243243]
+    qs = [5.262762, 53.700700,
+          146.974474, 287.567567,
+          472.848348, 705.258258,
+          982.420420]
     N = len(A[0, :])
     if n < 2 and q[0].imag < qs[0]:
         if q.imag[-1] > qs[0]:
@@ -344,35 +345,43 @@ def linCoeffs(A, n, q):
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
                     else:
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                mm = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
-                A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
+                mm = _np.where(A[:, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
     if n in [2, 3] and q[0].imag < qs[1]:
         if q.imag[-1] > qs[1]:
             ll = _np.where(q.imag <= qs[1])[0]
             if n == 2:
-                A[ll[-1], :] = -A[ll[-1], :]
+                # A[ll[-1], :] = -A[ll[-1], :]
                 for k in range(N):
                     if k % 2 == 0:  # even
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
                     else:
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                mm = _np.where(A[:ll[-1], n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
             if n == 3:
                 for k in range(N):
                     if k % 2 == 0:
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
                     else:
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                mm = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
-                A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
+                mm = _np.where(A[:ll[-1], n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
     if n in [4, 5] and q[0].imag < qs[2]:
         if q.imag[-1] > qs[2]:
             ll = _np.where(q.imag <= qs[2])[0]
             if n == 4:
                 for k in range(N):
                     if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                    else:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
             if n == 5:
                 mm = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
                 A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
@@ -381,6 +390,8 @@ def linCoeffs(A, n, q):
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
                     else:
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
     if n in [6, 7] and q[0].imag < qs[3]:
         if q.imag[-1] > qs[3]:
             ll = _np.where(q.imag <= qs[3])[0]
@@ -390,6 +401,8 @@ def linCoeffs(A, n, q):
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
                     else:
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                mm = _np.where(A[:, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
             if n == 7:
                 A[ll[-1] - 1:ll[-1] + 1, :] = -A[ll[-1] - 1:ll[-1] + 1, :]
                 mm = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
@@ -399,6 +412,17 @@ def linCoeffs(A, n, q):
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
                     else:
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                mm = _np.where(A[:, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+    if n in [8, 9] and q[0].imag < qs[4]:
+        if q.imag[-1] > qs[4]:
+            ll = _np.where(q.imag <= qs[4])[0]
+            if n == 6:
+                mm = _np.where(A[:, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+            if n == 7:
+                mm = _np.where(A[:, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
     return A
 
 
