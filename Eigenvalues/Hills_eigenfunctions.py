@@ -91,7 +91,8 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
             nA = Anorm(A[:, n], case=case)
             nAs = nA[_np.newaxis, :]
             As = _np.append(As, nAs, axis=0)
-        As = Fcoeffs(As, n, q, case)
+        if case is not 'gaussian':
+            As = Fcoeffs(As, n, q, case)
         if symmetry in ['None', 'even']:
             vals.update({'a' + str(2 * n): _np.array(a)})
             vals.update({'A' + str(2 * n): As})
@@ -325,7 +326,8 @@ def linCoeffs(A, n, q):
         A: nd-array. Corrected Fourier coefficient.
     '''
     qs = [2.171671, 22.152152,
-          60.626626, 118.621621]
+          60.626626, 118.621621,
+          237.243243]
     N = len(A[0, :])
     if n < 2 and q[0].imag < qs[0]:
         if q.imag[-1] > qs[0]:
@@ -665,21 +667,18 @@ def gaussCoeffs(As, n, q):
     if n == 1:
         lll = _np.where(As[:, n].real < 0)[0]
         As[lll, :] = As[lll, :]
-        mm = _np.where(q.imag <= qs[0])[0][-1]
-        As[mm:, 1].imag = -As[mm:, 1].imag
-        As[mm:, 3].real = -As[mm:, 3].real
-    if n == 2:
-        mm = _np.where(q.imag <= qs[0])[0][-1]
-        As[mm:, 0].real = -As[mm:, 0].real
-        As[mm:, 2].imag = -As[mm:, 2].imag
-        As[mm:, 4].real = -As[mm:, 4].real
-        As[mm:, 5].real = -As[mm:, 5].real
-        As[mm:, 6].real = -As[mm:, 6].real
-        As[mm:, 7].real = -As[mm:, 7].real
-        As[mm:, 8].real = -As[mm:, 8].real
-        As[mm:, 9].real = -As[mm:, 9].real
-        As[mm:, 10].real = -As[mm:, 10].real
-
+        # mm = _np.where(q.imag <= qs[0])[0][-1]
+        # As[mm + 1:, 1].imag = -As[mm + 1:, 1].imag
+        # As[mm + 1:, 3].real = -As[mm + 1:, 3].real
+    # if n == 2:
+    #     mm = _np.where(q.imag <= qs[0])[0][-1]
+    #     As[mm + 1:, 1].real = -As[mm + 1:, 1].real
+    #     As[mm + 1:, 12].real = -As[mm + 1:, 12].real
+    #     As[mm + 1:, 13].real = -As[mm + 1:, 13].real
+    #     As[mm + 1:, 14].real = -As[mm + 1:, 14].real
+    #     As[mm + 1:, 15].real = -As[mm + 1:, 15].real
+    #     As[mm + 1:, 16].real = -As[mm + 1:, 16].real
+    #     As[mm + 1:, 17].real = -As[mm + 1:, 17].real
 
     return As
 
@@ -710,7 +709,6 @@ def reorder(Avals, Q):
     within a dictionary, whenever the value of canonical parameter q lies
     between an interval. This represents the case of a narrow gaussian jet.
     """
-    import copy
     qs = [36.008508, 70.293793,
           114.818818, 175.898898,
           260.515515, 379.465965,
@@ -727,8 +725,8 @@ def reorder(Avals, Q):
     M.append(_np.where(Q.imag <= qs[7])[0][-1])
     M.append(len(Q))
     for m in range(len(M) - 1):
-        A2 = Adict['A2'][M[m] + 1:, :]  # anomalous mode
-        Am = Adict['A' + str(2 * (m + 2))][M[m] + 1:, :]
+        A2 = copy.deepcopy(Adict['A2'][M[m] + 1:, :])  # anomalous mode
+        Am = copy.deepcopy(Adict['A' + str(2 * (m + 2))][M[m] + 1:, :])
         a2 = copy.deepcopy(Adict['a2'][M[m] + 1:])  # anomalous eigenvalue
         am = copy.deepcopy(Adict['a' + str(2 * (m + 2))][M[m] + 1:])
         Adict['A2'][M[m] + 1:, :] = Am
