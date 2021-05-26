@@ -133,12 +133,14 @@ def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
         As = cCoeffs(As, n, q)
     if case is 'linear':
         As = linCoeffs(As, n, q)
-    if case is 'square':
+    elif case is 'square':
         As = sqrCoeffs(As, n, q)
-    if case is 'step':  # sine flow, associated with odd symmetry
+    elif case is 'step':  # sine flow, associated with odd symmetry
         As = stepCoeffs(As, n, q)
-    if case is 'gaussian':
+    elif case is 'gaussian':
         As = gaussCoeffs(As, n, q)
+    elif case is 'gaussian3':
+        As = gauss3Coeffs(As, n, q)
     return As
 
 
@@ -749,20 +751,24 @@ def gaussCoeffs(As, n, q):
           114.818818, 175.898898,
           260.515515, 379.465965,
           553.160660, 788.364864]
-    mm = _np.where(As[:, n].real < 0)[0]  # should always be > 0
-    if len(mm) > 0:
-        As[mm, :] = - As[mm, :]
     if n == 1:
-        lll = _np.where(As[:, n].real < 0)[0]
-        As[lll, :] = As[lll, :]
+        mm = _np.where(As[:, 0].real > 0)[0]  # sign jumps
+        As[mm, :] = - As[mm, :]
     return As
 
 
 def gauss3Coeffs(As, n, q):
     '''Correct behavior of Fourier coefficients as a function of q-parameter. This case is
-    associated with the wide gaussian jet (Ld=1.5). Not all eigenvalues cross.
+    associated with the wide gaussian jet (Ld=1.5). Only some eigenvalue pairs cross.
     ''' 
-    qs = []
+    qs = [206.551551, 304.801801, 805.732732, 939.888888]
+    pair = [['10', '12'], ['6', '8'], ['20', '22'], ['16', '18']]  # pair whose eigvals cross.
+    if n == 1:
+        lll = _np.where(As[:, 0].real > 0)[0]  # choosing (trial and error) to be neg
+        As[lll, :] = -As[lll, :]
+    elif n == 3:
+        lll = _np.where(As[:, 0].real < 0)[0]  # choosing (trial and error) to be neg
+        As[lll, :] = -As[lll, :]
     return As
 
 def Anorm(A, case='None'):
