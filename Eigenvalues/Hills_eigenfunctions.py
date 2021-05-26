@@ -813,12 +813,11 @@ def reorder_gauss(Avals, Q):
 
 
 def reorder_gauss3(Avals, Q):
-    """Changes the ordering of eigenvalues and eigenvectors that are stored within a
-    dictionary. This is associated with wide gaussian jet (Ld=1.5). Only some pairs of
-    eigenvalues cross and need to correct that.
+    """Changes the ordering of pairs of eigenvalues and eigenvectors that are stored within a
+    dictionary. This is associated with wide gaussian jet (Ld=1.5).
     """
-    qs = [206.551551, 304.801801]
-    pair = [['10', '12'], ['6', '8'], ['20', '22']]  # pair whose eigvals cross.
+    qs = [206.551551, 304.801801, 805.732732, 939.888888]
+    pair = [['10', '12'], ['6', '8'], ['20', '22'], ['16', '18']]  # pair whose eigvals cross.
     Adict = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
