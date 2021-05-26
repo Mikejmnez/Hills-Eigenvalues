@@ -100,9 +100,9 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
             vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
             vals.update({'B' + str(2 * (n + 1)): As})
     if case in ['gaussian', 'gaussian3']:
-        if case == 'gaussian':
+        if case == 'gaussian':  # narrow gaussian
             vals = reorder_gauss(vals, q)
-        elif case == 'gaussian3':
+        elif case == 'gaussian3':  # wide gaussian
             vals = reorder_gauss3(vals, q)
         for n in range(N):
             As = copy.deepcopy(vals['A' + str(2 * n)])
@@ -797,14 +797,8 @@ def reorder_gauss(Avals, Q):
           553.160660, 788.364864]
     Adict = copy.deepcopy(Avals)
     M = []
-    M.append(_np.where(Q.imag <= qs[0])[0][-1])
-    M.append(_np.where(Q.imag <= qs[1])[0][-1])
-    M.append(_np.where(Q.imag <= qs[2])[0][-1])
-    M.append(_np.where(Q.imag <= qs[3])[0][-1])
-    M.append(_np.where(Q.imag <= qs[4])[0][-1])
-    M.append(_np.where(Q.imag <= qs[5])[0][-1])
-    M.append(_np.where(Q.imag <= qs[6])[0][-1])
-    M.append(_np.where(Q.imag <= qs[7])[0][-1])
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
     M.append(len(Q))
     for m in range(len(M) - 1):
         A2 = copy.deepcopy(Adict['A2'][M[m] + 1:, :])  # anomalous mode
@@ -823,10 +817,24 @@ def reorder_gauss3(Avals, Q):
     dictionary. This is associated with wide gaussian jet (Ld=1.5). Only some pairs of
     eigenvalues cross and need to correct that.
     """
-    qs [206.551551]
+    qs = [206.551551, 304.801801]
+    pair = [['10', '12'], ['6', '8'], ['20', '22']]  # pair whose eigvals cross.
     Adict = copy.deepcopy(Avals)
     M = []
-    M.append(_np.where(Q.imag <= qs[0])[0][-1])
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict['a' + pair[m][1]][M[m] + 1:])
+
+        Adict['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict['a' + pair[m][1]][M[m] + 1:] = a0
     return Adict
 
 
