@@ -1339,7 +1339,8 @@ def reorder_gauss(Avals, Q):
         Adict1['a' + str(2 * (m + 3))][M[m] + 1:] = a4
 
     # second mode, asymptotes to n=24
-    qs = [577.603103, 718.255255]
+    qs = [577.603103, 718.255255,
+          888.313313]
     Adict = copy.deepcopy(Adict1)
     M = []
     for k in range(len(qs)):
