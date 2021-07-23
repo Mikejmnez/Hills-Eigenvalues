@@ -1364,7 +1364,8 @@ def reorder_gauss2(Avals, Q):
     between an interval. This represents the case of a intermediate (Ld=0.5) gaussian jet.
     """
     # first mode, asymptotes to n=3
-    qs = [20.236736, 108.712712]
+    qs = [20.236736, 108.712712,
+          471.690690]
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
