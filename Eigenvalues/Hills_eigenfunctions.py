@@ -1365,7 +1365,7 @@ def reorder_gauss2(Avals, Q):
     within a dictionary, whenever the value of canonical parameter q lies
     between an interval. This represents the case of a intermediate (Ld=0.5) gaussian jet.
     """
-    # first mode, asymptotes to n=3
+    # first mode, asymptotes to n=2
     qs = [20.236736, 108.712712,
           471.690690]
     Adict1 = copy.deepcopy(Avals)
@@ -1383,23 +1383,40 @@ def reorder_gauss2(Avals, Q):
         Adict1['a2'][M[m] + 1:] = am
         Adict1['a' + str(2 * (m + 2))][M[m] + 1:] = a2
 
-    # second mode, asymptotes to n=24
+    # second mode, asymptotes to n=12
     qs = [255.095095, 410.962962,
           659.524524]
-    Adict = copy.deepcopy(Adict1)
+    Adict2 = copy.deepcopy(Adict1)
     M = []
     for k in range(len(qs)):
         M.append(_np.where(Q.imag <= qs[k])[0][-1])
     M.append(len(Q))
     for m in range(len(M) - 1):
-        A14 = copy.deepcopy(Adict['A14'][M[m] + 1:, :])  # anomalous mode  $ should be 4
-        Am = copy.deepcopy(Adict['A' + str(2 * (m + 8))][M[m] + 1:, :])
-        a14 = copy.deepcopy(Adict['a14'][M[m] + 1:])  # anomalous eigenvalue
-        am = copy.deepcopy(Adict['a' + str(2 * (m + 8))][M[m] + 1:])
-        Adict['A14'][M[m] + 1:, :] = Am
-        Adict['A' + str(2 * (m + 8))][M[m] + 1:, :] = A14
-        Adict['a14'][M[m] + 1:] = am
-        Adict['a' + str(2 * (m + 8))][M[m] + 1:] = a14
+        A14 = copy.deepcopy(Adict2['A14'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict2['A' + str(2 * (m + 8))][M[m] + 1:, :])
+        a14 = copy.deepcopy(Adict2['a14'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict2['a' + str(2 * (m + 8))][M[m] + 1:])
+        Adict2['A14'][M[m] + 1:, :] = Am
+        Adict2['A' + str(2 * (m + 8))][M[m] + 1:, :] = A14
+        Adict2['a14'][M[m] + 1:] = am
+        Adict2['a' + str(2 * (m + 8))][M[m] + 1:] = a14
+
+    # third mode, asymptotes to n=24
+    qs = [610.876876, 797.193193]
+    Adict = copy.deepcopy(Adict2)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A24 = copy.deepcopy(Adict['A24'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict['A' + str(2 * (m + 13))][M[m] + 1:, :])
+        a24 = copy.deepcopy(Adict['a24'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict['a' + str(2 * (m + 13))][M[m] + 1:])
+        Adict['A24'][M[m] + 1:, :] = Am
+        Adict['A' + str(2 * (m + 13))][M[m] + 1:, :] = A24
+        Adict['a24'][M[m] + 1:] = am
+        Adict['a' + str(2 * (m + 13))][M[m] + 1:] = a24
     return Adict
 
 
