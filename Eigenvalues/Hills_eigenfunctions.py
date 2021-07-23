@@ -144,9 +144,11 @@ def A_coefficients(q, N, coeffs, K, symmetry='even', case='None'):
         elif symmetry is 'odd':
             vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
             vals.update({'B' + str(2 * (n + 1)): As})
-    if case in ['gaussian', 'gaussian3']:
+    if case in ['gaussian', 'gaussian2', 'gaussian3']:
         if case == 'gaussian':  # narrow gaussian
             vals = reorder_gauss(vals, q)
+        if case == 'gaussian2':
+            vals = reorder_gauss2(vals, q)
         elif case == 'gaussian3':  # wide gaussian
             vals = reorder_gauss3(vals, q)
         for n in range(N):
@@ -1382,21 +1384,22 @@ def reorder_gauss2(Avals, Q):
         Adict1['a' + str(2 * (m + 2))][M[m] + 1:] = a2
 
     # second mode, asymptotes to n=24
-    qs = []
+    qs = [255.095095, 410.962962,
+          659.524524]
     Adict = copy.deepcopy(Adict1)
     M = []
     for k in range(len(qs)):
         M.append(_np.where(Q.imag <= qs[k])[0][-1])
     M.append(len(Q))
     for m in range(len(M) - 1):
-        A24 = copy.deepcopy(Adict['A24'][M[m] + 1:, :])  # anomalous mode  $ should be 4
-        Am = copy.deepcopy(Adict['A' + str(2 * (m + 13))][M[m] + 1:, :])
-        a24 = copy.deepcopy(Adict['a24'][M[m] + 1:])  # anomalous eigenvalue
-        am = copy.deepcopy(Adict['a' + str(2 * (m + 13))][M[m] + 1:])
-        Adict['A24'][M[m] + 1:, :] = Am
-        Adict['A' + str(2 * (m + 13))][M[m] + 1:, :] = A24
-        Adict['a24'][M[m] + 1:] = am
-        Adict['a' + str(2 * (m + 13))][M[m] + 1:] = a24
+        A14 = copy.deepcopy(Adict['A14'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict['A' + str(2 * (m + 8))][M[m] + 1:, :])
+        a14 = copy.deepcopy(Adict['a14'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict['a' + str(2 * (m + 8))][M[m] + 1:])
+        Adict['A14'][M[m] + 1:, :] = Am
+        Adict['A' + str(2 * (m + 8))][M[m] + 1:, :] = A14
+        Adict['a14'][M[m] + 1:] = am
+        Adict['a' + str(2 * (m + 8))][M[m] + 1:] = a14
     return Adict
 
 
