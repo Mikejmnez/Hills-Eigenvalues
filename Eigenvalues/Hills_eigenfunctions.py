@@ -1319,17 +1319,14 @@ def reorder_gauss(Avals, Q):
     within a dictionary, whenever the value of canonical parameter q lies
     between an interval. This represents the case of a narrow gaussian jet.
     """
-    qs = [36.008508, 70.293793,
-          114.818818, 175.898898,
-          260.515515, 379.465965,
-          553.160660, 788.364864]
+    qs = [46.161161, ]
     Adict = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
         M.append(_np.where(Q.imag <= qs[k])[0][-1])
     M.append(len(Q))
     for m in range(len(M) - 1):
-        A2 = copy.deepcopy(Adict['A2'][M[m] + 1:, :])  # anomalous mode
+        A2 = copy.deepcopy(Adict['A2'][M[m] + 1:, :])  # anomalous mode  $ should be 4
         Am = copy.deepcopy(Adict['A' + str(2 * (m + 2))][M[m] + 1:, :])
         a2 = copy.deepcopy(Adict['a2'][M[m] + 1:])  # anomalous eigenvalue
         am = copy.deepcopy(Adict['a' + str(2 * (m + 2))][M[m] + 1:])
