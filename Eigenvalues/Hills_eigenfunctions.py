@@ -5,6 +5,7 @@ defines a class of eigenfunctions for Hill's equation
 import numpy as _np
 import copy
 from eig_system import matrix_system, eig_pairs
+import copy as _copy
 
 
 class eigenfunctions:
@@ -16,6 +17,7 @@ class eigenfunctions:
         self._K = K
         self._symmetry = symmetry
         self._case = case
+
 
     @classmethod
     def phi_even(
@@ -30,13 +32,13 @@ class eigenfunctions:
         As=None,
         Ncut=0,
     ):
-        """Even eigenfunctions that solves Hill's equation associated with
+        """Even eigenfunctions that solve Hill's equation associated with
         the case where Neumann BC and coeffs are associated with a purely
         cosine Fourier series. Simplest case is that of Mathieu's ce_2n
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if As is None:
-            As = A_coefficients(q, N, coeffs, K, symmetry, case)
+            As = A_coefficients(q, N, coeffs, K, symmetry)
         vals = {}
         if Ncut != 0:
             N = Ncut
@@ -56,8 +58,47 @@ class eigenfunctions:
                 vals.update({'phi' + str(2 * n): phi})
         return vals
 
+    @classmethod
+    def phi_odd(
+        cls,
+        q,
+        x,
+        N,
+        coeffs,
+        K,
+        symmetry='Odd',
+        case='None',
+        Bs=None,
+        Ncut=0,
+    ):
+        """Odd eigenfunctions that solve Hill's equation associated with
+        the case where Dirichlet BCs and coeffs are associated with a pure
+        sine Fourier series. Simplest case is that of Mathieu's se_2n+2
+        associates with coeffs = 1. when K = 1, otherwise coeffs =0. Th
+        """
+        if Bs is None:
+            Bs = A_coefficients(q, N, coeffs, K, symmetry)
+        vals = {}
+        if Ncut != 0:
+            N = Ncut
+        LEN = range(N-1)
+        for n in LEN:
+            terms = [_np.sin(2*(k+1)*x)*(Bs['B'+str(2*(n+1))][0, k]) for k in LEN]
+            vals.update({'phi' + str(2 * (n + 1)): + _np.sum(terms, axis=0)})
+            vals.update({'phi' + str(2 * (n + 1)):
+                         vals['phi' + str(2 * (n + 1))][_np.newaxis, :]})
+            vals.update({'b' + str(2 * (n + 1)): Bs['b' + str(2 * (n + 1))]})
+        for i in range(1, len(q)):
+            for n in LEN:
+                terms = [_np.sin(2*(k+1)*x)*(Bs['B'+str(2*(n+1))][i, k]) for k in LEN]
+                phi = _np.sum(terms, axis=0)
+                phi = phi[_np.newaxis, :]
+                phi = _np.append(vals['phi' + str(2 * (n + 1))], phi, axis=0)
+                vals.update({'phi' + str(2 * (n + 1)): phi})
+        return vals
 
-def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
+
+def A_coefficients(q, N, coeffs, K, symmetry='even', case='None'):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -78,17 +119,21 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
             'A2n', 3D array).
     """
     vals = {}
-    if q.imag.any() == 0:
-        raise Warning("q must be imaginary")
+    if len(q)>1:
+        if q.imag.any() == 0:
+            raise Warning("q must be imaginary")
+    else:
+        if q.imag == 0:
+            raise Warning("q must be imaginary")
     for n in range(N):
-        a, A = eig_pairs(matrix_system(q[0], N, coeffs, K, symmetry, case))
-        a = [a[n]]  # makes a list of the nth eigenvalue
-        As = Anorm(A[:, n], case)
+        am, Am = eig_pairs(matrix_system(q[0], N, coeffs, K, symmetry), symmetry)
+        a = [am[n]]  # makes a list of the nth eigenvalue
+        As = Anorm(Am[:, n], symmetry)
         As = As[_np.newaxis, :]
         for k in range(1, len(q)):
-            an, A = eig_pairs(matrix_system(q[k], N, coeffs, K, symmetry, case))
+            an, An = eig_pairs(matrix_system(q[k], N, coeffs, K, symmetry), symmetry)
             a.append(an[n])
-            nA = Anorm(A[:, n], case=case)
+            nA = Anorm(An[:, n], symmetry)
             nAs = nA[_np.newaxis, :]
             As = _np.append(As, nAs, axis=0)
         if case not in ['gaussian', 'gaussian3']:
@@ -106,7 +151,7 @@ def A_coefficients(q, N, coeffs, K, symmetry='None', case='None'):
             vals = reorder_gauss3(vals, q)
         for n in range(N):
             As = copy.deepcopy(vals['A' + str(2 * n)])
-            As = Fcoeffs(As, n, q, case)
+            # As = Fcoeffs(As, n, q, case)
             vals.update({'A' + str(2 * n): As})
     return vals
 
@@ -129,10 +174,14 @@ def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
             Corrected Eigenvector with same shape as original
     """
     # Estimate limiting value for small q (pos or neg) and correct.
-    if case is "Mathieu":  # cosine jet
-        As = cCoeffs(As, n, q)
     if case is 'linear':
         As = linCoeffs(As, n, q)
+    elif case is 'linear0':
+        As = lin0Coeffs(As, n, q)
+    elif case is 'linear2':
+        As = linCoeffs2(As, n, q)
+    elif case is 'nlinear':
+        As = linnCoeffs(As, n, q)
     elif case is 'square':
         As = sqrCoeffs(As, n, q)
     elif case is 'step':  # sine flow, associated with odd symmetry
@@ -141,6 +190,13 @@ def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
         As = gaussCoeffs(As, n, q)
     elif case is 'gaussian3':
         As = gauss3Coeffs(As, n, q)
+    elif case is 'cosine':
+        As = cCoeffs(As, n, q)
+    elif case is 'cosine_shifted':
+        nAs = cCoeffs(As, n, q)
+        As = copy.deepcopy(nAs)
+        for r in range(len(As[0, :])):
+            As[:, r] = ((-1)**n) * _np.cos(r * _np.pi) * nAs[:, r]
     return As
 
 
@@ -157,160 +213,192 @@ def cCoeffs(A, n, q):
     Output:
         A: nd-array. Corrected Fourier coefficient.
     '''
-    qs = [1.466466, 16.466466,
-          47.797797, 95.4654654,
-          159.469469, 239.809809,
-          336.468468, 452.972972,
-          578.813813, 724.434434,
-          885.195195]
+    qs = [2.938438, 32.942942,
+          95.613113, 190.950950,
+          318.959459, 479.636636,
+          672.983483, 898.998498,
+          1157.684684, 1449.039039,
+          1773.061561, 2129.755255]
     N = len(A[0, :])
     if n < 2 and q[0].imag < qs[0]:
         if q.imag[-1] > qs[0]:
             ll = _np.where(q.imag <= qs[0])[0]
             if n == 0:
                 for k in range(N):
-                    A[ll[-1] + 1:, k] = -A[ll[-1] + 1:, k]
+                    if k % 2 ==0:
+                        A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
+                    else:
+                        A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
     if n in [2, 3] and q[0].imag < qs[1]:
         if q.imag[-1] > qs[1]:
             ll = _np.where(q.imag <= qs[1])[0]
             if n == 2:
                 for k in range(N):
-                    A[ll[-1] + 1:, k] = -A[ll[-1] + 1:, k]
-                mm = _np.where(A[:, 0].real > 0)[0]  # never changes sign
+                    if k % 2 ==0:
+                        A[ll[-1] + 1:, k] = -A[ll[-1] + 1:, k]
+                    else:
+                        A[ll[-1] + 1:, k] = -A[ll[-1] + 1:, k]
+                m0 = _np.where(A[ll[-1]+1:, 0].real > 0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real<0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+            if n == 3:
+                m0 = _np.where(A[ll[-1]+1:, 0].real > 0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real<0)[0]  # should be >0
                 A[mm, :] = -A[mm, :]
     if n in [4, 5] and q[0].imag < qs[2]:
         if q.imag[-1] > qs[2]:
             ll = _np.where(q.imag <= qs[2])[0]
             if n == 4:
                 for k in range(N):
-                    A[ll[-1] + 1:, k] = - A[ll[-1] + 1:, k]
-                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
-                A[mm, :] = -A[mm, :]
+                    if k % 2 ==0:
+                        A[ll[-1] + 1:, k] = - A[ll[-1] + 1:, k]
+                    else:
+                        A[ll[-1] + 1:, k] = - A[ll[-1] + 1:, k]
+                m0 = _np.where(A[ll[-1]+1:, 0].real < 0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+            if n == 5:
+                for k in range(N):
+                    if k % 2 ==0:
+                        A[ll[-1]+1:, k] = - A[ll[-1]+1:, k]
+                    else:
+                        A[ll[-1]+1:, k] = - A[ll[-1]+1:, k]
+                m0 = _np.where(A[ll[-1]+1:, 0].real < 0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
     if n in [6, 7] and q[0].imag < qs[3]:
         if q.imag[-1] > qs[3]:
             ll = _np.where(q.imag <= qs[3])[0]
             if n == 6:
-                mm = _np.where(A[:, 0].real > 0)[0]  # always negative
-                A[mm, :] = -A[mm, :]
+                for k in range(N):
+                    if k % 2 ==0:
+                        NNN = 1
+                    # else:
+                    #     A[:, k] = -A[:, k]
+                m0 = _np.where(A[ll[-1]+1:, 0].real > 0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
             if n == 7:
                 for k in range(N):
-                    As = A[ll[-1] - 1, k]
-                    for m in _np.arange(ll[-1], ll[-1] + 2):
-                        if k % 2 == 0:
-                            if _np.sign(A[m, k].imag) != _np.sign(As.imag):
-                                A[m, k] = -A[m, k]
-                        else:
-                            if _np.sign(A[m, k].real) != _np.sign(As.real):
-                                A[m, k] = -A[m, k]
+                    if k % 2 == 0:
+                        A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
+                    else:
+                        A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
+                A[mm, :] = -A[mm, :]
     if n in [8, 9] and q[0].imag < qs[4]:
         if q[-1].imag > qs[4]:
             ll = _np.where(q.imag <= qs[4])[0]
             if n == 8:
-                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
                 A[mm, :] = -A[mm, :]
             if n == 9:
-                for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
+                A[mm, :] = -A[mm, :]
     if n in [10, 11] and q[0].imag < qs[5]:
         if q[-1].imag > qs[5]:
             ll = _np.where(q.imag <= qs[5])[0]
             if n == 10:
-                mm = _np.where(A[:, 0].real > 0)[0]  # always negative
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
                 A[mm, :] = -A[mm, :]
-                for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
             if n == 11:
                 for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+                    if k % 2==0:
+                        A[ll[-1]+1:, k]= -A[ll[-1]+1:, k]
+                    else:
+                        A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
+                A[mm, :] = -A[mm, :]
     if n in [12, 13] and q[0].imag < qs[6]:
         if q[-1].imag > qs[6]:
             ll = _np.where(q.imag <= qs[6])[0]
             if n == 12:
-                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
+                for k in range(N):
+                    if k % 2 ==0:
+                        A[:ll[-1]+1, k].real = -A[:ll[-1]+1, k].real
+                    else:
+                        A[:ll[-1]+1, k].imag = -A[:ll[-1]+1, k].imag
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
                 A[mm, :] = -A[mm, :]
-                for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
             if n == 13:
-                for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+                # for k in range(N):
+                    # if k % 2 == 0:
+                    #     NNN = 1
+                    # else:
+                    #     A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
+                A[mm, :] = -A[mm, :]
     if n in [14, 15] and q[0].imag < qs[7]:
         if q[-1].imag > qs[7]:
             ll = _np.where(q.imag <= qs[7])[0]
             if n == 14:
-                mm = _np.where(A[:, 0].real > 0)[0]  # always negative
+                m0 = _np.where(A[ll[-1] + 1:, 0].real >0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
                 A[mm, :] = -A[mm, :]
-                for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
             if n == 15:
-                mm = _np.where(A[:, 0].real > 0)[0]  # always negative
+                m0 = _np.where(A[ll[-1] + 1:, 0].real >0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
                 A[mm, :] = -A[mm, :]
-                for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
     if n in [16, 17] and q[0].imag < qs[8]:
         if q[-1].imag > qs[8]:
             ll = _np.where(q.imag <= qs[8])[0]
             if n == 16:
-                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
+                m0 = _np.where(A[ll[-1] + 1:, 0].real <0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
                 A[mm, :] = -A[mm, :]
-                for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
             if n == 17:
-                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
+                m0 = _np.where(A[ll[-1] + 1:, 0].real <0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
                 A[mm, :] = -A[mm, :]
-                for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
     if n in [18, 19] and q[0].imag < qs[9]:
         if q[-1].imag > qs[9]:
             ll = _np.where(q.imag <= qs[9])[0]
             if n == 18:
-                mm = _np.where(A[:, 0].real > 0)[0]  # always negative
+                m0 = _np.where(A[ll[-1] + 1:, 0].real >0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
                 A[mm, :] = -A[mm, :]
-                for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
             if n == 19:
-                mm = _np.where(A[:, 0].real > 0)[0]  # always negative
+                m0 = _np.where(A[ll[-1] + 1:, 0].real >0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
                 A[mm, :] = -A[mm, :]
-                for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
     if n in [20, 21] and q[0].imag < qs[10]:
         if q[-1].imag > qs[10]:
             ll = _np.where(q.imag <= qs[10])[0]
             if n == 20:
-                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
+                m0 = _np.where(A[ll[-1] + 1:, 0].real <0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
                 A[mm, :] = -A[mm, :]
-                for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
             if n == 21:
-                mm = _np.where(A[:, 0].real < 0)[0]  # always positive
-                A[mm, :] = -A[mm, :]
                 for k in range(N):
-                    As = abs(A[:ll[-1] + 1, k])  # before EP
-                    sign = (1j)**(n - k)  # before EP
-                    A[:ll[-1] + 1, k] = sign * As  # Before EP
+                    if k % 2 ==0:
+                        # NNN = 1
+                        A[:ll[-1]+1, k].imag = -A[:ll[-1]+1, k].imag
+                    else:
+                        A[:ll[-1]+1, k].real = -A[:ll[-1]+1, k].real
+                m0 = _np.where(A[ll[-1] + 1:, 0].real <0)[0]  # never changes sign
+                A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
+                A[mm, :] = -A[mm, :]
     # if q.imag[-1] >= qs[-1]:
     #     raise ValueError("Not yet implemented for values of Mathieu`s"
     #                      "canonical parameter q>95i")
@@ -330,10 +418,10 @@ def linCoeffs(A, n, q):
     Output:
         A: nd-array. Corrected Fourier coefficient.
     '''
-    qs = [5.262762, 53.700700,
-          146.974474, 287.567567,
-          472.848348, 705.258258,
-          982.420420]
+    qs = [3.561561, 44.290290,
+          131.600600, 264.419419,
+          443.489489, 668.252752,
+          939.133133]
     N = len(A[0, :])
     if n < 2 and q[0].imag < qs[0]:
         if q.imag[-1] > qs[0]:
@@ -341,15 +429,18 @@ def linCoeffs(A, n, q):
             if n == 0:
                 for k in range(N):
                     if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                        NNNNN = 1
+                        # A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
                     else:
+                        A[:, k].imag = -A[:, k].imag
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
             if n == 1:
                 for k in range(N):
                     if k % 2 == 0:
+                        A[:, k].imag = -A[:, k].imag
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-                    else:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+            #         else:
+            #             A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
                 mm = _np.where(A[:, n].real < 0)[0]  # should be >0
                 A[mm, :] = -A[mm, :]
     if n in [2, 3] and q[0].imag < qs[1]:
@@ -358,65 +449,52 @@ def linCoeffs(A, n, q):
             if n == 2:
                 for k in range(N):
                     if k % 2 == 0:  # even
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                        NNNNN=1
                     else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-                mm = _np.where(A[:ll[-1], n].real < 0)[0]  # should be >0
-                A[mm, :] = -A[mm, :]
-                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
-                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+                        A[:, k] = -A[:, k]
             if n == 3:
-                mm = _np.where(A[:ll[-1], n].real < 0)[0]  # should be >0
-                A[mm, :] = -A[mm, :]
-                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
-                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
                 for k in range(N):
                     if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                        A[:, k] = -A[:, k]
+                # after EP
+                mm = _np.where(A[:, 0].real > 0)[0]  # should be <0
+                A[mm, :] = -A[mm, :]
+                # before EP
+                mm = _np.where(A[:ll[-1] + 1, n].real <0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
     if n in [4, 5] and q[0].imag < qs[2]:
         if q.imag[-1] > qs[2]:
             ll = _np.where(q.imag <= qs[2])[0]
             if n == 4:
-                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
-                A[mm, :] = -A[mm, :]
+                for k in range(N):
+                    if k % 2 == 0:
+                        NNN = 1
+                    else:
+                        A[:, k] = - A[:, k]
+            if n == 5:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[:, k] = -A[:, k]
+
                 m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
                 A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-            if n == 5:
                 mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
                 A[mm, :] = -A[mm, :]
-                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
-                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
     if n in [6, 7] and q[0].imag < qs[3]:
         if q.imag[-1] > qs[3]:
             ll = _np.where(q.imag <= qs[3])[0]
             if n == 6:
                 for k in range(N):
                     if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                        NNN = 1
                     else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-                m0 = _np.where(A[:, 0].real > 0)[0]  # should be <0
-                A[m0, :] = -A[m0, :]
+                        A[:, k] = -A[:, k]
             if n == 7:
-                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
-                A[mm, :] = -A[mm, :]
                 for k in range(N):
                     if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                        A[:, k]= -A[:, k]
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
                 m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
                 A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
     if n in [8, 9] and q[0].imag < qs[4]:
@@ -425,23 +503,21 @@ def linCoeffs(A, n, q):
             if n == 8:
                 mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
                 A[mm, :] = -A[mm, :]
-                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
                 A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
                 for k in range(N):
                     if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                        NNN = 1
                     else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                        A[:, k] = -A[:, k]
             if n == 9:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[:, k] = -A[:, k]
                 mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
                 A[mm, :] = -A[mm, :]
                 m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
                 A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
     if n in [10, 11] and q[0].imag < qs[5]:
         if q.imag[-1] > qs[5]:
             ll = _np.where(q.imag <= qs[5])[0]
@@ -452,19 +528,19 @@ def linCoeffs(A, n, q):
                 A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
                 for k in range(N):
                     if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                        NNN = 1
                     else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                        A[:, k] = -A[:, k]
             if n == 11:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[:, k] = -A[:, k]
+                    # else:
+                        # A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
                 mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
                 A[mm, :] = -A[mm, :]
                 m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
                 A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
     if n in [12, 13] and q[0].imag < qs[6]:
         if q.imag[-1] > qs[6]:
             ll = _np.where(q.imag <= qs[6])[0]
@@ -475,21 +551,447 @@ def linCoeffs(A, n, q):
                 A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
                 for k in range(N):
                     if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                        NNN = 1
                     else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                        A[:, k] = -A[:, k]
             if n == 13:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[:, k] = -A[:, k]
                 mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
                 A[mm, :] = -A[mm, :]
                 m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
                 A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    return A
+
+
+def linCoeffs2(A, n, q):
+    '''Correct the behavior of the Fourier coefficients as a function of
+    parameter (purely imaginary). The Fourier coefficients are complex.
+    This is the case of a linear (triangular)-jet.
+    Input:
+        A: nd-array. Fourier coefficients (eigenvector) with real and imaginary
+            components.
+        n: int, index of the eigenvector -> n associated with ce_{2n}
+        q: complex, value of the parameter. For now assumed to span values
+            before the second branch point q<16i.
+    Output:
+        A: nd-array. Corrected Fourier coefficient.
+    '''
+    qs = [3.561561, 44.290290,
+          131.600600, 264.419419,
+          443.489489, 668.252752,
+          939.133133]
+    N = len(A[0, :])
+    if n < 2 and q[0].imag < qs[0]:
+        if q.imag[-1] > qs[0]:
+            ll = _np.where(q.imag <= qs[0])[0]
+            if n == 0:
+                for k in range(N):
+                    if k % 2 ==0:
+                        NNN = 1
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+            if n == 1:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[:, k].imag = -A[:, k].imag
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                    else:
+                        A[:, k].imag = -A[:, k].imag
+                        # A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    if n in [2, 3] and q[0].imag < qs[1]:
+        if q.imag[-1] > qs[1]:
+            ll = _np.where(q.imag <= qs[1])[0]
+            if n == 2:
+                for k in range(N):
+                    if k % 2 == 0:  # even
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+            if n == 3:
                 for k in range(N):
                     if k % 2 == 0:
                         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
                     else:
                         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                # after EP
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+                # before EP
+                mm = _np.where(A[:ll[-1] + 1, n].real <0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+    if n in [4, 5] and q[0].imag < qs[2]:
+        if q.imag[-1] > qs[2]:
+            ll = _np.where(q.imag <= qs[2])[0]
+            if n == 4:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real= -A[ll[-1] + 1:, k].real
+            if n == 5:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real= -A[ll[-1] + 1:, k].real
 
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+    if n in [6, 7] and q[0].imag < qs[3]:
+        if q.imag[-1] > qs[3]:
+            ll = _np.where(q.imag <= qs[3])[0]
+            if n == 6:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+            if n == 7:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    if n in [8, 9] and q[0].imag < qs[4]:
+        if q.imag[-1] > qs[4]:
+            ll = _np.where(q.imag <= qs[4])[0]
+            if n == 8:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+                for k in range(N):
+                    if k % 2 == 0:
+                       A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+            if n == 9:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    if n in [10, 11] and q[0].imag < qs[5]:
+        if q.imag[-1] > qs[5]:
+            ll = _np.where(q.imag <= qs[5])[0]
+            if n == 10:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                # m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                # A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+            if n == 11:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    if n in [12, 13] and q[0].imag < qs[6]:
+        if q.imag[-1] > qs[6]:
+            ll = _np.where(q.imag <= qs[6])[0]
+            if n == 12:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+            if n == 13:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                    else:
+                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
     return A
+
+
+def linnCoeffs(A, n, q):
+    '''Correct the behavior of the Fourier coefficients as a function of
+    parameter (purely imaginary). The Fourier coefficients are complex.
+    This is the case of a linear (triangular)-jet.
+    Input:
+        A: nd-array. Fourier coefficients (eigenvector) with real and imaginary
+            components.
+        n: int, index of the eigenvector -> n associated with ce_{2n}
+        q: complex, value of the parameter. For now assumed to span values
+            before the second branch point q<16i.
+    Output:
+        A: nd-array. Corrected Fourier coefficient.
+    '''
+    qs = [3.561561, 44.290290,
+          131.600600, 264.419419,
+          443.489489, 668.252752,
+          939.133133]
+    N = len(A[0, :])
+    if n < 2 and q[0].imag < qs[0]:
+        if q.imag[-1] > qs[0]:
+            ll = _np.where(q.imag <= qs[0])[0]
+            if n == 0:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
+                    else:
+                        A[ll[-1] + 1:, k] = -A[ll[-1] + 1:, k]
+            if n == 1:
+                # for k in range(N):
+                #     if k % 2 == 0:
+                #         A[:, k].imag = -A[:, k].imag
+                mm = _np.where(A[:, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+    if n in [2, 3] and q[0].imag < qs[1]:
+        if q.imag[-1] > qs[1]:
+            ll = _np.where(q.imag <= qs[1])[0]
+            if n == 2:
+                for k in range(N):
+                    if k % 2 == 0:  # even
+                        A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
+                    else:
+                        A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
+            mm = _np.where(A[:, 0].real > 0)[0]  # should be <0
+            A[mm, :] = -A[mm, :]
+            if n == 3:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[:, k] = -A[:, k]
+                    else:
+                        A[:, k] = -A[:, k]
+                # after EP
+                mm = _np.where(A[:, 0].real > 0)[0]  # should be <0
+                A[mm, :] = -A[mm, :]
+                # before EP
+                mm = _np.where(A[:ll[-1] + 1, n].real <0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+    if n in [4, 5] and q[0].imag < qs[2]:
+        if q.imag[-1] > qs[2]:
+            ll = _np.where(q.imag <= qs[2])[0]
+            if n == 4:
+                mm = _np.where(A[:, 0].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+            if n == 5:
+                for k in range(N):
+                    if k % 2 == 0:
+                        A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
+                    else:
+                        A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+    if n in [6, 7] and q[0].imag < qs[3]:
+        if q.imag[-1] > qs[3]:
+            ll = _np.where(q.imag <= qs[3])[0]
+            if n == 6:
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+            if n == 7:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    if n in [8, 9] and q[0].imag < qs[4]:
+        if q.imag[-1] > qs[4]:
+            ll = _np.where(q.imag <= qs[4])[0]
+            if n == 8:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+            if n == 9:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    if n in [10, 11] and q[0].imag < qs[5]:
+        if q.imag[-1] > qs[5]:
+            ll = _np.where(q.imag <= qs[5])[0]
+            if n == 10:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+            if n == 11:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    if n in [12, 13] and q[0].imag < qs[6]:
+        if q.imag[-1] > qs[6]:
+            ll = _np.where(q.imag <= qs[6])[0]
+            if n == 12:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+                # for k in range(N):
+                #     if k % 2 == 0:
+                #         NNN = 1
+                #     else:
+                #         A[:, k] = -A[:, k]
+            if n == 13:
+                # for k in range(N):
+                #     if k % 2 == 0:
+                #         A[:, k] = -A[:, k]
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    return A
+
+
+def lin0Coeffs(A, n, q):
+    '''Correct the behavior of the Fourier coefficients as a function of
+    parameter (purely imaginary). The Fourier coefficients are complex.
+    This is the case of a linear (triangular)-jet.
+    Input:
+        A: nd-array. Fourier coefficients (eigenvector) with real and imaginary
+            components.
+        n: int, index of the eigenvector -> n associated with ce_{2n}
+        q: complex, value of the parameter. For now assumed to span values
+            before the second branch point q<16i.
+    Output:
+        A: nd-array. Corrected Fourier coefficient.
+    '''
+    qs = [3.561561, 44.290290,
+          131.600600, 264.419419,
+          443.489489, 668.252752,
+          939.133133]
+    N = len(A[0, :])
+    if n < 2 and q[0].imag < qs[0]:
+        if q.imag[-1] > qs[0]:
+            ll = _np.where(q.imag <= qs[0])[0]
+            if n == 1:
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be >0
+                A[m0 + ll[-1] + 1, :] = -A[m0+ll[-1] + 1, :]
+                # before EP
+                mm = _np.where(A[:ll[-1] + 1, n].real <0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+    if n in [2, 3] and q[0].imag < qs[1]:
+        if q.imag[-1] > qs[1]:
+            ll = _np.where(q.imag <= qs[1])[0]
+            if n == 3:
+                mm = _np.where(A[:, 0].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                # before EP
+                mm = _np.where(A[:ll[-1] + 1, n].real <0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+    if n in [4, 5] and q[0].imag < qs[2]:
+        if q.imag[-1] > qs[2]:
+            ll = _np.where(q.imag <= qs[2])[0]
+            # if n == 4:
+                # mm = _np.where(A[:, 0].real < 0)[0]  # should be >0
+                # A[mm, :] = -A[mm, :]
+                # mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                # A[mm, :] = -A[mm, :]
+            if n == 5:
+                # for k in range(N):
+                #     if k % 2 == 0:
+                #         A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
+                #     else:
+                #         A[ll[-1]+1:, k] = -A[ll[-1]+1:, k]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be >0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+                # mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                # A[mm, :] = -A[mm, :]
+    if n in [6, 7] and q[0].imag < qs[3]:
+        if q.imag[-1] > qs[3]:
+            ll = _np.where(q.imag <= qs[3])[0]
+            if n == 6:
+                for k in range(N):
+                    if k % 2 == 0:
+                        NNN = 1
+                        # A[:ll[-1]+1, k].imag = -A[:ll[-1]+1, k].imag
+                    else:
+                        A[:ll[-1]+1, k].real = -A[:ll[-1]+1, k].real
+            #     m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+            #     A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+            #     mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+            #     A[mm, :] = -A[mm, :]
+            if n == 7:
+                # for k in range(N):
+                #     if k % 2 == 0:
+                #         A[:ll[-1]+1, k] = -A[:ll[-1]+1, k]
+                #     else:
+                #         A[:ll[-1]+1, k].real = -A[:ll[-1]+1, k].real
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    if n in [8, 9] and q[0].imag < qs[4]:
+        if q.imag[-1] > qs[4]:
+            ll = _np.where(q.imag <= qs[4])[0]
+            if n == 8:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                # m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+                # A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+            if n == 9:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    if n in [10, 11] and q[0].imag < qs[5]:
+        if q.imag[-1] > qs[5]:
+            ll = _np.where(q.imag <= qs[5])[0]
+            if n == 10:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+            #     m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+            #     A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+            if n == 11:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    if n in [12, 13] and q[0].imag < qs[6]:
+        if q.imag[-1] > qs[6]:
+            ll = _np.where(q.imag <= qs[6])[0]
+            if n == 12:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+            #     m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
+            #     A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+            if n == 13:
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    return A
+
 
 
 def sqrCoeffs(A, n, q):
@@ -505,110 +1007,116 @@ def sqrCoeffs(A, n, q):
     Output:
         A: nd-array. Corrected Fourier coefficient.
     '''
-    qs = [3.386386, 23.207207,
-          52.086086, 86.723723,
-          125.530530, 167.591591]
+    qs = [2.296796, 19.198698,
+          44.409409, 75.029029,
+          109.620620, 147.331331]
     N = len(A[0, :])
-    if n < 2 and q[0].imag < qs[0]:
-        if q.imag[-1] > qs[0]:
-            ll = _np.where(q.imag <= qs[0])[0]
-            if n == 0:
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-            if n == 1:
-                mm = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
-                A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-                    else:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+    # if n < 2 and q[0].imag < qs[0]:
+    #     if q.imag[-1] > qs[0]:
+    #         ll = _np.where(q.imag <= qs[0])[0]
+    #         if n == 0:
+    #             for k in range(N):
+    #                 if k % 2 == 0:
+    #                     A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+    #                 else:
+    #                     A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+    #         if n == 1:
+    #             mm = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+    #             A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
+    #             for k in range(N):
+    #                 if k % 2 == 0:
+    #                     A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+    #                 else:
+    #                     A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
     if n in [2, 3] and q[0].imag < qs[1]:
         if q.imag[-1] > qs[1]:
             ll = _np.where(q.imag <= qs[1])[0]
             if n == 2:
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+                # for k in range(N):
+                #     if k % 2 == 0:
+                #         A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                #     else:
+                #         A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
             if n == 3:
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-                    else:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                mm = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
-                A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
-    if n in [4, 5] and q[0].imag < qs[2]:
-        if q.imag[-1] > qs[2]:
-            ll = _np.where(q.imag <= qs[2])[0]
-            if n == 4:
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-            if n == 5:
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-                    else:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                mm = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
-                A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
-    if n in [6, 7] and q[0].imag < qs[3]:
-        if q.imag[-1] > qs[3]:
-            ll = _np.where(q.imag <= qs[3])[0]
-            if n == 6:
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-            if n == 7:
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-                    else:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                mm = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
-                A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
-    if n in [8, 9] and q[0].imag < qs[4]:
-        if q.imag[-1] > qs[4]:
-            ll = _np.where(q.imag <= qs[4])[0]
-            if n == 8:
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-            if n == 9:
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-                    else:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-            mm = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
-            A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
-    if n in [10, 11] and q[0].imag < qs[5]:
-        if q.imag[-1] > qs[5]:
-            ll = _np.where(q.imag <= qs[5])[0]
-            if n == 10:
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
-                    else:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-            if n == 11:
-                for k in range(N):
-                    if k % 2 == 0:
-                        A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
-                    else:
-                        A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+                mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+                A[mm, :] = -A[mm, :]
+                m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+                A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+            #     for k in range(N):
+            #         if k % 2 == 0:
+            #             A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+            #         else:
+            #             A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+    # if n in [4, 5] and q[0].imag < qs[2]:
+    #     if q.imag[-1] > qs[2]:
+    #         ll = _np.where(q.imag <= qs[2])[0]
+    #         if n == 4:
+    #             for k in range(N):
+    #                 if k % 2 == 0:
+    #                     A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+    #                 else:
+    #                     A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+    #         if n == 5:
+    #             for k in range(N):
+    #                 if k % 2 == 0:
+    #                     A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+    #                 else:
+    #                     A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+    #             mm = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+    #             A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
+    # if n in [6, 7] and q[0].imag < qs[3]:
+    #     if q.imag[-1] > qs[3]:
+    #         ll = _np.where(q.imag <= qs[3])[0]
+    #         if n == 6:
+    #             for k in range(N):
+    #                 if k % 2 == 0:
+    #                     A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+    #                 else:
+    #                     A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+    #         if n == 7:
+    #             for k in range(N):
+    #                 if k % 2 == 0:
+    #                     A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+    #                 else:
+    #                     A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+    #             mm = _np.where(A[ll[-1] + 1:, 0].real > 0)[0]  # should be <0
+    #             A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
+    # if n in [8, 9] and q[0].imag < qs[4]:
+    #     if q.imag[-1] > qs[4]:
+    #         ll = _np.where(q.imag <= qs[4])[0]
+    #         if n == 8:
+    #             for k in range(N):
+    #                 if k % 2 == 0:
+    #                     A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+    #                 else:
+    #                     A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+    #         if n == 9:
+    #             for k in range(N):
+    #                 if k % 2 == 0:
+    #                     A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+    #                 else:
+    #                     A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+    #         mm = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be >0
+    #         A[mm + ll[-1] + 1, :] = -A[mm + ll[-1] + 1, :]
+    # if n in [10, 11] and q[0].imag < qs[5]:
+    #     if q.imag[-1] > qs[5]:
+    #         ll = _np.where(q.imag <= qs[5])[0]
+    #         if n == 10:
+    #             for k in range(N):
+    #                 if k % 2 == 0:
+    #                     A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
+    #                 else:
+    #                     A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+    #         if n == 11:
+    #             for k in range(N):
+    #                 if k % 2 == 0:
+    #                     A[ll[-1] + 1:, k].real = -A[ll[-1] + 1:, k].real
+    #                 else:
+    #                     A[ll[-1] + 1:, k].imag = -A[ll[-1] + 1:, k].imag
     return A
 
 
@@ -769,9 +1277,22 @@ def gauss3Coeffs(As, n, q):
     elif n == 3:
         lll = _np.where(As[:, 0].real < 0)[0]  # choosing (trial and error) to be neg
         As[lll, :] = -As[lll, :]
+    elif n == 5:
+        lll = _np.where(As[:, 0].real > 0)[0]
+        As[lll, :] = -As[lll, :]
+    elif n == 8:
+        lll = _np.where(As[:, 0].real > 0)[0]  # pattern suggest otherwise, but graph this
+        As[lll, :] = -As[lll, :]
+    elif n == 10:
+        lll = _np.where(As[:, 0].real < 0)[0]  # pattern suggest otherwise, but graph this
+        As[lll, :] = -As[lll, :]
+    elif n == 12:
+        lll = _np.where(As[:, 0].real > 0)[0]  # pattern suggest otherwise, but graph this
+        As[lll, :] = -As[lll, :]
     return As
 
-def Anorm(A, case='None'):
+
+def Anorm(A, symmetry='even'):
     """ Normalization of eigenvectors in accordance to Mathieu functions.
     Default is for that associated with ce_{2n}(q, z).
     Input:
@@ -782,13 +1303,14 @@ def Anorm(A, case='None'):
     Output:
         A: 1d-array. Normalized eigenvector.
     """
-    if case == "Mathieu":
-        A0star = A[0]
-        Astar = A[1:]
-        norm = _np.sqrt((2 * (A[0] * A0star)) + _np.sum(A[1:] * Astar))
+    A0star = _copy.deepcopy(A[0])
+    Astar = _copy.deepcopy(A[1:])
+    if symmetry == "even":
+        fac = 2
     else:
-        norm = _np.sqrt(_np.sum(A ** 2))
-    A = A / norm
+        fac = 1
+    norm = _np.sqrt((fac * (A[0] * A0star)) + _np.sum(A[1:] * Astar))
+    A = _copy.deepcopy(A) / norm
     return A
 
 

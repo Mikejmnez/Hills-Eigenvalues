@@ -1,8 +1,9 @@
 from numpy import linalg as LA
 import numpy as _np
+import copy as _copy
 
 
-def matrix_system(q, N, coeffs, K, symmetry='None', case='None'):
+def matrix_system(q, N, coeffs, K, symmetry='even'):
     ''' Constructs a matrix system whose eigenvalues and eigenvectors solve
     Hill's equation.
 
@@ -36,13 +37,13 @@ def matrix_system(q, N, coeffs, K, symmetry='None', case='None'):
     if symmetry == 'None':
         A = FFH_matrix(q, N, coeffs, K)
     elif symmetry == 'even':
-        A = even_matrix(q, N, coeffs, K, case=case)
+        A = even_matrix(q, N, coeffs, K)
     elif symmetry == 'odd':
         A = odd_matrix(q, N, coeffs, K)
     return A
 
 
-def even_matrix(q, N, alphas, K, case='None'):
+def even_matrix(q, N, alphas, K, symmetry='even'):
     ''' Creates a matrix of order NxN. The size N is
     determined (for now) outside, but it should be larger than the order of
     approximation of the Fourier series.
@@ -75,12 +76,16 @@ def even_matrix(q, N, alphas, K, case='None'):
         N = M
     diag = [4 * (k**2) for k in range(N)]  # diagonal of A.
     A = _np.diag(diag, 0)
+    nA = _np.zeros(_np.shape(A))*1j
     for k in range(len(K)):
-        a = q * alphas[k] * _np.ones(N - K[k])  # defines the off-diagonal term
-        A = A + _np.diag(a, K[k]) + _np.diag(a, -K[k])  # adds off-diagonals
-    if case == 'Mathieu':
-        A[0, 1] = A[0, 1] * _np.sqrt(2)
-        A[1, 0] = A[1, 0] * _np.sqrt(2)
+        a = q * alphas[k] * _np.ones(N - int(K[k]))  # defines the off-diagonal term
+        A = A + _np.diag(a, int(K[k])) + _np.diag(a, -int(K[k]))  # adds off-diagonals
+    for n in range(1, len(K)):
+        nA[1: len(K) + (1 - n), n] = _copy.deepcopy(1j*(q.imag * alphas[n:]))
+    A = A + nA
+    if symmetry == 'even':
+        A[0, 1:] = _copy.deepcopy(A[0, 1:]) * _np.sqrt(2)
+        A[1:, 0] = _copy.deepcopy(A[1:, 0]) * _np.sqrt(2)
     return A
 
 
@@ -145,7 +150,7 @@ def FFH_matrix(q, N, gammas, K):
     return A
 
 
-def eig_pairs(A):
+def eig_pairs(A, symmetry='even'):
     """ Calculates the characteristic value (eigenvalue) and the Fourier
     coefficients of Matrix A (particular Hills equation). Both eigenvals and
     Eigenvectors are sorted in ascending order.
@@ -157,11 +162,13 @@ def eig_pairs(A):
         w: sorted eigenvalues.
     """
     w, V = LA.eig(A)  # calculates the eigenvalue and eigenvector
+    if symmetry =='even':
+        V[0, :] = _copy.deepcopy(V[0, :]) / _np.sqrt(2)
     ord_w, V = order_check(w, V)
     return ord_w, V
 
 
-def order_check(a, v):
+def order_check(a, v, symmetry = 'even'):
     """ Check the ordering of the eigenvalue array, from smaller to larger. If
     true, return a unchanged. Ordering also matters if a is complex. If a is
     complex, ordering again is first set according to real(a). If two
@@ -177,7 +184,9 @@ def order_check(a, v):
         nv = 0 * _np.copy(v)
         for k in range(len(Ind)):
             nv[:, k] = v[:, Ind[k]]
+    if symmetry == 'None':
+        inv = _np.arange(len(Ind))
+        mv = 0 * _np.copy(nv)
+        ordered_a = ordered_a[inv]
+        # for k in range(Ind):
     return ordered_a, nv
-
-
-
