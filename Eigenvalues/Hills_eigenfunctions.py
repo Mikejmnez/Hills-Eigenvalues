@@ -1319,7 +1319,9 @@ def reorder_gauss(Avals, Q):
     within a dictionary, whenever the value of canonical parameter q lies
     between an interval. This represents the case of a narrow gaussian jet.
     """
-    qs = [46.161161, 102.157657]
+    qs = [46.161161, 102.157657,
+          217.651651, 446.634634,
+          844.616616]
     Adict = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
