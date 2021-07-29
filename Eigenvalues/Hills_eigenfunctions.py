@@ -144,10 +144,16 @@ def A_coefficients(q, N, coeffs, K, symmetry='even', case='None'):
         elif symmetry is 'odd':
             vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
             vals.update({'B' + str(2 * (n + 1)): As})
-    if case in ['gaussian', 'gaussian2', 'gaussian3']:
-        if case == 'gaussian':  # narrow gaussian
+    if case in ['linear', 'asine', 'gaussian', 'gaussian2', 'gaussian3', 'quad']:
+        if case == 'linear':
+            vals = reorder_linear(vals, q)
+        elif case == 'asine':
+            vals = reorder_asine(vals, q)
+        elif case == 'quad':
+            vals = reorder_quad(vals, q)
+        elif case == 'gaussian':  # narrow gaussian
             vals = reorder_gauss(vals, q)
-        if case == 'gaussian2':
+        elif case == 'gaussian2':
             vals = reorder_gauss2(vals, q)
         elif case == 'gaussian3':  # wide gaussian
             vals = reorder_gauss3(vals, q)
@@ -1316,15 +1322,43 @@ def Anorm(A, symmetry='even'):
     return A
 
 
+def reorder_linear(Avals, Q):
+    """Changes the ordering of pairs of eigenvalues and eigenvectors that are stored within a
+    dictionary. This is associated with triangular jet (Ld=1.5).
+    """
+    qs = [544.031, 589.201]
+    pair = ['16', '18', '20']  # pair whose eigvals cross.
+    Adict = copy.deepcopy(Avals)
+    l0 = _np.where(Q.imag >= qs[0])[0][0]
+    l1 = _np.where(Q.imag >= qs[1])[0][0]
+
+    A16 = copy.deepcopy(Avals['A16'][l0:l1, :])
+    A18 = copy.deepcopy(Avals['A18'][l0:l1, :])
+    A20 = copy.deepcopy(Avals['A20'][l0:l1, :])
+
+    a16 = copy.deepcopy(Avals['a16'][l0:l1])
+    a18 = copy.deepcopy(Avals['a18'][l0:l1])
+    a20 = copy.deepcopy(Avals['a20'][l0:l1])
+
+    Adict['A16'][l0:l1, :] = A18
+    Adict['A18'][l0:l1, :] = A20
+    Adict['A20'][l0:l1, :] = A16
+
+    Adict['a16'][l0:l1] = a18
+    Adict['a18'][l0:l1] = a20
+    Adict['a20'][l0:l1] = a16
+    return Adict
+
+
 def reorder_gauss(Avals, Q):
     """Changes the ordering of the eigenvectors and eigenvalues that are stored
     within a dictionary, whenever the value of canonical parameter q lies
     between an interval. This represents the case of a narrow gaussian jet.
     """
-    # first mode, asymptotes to n=3
+    # first mode, asymptotes to n=2
     qs = [46.161161, 102.157657,
           217.651651, 446.634634,
-          844.616616]
+          844.616616, 1482, 2447, 3846]
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
@@ -1342,7 +1376,8 @@ def reorder_gauss(Avals, Q):
 
     # second mode, asymptotes to n=24
     qs = [577.603103, 718.255255,
-          888.313313]
+          888.313313, 1096.65, 1356.4,
+          1675.75, 2049.875, 2486.5]
     Adict = copy.deepcopy(Adict1)
     M = []
     for k in range(len(qs)):
@@ -1365,9 +1400,9 @@ def reorder_gauss2(Avals, Q):
     within a dictionary, whenever the value of canonical parameter q lies
     between an interval. This represents the case of a intermediate (Ld=0.5) gaussian jet.
     """
-    # first mode, asymptotes to n=2
+    # first mode, asymptotes to 2n=2
     qs = [20.236736, 108.712712,
-          471.690690]
+          471.690690, 1470.5, 3680.3]
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
@@ -1383,9 +1418,10 @@ def reorder_gauss2(Avals, Q):
         Adict1['a2'][M[m] + 1:] = am
         Adict1['a' + str(2 * (m + 2))][M[m] + 1:] = a2
 
-    # second mode, asymptotes to n=12
+    # second mode, asymptotes to 2n=14
     qs = [255.095095, 410.962962,
-          659.524524]
+          659.524524, 1020.25, 1532.75,
+          2240, 3191.5]
     Adict2 = copy.deepcopy(Adict1)
     M = []
     for k in range(len(qs)):
@@ -1401,8 +1437,10 @@ def reorder_gauss2(Avals, Q):
         Adict2['a14'][M[m] + 1:] = am
         Adict2['a' + str(2 * (m + 8))][M[m] + 1:] = a14
 
-    # third mode, asymptotes to n=24
-    qs = [610.876876, 797.193193]
+    # third mode, asymptotes to 2n=24
+    qs = [610.876876, 797.193193, 1064.625,
+          1394.75, 1814.125, 2336.625,
+          2981, 3767.625]
     Adict = copy.deepcopy(Adict2)
     M = []
     for k in range(len(qs)):
@@ -1424,8 +1462,9 @@ def reorder_gauss3(Avals, Q):
     """Changes the ordering of pairs of eigenvalues and eigenvectors that are stored within a
     dictionary. This is associated with wide gaussian jet (Ld=1.5).
     """
-    qs = [206.551551, 304.801801, 805.732732, 939.888888]
-    pair = [['10', '12'], ['6', '8'], ['20', '22'], ['16', '18']]  # pair whose eigvals cross.
+    qs = [189.028528, 498.264264, 777.692692, 765.746746, 999.832832, 3124]
+    pair = [['10', '12'], ['6', '8'], ['20', '22'], ['24', '26'], ['16', '18'],
+            ['10', '14']]  # pair whose eigvals cross.
     Adict = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
@@ -1445,9 +1484,49 @@ def reorder_gauss3(Avals, Q):
     return Adict
 
 
+def reorder_asine(Avals, Q):
+    """ changes the ordering"""
+    qs = [216.46969697]
+    pair = [['10', '12']]
+    Adict = copy.deepcopy(Avals)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict['a' + pair[m][1]][M[m] + 1:])
+
+        Adict['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict['a' + pair[m][1]][M[m] + 1:] = a0
+    return Adict
 
 
+def reorder_quad(Avals, Q):
+    """ changes the ordering"""
+    qs = [119]
+    pair = [['6', '8']]
+    Adict = copy.deepcopy(Avals)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
 
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict['a' + pair[m][1]][M[m] + 1:])
 
+        Adict['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict['a' + pair[m][1]][M[m] + 1:] = a0
+    return Adict
 
 
