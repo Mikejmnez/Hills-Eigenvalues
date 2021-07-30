@@ -118,6 +118,9 @@ def A_coefficients(q, N, coeffs, K, symmetry='even', case='None'):
         dict: 'a_{2n}(q)' (2d-array, key: 'a2n') and 'A^{2n}_{2r}(q)' (key:
             'A2n', 3D array).
     """
+    cases = ['linear', 'asine', 'gaussian',
+             'gaussian2', 'gaussian3', 'quad',
+             'cuartic', 'sixth', 'tenth']
     vals = {}
     if len(q)>1:
         if q.imag.any() == 0:
@@ -144,13 +147,19 @@ def A_coefficients(q, N, coeffs, K, symmetry='even', case='None'):
         elif symmetry is 'odd':
             vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
             vals.update({'B' + str(2 * (n + 1)): As})
-    if case in ['linear', 'asine', 'gaussian', 'gaussian2', 'gaussian3', 'quad']:
+    if case in cases:
         if case == 'linear':
             vals = reorder_linear(vals, q)
         elif case == 'asine':
             vals = reorder_asine(vals, q)
         elif case == 'quad':
             vals = reorder_quad(vals, q)
+        elif case == 'cuartic':
+            vals = reorder_cuartic(vals, q)
+        elif case == 'sixth':
+            vals = reorder_sixth(vals, q)
+        elif case == 'tenth':
+            vals = reorder_tenth(vals, q)
         elif case == 'gaussian':  # narrow gaussian
             vals = reorder_gauss(vals, q)
         elif case == 'gaussian2':
@@ -1620,11 +1629,167 @@ def reorder_quad(Avals, Q):
     return Adictn
 
 
+def reorder_cuartic(Avals, Q):
+    """Changes the ordering of the eigenvectors and eigenvalues that are stored
+    within a dictionary, whenever the value of canonical parameter q lies
+    between an interval. This represents the case of a jet with cuartic polynomial dep.
+    """
+    # first mode, asymptotes to 2n=2
+    qs = [46.75438596, 360.25]
+    Adict1 = copy.deepcopy(Avals)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A2 = copy.deepcopy(Adict1['A2'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict1['A' + str(2 * (m + 2))][M[m] + 1:, :])
+        a2 = copy.deepcopy(Adict1['a2'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict1['a' + str(2 * (m + 2))][M[m] + 1:])
+        Adict1['A2'][M[m] + 1:, :] = Am
+        Adict1['A' + str(2 * (m + 2))][M[m] + 1:, :] = A2
+        Adict1['a2'][M[m] + 1:] = am
+        Adict1['a' + str(2 * (m + 2))][M[m] + 1:] = a2
+
+    # 2nd mode, 2n=8
+    qs = [138.5, 261.625, 501.625, 874.625]
+    Adict2 = copy.deepcopy(Adict1)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A8 = copy.deepcopy(Adict2['A8'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict2['A' + str(2 * (m + 5))][M[m] + 1:, :])
+        a8 = copy.deepcopy(Adict2['a8'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict2['a' + str(2 * (m + 5))][M[m] + 1:])
+        Adict2['A8'][M[m] + 1:, :] = Am
+        Adict2['A' + str(2 * (m + 5))][M[m] + 1:, :] = A8
+        Adict2['a8'][M[m] + 1:] = am
+        Adict2['a' + str(2 * (m + 5))][M[m] + 1:] = a8
+
+    # 3nd mode, 2n=16
+    qs = [484.375]
+    Adict3 = copy.deepcopy(Adict2)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A16 = copy.deepcopy(Adict3['A16'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict3['A' + str(2 * (m + 9))][M[m] + 1:, :])
+        a16 = copy.deepcopy(Adict3['a16'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict3['a' + str(2 * (m + 9))][M[m] + 1:])
+        Adict3['A16'][M[m] + 1:, :] = Am
+        Adict3['A' + str(2 * (m + 9))][M[m] + 1:, :] = A16
+        Adict3['a16'][M[m] + 1:] = am
+        Adict3['a' + str(2 * (m + 9))][M[m] + 1:] = a16
+
+    ## reorders between a specific pair of modes after the value qs
+    qs = [740.875]
+    pair = [['16', '20']]
+    Adict4 = copy.deepcopy(Adict3)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict4['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict4['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict4['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict4['a' + pair[m][1]][M[m] + 1:])
+
+        Adict4['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict4['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict4['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict4['a' + pair[m][1]][M[m] + 1:] = a0
+
+    return Adict4
 
 
+def reorder_sixth(Avals, Q):
+    """Changes the ordering of the eigenvectors and eigenvalues that are stored
+    within a dictionary, whenever the value of canonical parameter q lies
+    between an interval. This represents the case of a jet with cuartic polynomial dep.
+    """
+    # first mode, asymptotes to 2n=2
+    qs = [29.07017544, 130.125, 404.5, 965.0]
+    Adict1 = copy.deepcopy(Avals)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A2 = copy.deepcopy(Adict1['A2'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict1['A' + str(2 * (m + 2))][M[m] + 1:, :])
+        a2 = copy.deepcopy(Adict1['a2'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict1['a' + str(2 * (m + 2))][M[m] + 1:])
+        Adict1['A2'][M[m] + 1:, :] = Am
+        Adict1['A' + str(2 * (m + 2))][M[m] + 1:, :] = A2
+        Adict1['a2'][M[m] + 1:] = am
+        Adict1['a' + str(2 * (m + 2))][M[m] + 1:] = a2
+
+    # 2n mode, asymptotes to 2n=10
+    qs = [199.08,  301.125, 459.5]
+    Adict2 = copy.deepcopy(Adict1)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A10 = copy.deepcopy(Adict2['A10'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict2['A' + str(2 * (m + 6))][M[m] + 1:, :])
+        a10 = copy.deepcopy(Adict2['a10'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict2['a' + str(2 * (m + 6))][M[m] + 1:])
+        Adict2['A10'][M[m] + 1:, :] = Am
+        Adict2['A' + str(2 * (m + 6))][M[m] + 1:, :] = A10
+        Adict2['a10'][M[m] + 1:] = am
+        Adict2['a' + str(2 * (m + 6))][M[m] + 1:] = a10
 
 
+    # 3n mode, asymptotes to 2n=18
+    qs = [555.125]
+    Adict3 = copy.deepcopy(Adict2)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A18 = copy.deepcopy(Adict3['A18'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict3['A' + str(2 * (m + 10))][M[m] + 1:, :])
+        a18 = copy.deepcopy(Adict3['a18'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict3['a' + str(2 * (m + 10))][M[m] + 1:])
+        Adict3['A18'][M[m] + 1:, :] = Am
+        Adict3['A' + str(2 * (m + 10))][M[m] + 1:, :] = A18
+        Adict3['a18'][M[m] + 1:] = am
+        Adict3['a' + str(2 * (m + 10))][M[m] + 1:] = a18
 
+    return Adict3
+
+
+def reorder_tenth(Avals, Q):
+    """Changes the ordering of the eigenvectors and eigenvalues that are stored
+    within a dictionary, whenever the value of canonical parameter q lies
+    between an interval. This represents the case of a jet with cuartic polynomial dep.
+    """
+    # first mode, asymptotes to 2n=2
+    qs = [23.9]
+    Adict1 = copy.deepcopy(Avals)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A2 = copy.deepcopy(Adict1['A2'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict1['A' + str(2 * (m + 2))][M[m] + 1:, :])
+        a2 = copy.deepcopy(Adict1['a2'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict1['a' + str(2 * (m + 2))][M[m] + 1:])
+        Adict1['A2'][M[m] + 1:, :] = Am
+        Adict1['A' + str(2 * (m + 2))][M[m] + 1:, :] = A2
+        Adict1['a2'][M[m] + 1:] = am
+        Adict1['a' + str(2 * (m + 2))][M[m] + 1:] = a2
+    return Adict1
 
 
 
