@@ -1509,24 +1509,127 @@ def reorder_asine(Avals, Q):
 
 def reorder_quad(Avals, Q):
     """ changes the ordering"""
-    qs = [119]
-    pair = [['6', '8']]
-    Adict = copy.deepcopy(Avals)
+
+    # first mode, asymptotes to 2n=2
+    qs = [1647.4]
+    Adict0 = copy.deepcopy(Avals)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A2 = copy.deepcopy(Adict0['A2'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict0['A' + str(2 * (m + 2))][M[m] + 1:, :])
+        a2 = copy.deepcopy(Adict0['a2'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict0['a' + str(2 * (m + 2))][M[m] + 1:])
+        Adict0['A2'][M[m] + 1:, :] = Am
+        Adict0['A' + str(2 * (m + 2))][M[m] + 1:, :] = A2
+        Adict0['a2'][M[m] + 1:] = am
+        Adict0['a' + str(2 * (m + 2))][M[m] + 1:] = a2
+
+
+    # 2n mode, asymptotes to 2n=6
+    qs = [119, 687.875]
+    Adict1 = copy.deepcopy(Adict0)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A6 = copy.deepcopy(Adict1['A6'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict1['A' + str(2 * (m + 4))][M[m] + 1:, :])
+        a6 = copy.deepcopy(Adict1['a6'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict1['a' + str(2 * (m + 4))][M[m] + 1:])
+        Adict1['A6'][M[m] + 1:, :] = Am
+        Adict1['A' + str(2 * (m + 4))][M[m] + 1:, :] = A6
+        Adict1['a6'][M[m] + 1:] = am
+        Adict1['a' + str(2 * (m + 4))][M[m] + 1:] = a6
+
+
+    # 2n mode, asymptotes to 2n=12
+    qs = [488, 715.875, 757.125]
+    Adict2 = copy.deepcopy(Adict1)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A12 = copy.deepcopy(Adict2['A12'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict2['A' + str(2 * (m + 7))][M[m] + 1:, :])
+        a12 = copy.deepcopy(Adict2['a12'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict2['a' + str(2 * (m + 7))][M[m] + 1:])
+        Adict2['A12'][M[m] + 1:, :] = Am
+        Adict2['A' + str(2 * (m + 7))][M[m] + 1:, :] = A12
+        Adict2['a12'][M[m] + 1:] = am
+        Adict2['a' + str(2 * (m + 7))][M[m] + 1:] = a12
+
+    # 3rd mode, asymptotes to 2n=16
+    qs = [560.625, 622.375]
+    Adict3 = copy.deepcopy(Adict2)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A16 = copy.deepcopy(Adict3['A16'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict3['A' + str(2 * (m + 9))][M[m] + 1:, :])
+        a16 = copy.deepcopy(Adict3['a16'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict3['a' + str(2 * (m + 9))][M[m] + 1:])
+        Adict3['A16'][M[m] + 1:, :] = Am
+        Adict3['A' + str(2 * (m + 9))][M[m] + 1:, :] = A16
+        Adict3['a16'][M[m] + 1:] = am
+        Adict3['a' + str(2 * (m + 9))][M[m] + 1:] = a16
+
+    # 4rd mode, asymptotes to 2n=18
+    qs = [651.375]
+    Adict4 = copy.deepcopy(Adict3)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A18 = copy.deepcopy(Adict4['A18'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict4['A' + str(2 * (m + 10))][M[m] + 1:, :])
+        a18 = copy.deepcopy(Adict4['a18'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict4['a' + str(2 * (m + 10))][M[m] + 1:])
+        Adict4['A18'][M[m] + 1:, :] = Am
+        Adict4['A' + str(2 * (m + 10))][M[m] + 1:, :] = A18
+        Adict4['a18'][M[m] + 1:] = am
+        Adict4['a' + str(2 * (m + 10))][M[m] + 1:] = a18
+
+    ## reorders between a specific pair of modes after the value qs
+    qs = [811.5]
+    pair = [['12', '16']]
+    Adictn = copy.deepcopy(Adict4)
     M = []
     for k in range(len(qs)):
         M.append(_np.where(Q.imag <= qs[k])[0][-1])
     M.append(len(Q))
 
     for m in range(len(qs)):
-        A0 = copy.deepcopy(Adict['A' + pair[m][0]][M[m] + 1:, :])
-        A2 = copy.deepcopy(Adict['A' + pair[m][1]][M[m] + 1:, :])
-        a0 = copy.deepcopy(Adict['a' + pair[m][0]][M[m] + 1:])
-        a2 = copy.deepcopy(Adict['a' + pair[m][1]][M[m] + 1:])
+        A0 = copy.deepcopy(Adictn['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adictn['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adictn['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adictn['a' + pair[m][1]][M[m] + 1:])
 
-        Adict['A' + pair[m][0]][M[m] + 1:, :] = A2
-        Adict['A' + pair[m][1]][M[m] + 1:, :] = A0
-        Adict['a' + pair[m][0]][M[m] + 1:] = a2
-        Adict['a' + pair[m][1]][M[m] + 1:] = a0
-    return Adict
+        Adictn['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adictn['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adictn['a' + pair[m][0]][M[m] + 1:] = a2
+        Adictn['a' + pair[m][1]][M[m] + 1:] = a0
+
+    return Adictn
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
