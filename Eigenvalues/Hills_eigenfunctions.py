@@ -1835,6 +1835,24 @@ def reorder_sqr3(Avals, Q):
         Adict1['a' + str(2 * (m + 3))][M[m] + 1:] = a4
 
 
+    # 2n mode, asymptotes to 2n=28
+    qs = [335.125, 772.5]
+    Adict2 = copy.deepcopy(Adict1)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A28 = copy.deepcopy(Adict1['A28'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict1['A' + str(2 * (m + 15))][M[m] + 1:, :])
+        a28 = copy.deepcopy(Adict1['a28'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict1['a' + str(2 * (m + 15))][M[m] + 1:])
+        Adict1['A28'][M[m] + 1:, :] = Am
+        Adict1['A' + str(2 * (m + 15))][M[m] + 1:, :] = A28
+        Adict1['a28'][M[m] + 1:] = am
+        Adict1['a' + str(2 * (m + 15))][M[m] + 1:] = a28
+
+
     return Adict1
 
 
