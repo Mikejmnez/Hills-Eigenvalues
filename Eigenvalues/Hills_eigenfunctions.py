@@ -2283,5 +2283,29 @@ def reorder_sqr3(Avals, Q):
 
 
 
+def reorder_square4(Avals, Q):
+    """Changes the ordering of pairs of eigenvalues and eigenvectors that are stored within a
+    dictionary. This is associated with triangular jet (Ld=1.5).
+    """
+    # pair of eigs
+    qs = []
+    pair = [['0', '2']]  # pair whose eigvals cross.
+    Adict1 = copy.deepcopy(Avals)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
 
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Avals['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Avals['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Avals['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Avals['a' + pair[m][1]][M[m] + 1:])
+
+        Adict1['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict1['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict1['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict1['a' + pair[m][1]][M[m] + 1:] = a0
+
+    return Adict1
 
