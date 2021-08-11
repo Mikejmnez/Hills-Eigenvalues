@@ -119,8 +119,8 @@ def A_coefficients(q, N, coeffs, K, symmetry='even', case='None'):
             'A2n', 3D array).
     """
     cases = ['linear', 'linear2', 'linear3', 'linear4', 'asine', 'gaussian',
-             'gaussian2', 'gaussian3', 'quad',
-             'cuartic', 'sixth', 'tenth', 'square3']
+             'gaussian2', 'gaussian3', 'quad', 'cuartic', 'sixth', 
+             'tenth', 'square3', 'square4']
     vals = {}
     if len(q)>1:
         if q.imag.any() == 0:
@@ -162,6 +162,8 @@ def A_coefficients(q, N, coeffs, K, symmetry='even', case='None'):
                 As = copy.deepcopy(vals['A' + str(2 * n)])
                 As = Fcoeffs(As, n, q, case)
                 vals.update({'A' + str(2 * n): As})
+        elif case == 'square4':
+            vals = reorder_sqr4(vals, q)
         elif case == 'asine':
             vals = reorder_asine(vals, q)
         elif case == 'quad':
@@ -2282,8 +2284,7 @@ def reorder_sqr3(Avals, Q):
     return Adict2
 
 
-
-def reorder_square4(Avals, Q):
+def reorder_sqr4(Avals, Q):
     """Changes the ordering of pairs of eigenvalues and eigenvectors that are stored within a
     dictionary. This is associated with triangular jet (Ld=1.5).
     """
