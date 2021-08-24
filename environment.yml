@@ -1,0 +1,24 @@
+name: Advection_Diffusion
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - pytest
+  - ipython
+  - scipy
+  - matplotlib
+  - jupyterlab
+  - python=3.7
+  - numpy=1.15
+  - pip
+  - git
+  - ffmpeg
+  - netcdf4
+  - bottleneck
+  - xarray
+  - dask
+  - numba
+  - holoviews
+  - bokeh
+  - pillow
+  - zarr
