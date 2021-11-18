@@ -1304,13 +1304,17 @@ def gaussCoeffs(A, n, q):
     '''Correct behavior of Fourier coefficients as a function of q-parameter. This case is
     associated with the narrow gaussian jet (Ld=.25).
     ''' 
-    if n ==2:
-        if q.imag[-1] > 20:
-            ll = _np.where(q.imag <= 20)[0]
-            # mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
-            # A[mm, :] = -A[mm, :]
-            m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
-            A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
+    if n == 1:
+        mm = _np.where(As[:, 0].real > 0)[0]  # sign jumps
+        As[mm, :] = - As[mm, :]
+
+    # if n ==2:
+    #     if q.imag[-1] > 20:
+    #         ll = _np.where(q.imag <= 20)[0]
+    #         # mm = _np.where(A[:ll[-1] + 1, n].real < 0)[0]  # should be >0
+    #         # A[mm, :] = -A[mm, :]
+    #         m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
+    #         A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
     return A
 
 
@@ -1800,23 +1804,25 @@ def reorder_gauss(Avals, Q):
     between an interval. This represents the case of a narrow gaussian jet.
     """
     # first mode, asymptotes to n=2
-    qs = [46.161161, 102.157657,
-          217.651651, 446.634634,
-          844.616616, 1482, 2447, 3846]
+    qs = [17.15, 55.3,
+          162, 434.85, 
+          988.1]
+
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
         M.append(_np.where(Q.imag <= qs[k])[0][-1])
     M.append(len(Q))
+
     for m in range(len(M) - 1):
-        A4 = copy.deepcopy(Adict1['A4'][M[m] + 1:, :])  # anomalous mode  $ should be 4
-        Am = copy.deepcopy(Adict1['A' + str(2 * (m + 3))][M[m] + 1:, :])
-        a4 = copy.deepcopy(Adict1['a4'][M[m] + 1:])  # anomalous eigenvalue
-        am = copy.deepcopy(Adict1['a' + str(2 * (m + 3))][M[m] + 1:])
-        Adict1['A4'][M[m] + 1:, :] = Am
-        Adict1['A' + str(2 * (m + 3))][M[m] + 1:, :] = A4
-        Adict1['a4'][M[m] + 1:] = am
-        Adict1['a' + str(2 * (m + 3))][M[m] + 1:] = a4
+        A2 = copy.deepcopy(Adict1['A2'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict1['A' + str(2 * (m + 2))][M[m] + 1:, :])
+        a2 = copy.deepcopy(Adict1['a2'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict1['a' + str(2 * (m + 2))][M[m] + 1:])
+        Adict1['A2'][M[m] + 1:, :] = Am
+        Adict1['A' + str(2 * (m + 2))][M[m] + 1:, :] = A2
+        Adict1['a2'][M[m] + 1:] = am
+        Adict1['a' + str(2 * (m + 2))][M[m] + 1:] = a2
 
     # second mode, asymptotes to n=24
     qs = [577.603103, 718.255255,
@@ -1845,8 +1851,7 @@ def reorder_gauss2(Avals, Q):
     between an interval. This represents the case of a intermediate (Ld=0.5) gaussian jet.
     """
     # first mode, asymptotes to 2n=2
-    qs = [20.236736, 108.712712,
-          471.690690, 1470.5, 3680.3]
+    qs = [43.45, 628, ]
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
