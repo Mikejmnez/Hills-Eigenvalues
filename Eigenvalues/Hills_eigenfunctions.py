@@ -1300,9 +1300,9 @@ def gauss3Coeffs(As, n, q):
     return As
 
 
-def gaussCoeffs(A, n, q):
+def gaussCoeffs(As, n, q):
     '''Correct behavior of Fourier coefficients as a function of q-parameter. This case is
-    associated with the narrow gaussian jet (Ld=.25).
+    associated with the narrow gaussian jet (Ld = 1 / 2.9).
     ''' 
     if n == 1:
         mm = _np.where(As[:, 0].real > 0)[0]  # sign jumps
@@ -1315,7 +1315,7 @@ def gaussCoeffs(A, n, q):
     #         # A[mm, :] = -A[mm, :]
     #         m0 = _np.where(A[ll[-1] + 1:, 0].real < 0)[0]  # should be <0
     #         A[m0 + ll[-1] + 1, :] = -A[m0 + ll[-1] + 1, :]
-    return A
+    return As
 
 
 def Anorm(A, symmetry='even'):
