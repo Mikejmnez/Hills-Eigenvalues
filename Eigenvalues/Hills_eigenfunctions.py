@@ -1407,94 +1407,109 @@ def reorder_linear2(Avals, Q):
         Adict2['a6'][M[m] + 1:] = am
         Adict2['a' + str(2 * (m + 4))][M[m] + 1:] = a6
 
-    # 3nd mode, asymptotes to 2n=10
-    qs = [181.2, 411.8, 830.8]
+    # pair of eigs
+    qs = [181.2]
+    pair = [['10', '12']]  # pair whose eigvals cross.
     Adict3 = copy.deepcopy(Adict2)
     M = []
     for k in range(len(qs)):
         M.append(_np.where(Q.imag <= qs[k])[0][-1])
     M.append(len(Q))
-    for m in range(len(M) - 1):
-        A10 = copy.deepcopy(Adict2['A10'][M[m] + 1:, :])  # anomalous mode  $ should be 4
-        Am = copy.deepcopy(Adict2['A' + str(2 * (m + 6))][M[m] + 1:, :])
-        a10 = copy.deepcopy(Adict2['a10'][M[m] + 1:])  # anomalous eigenvalue
-        am = copy.deepcopy(Adict2['a' + str(2 * (m + 6))][M[m] + 1:])
-        Adict3['A10'][M[m] + 1:, :] = Am
-        Adict3['A' + str(2 * (m + 6))][M[m] + 1:, :] = A10
-        Adict3['a10'][M[m] + 1:] = am
-        Adict3['a' + str(2 * (m + 6))][M[m] + 1:] = a10
 
-    # 4th mode, asymptotes to 2n=14
-    qs = [395.175, 793.8, ]
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict3['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict3['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict3['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict3['a' + pair[m][1]][M[m] + 1:])
+
+        Adict3['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict3['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict3['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict3['a' + pair[m][1]][M[m] + 1:] = a0
+
+
+    # pair of eigs
+    qs = [395.153]
+    pair = [['14', '16']]  # pair whose eigvals cross.
     Adict4 = copy.deepcopy(Adict3)
     M = []
     for k in range(len(qs)):
         M.append(_np.where(Q.imag <= qs[k])[0][-1])
     M.append(len(Q))
-    for m in range(len(M) - 1):
-        A14 = copy.deepcopy(Adict3['A14'][M[m] + 1:, :])  # anomalous mode  $ should be 4
-        Am = copy.deepcopy(Adict3['A' + str(2 * (m + 8))][M[m] + 1:, :])
-        a14 = copy.deepcopy(Adict3['a14'][M[m] + 1:])  # anomalous eigenvalue
-        am = copy.deepcopy(Adict3['a' + str(2 * (m + 8))][M[m] + 1:])
-        Adict4['A14'][M[m] + 1:, :] = Am
-        Adict4['A' + str(2 * (m + 8))][M[m] + 1:, :] = A14
-        Adict4['a14'][M[m] + 1:] = am
-        Adict4['a' + str(2 * (m + 8))][M[m] + 1:] = a14
 
-    # 5th mode, asymptotes to 2n=14
-    qs = [ 567.1]
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict4['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict4['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict4['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict4['a' + pair[m][1]][M[m] + 1:])
+
+        Adict4['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict4['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict4['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict4['a' + pair[m][1]][M[m] + 1:] = a0
+
+
+    # pair of eigs
+    qs = [411.8]
+    pair = [['10', '16']]  # pair whose eigvals cross.
     Adict5 = copy.deepcopy(Adict4)
     M = []
     for k in range(len(qs)):
         M.append(_np.where(Q.imag <= qs[k])[0][-1])
     M.append(len(Q))
-    for m in range(len(M) - 1):
-        A18 = copy.deepcopy(Adict5['A18'][M[m] + 1:, :])  # anomalous mode  $ should be 4
-        Am = copy.deepcopy(Adict5['A' + str(2 * (m + 10))][M[m] + 1:, :])
-        a18 = copy.deepcopy(Adict5['a18'][M[m] + 1:])  # anomalous eigenvalue
-        am = copy.deepcopy(Adict5['a' + str(2 * (m + 10))][M[m] + 1:])
-        Adict5['A18'][M[m] + 1:, :] = Am
-        Adict5['A' + str(2 * (m + 10))][M[m] + 1:, :] = A18
-        Adict5['a18'][M[m] + 1:] = am
-        Adict5['a' + str(2 * (m + 10))][M[m] + 1:] = a18
 
-    # # pair of eigs
-    # qs = [823.]
-    # pair = [['10', '20']]  # pair whose eigvals cross.
-    # Adict10 = copy.deepcopy(Adict9)
-    # M = []
-    # for k in range(len(qs)):
-    #     M.append(_np.where(Q.imag <= qs[k])[0][-1])
-    # M.append(len(Q))
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict5['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict5['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict5['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict5['a' + pair[m][1]][M[m] + 1:])
 
-    # for m in range(len(qs)):
-    #     A0 = copy.deepcopy(Adict9['A' + pair[m][0]][M[m] + 1:, :])
-    #     A2 = copy.deepcopy(Adict9['A' + pair[m][1]][M[m] + 1:, :])
-    #     a0 = copy.deepcopy(Adict9['a' + pair[m][0]][M[m] + 1:])
-    #     a2 = copy.deepcopy(Adict9['a' + pair[m][1]][M[m] + 1:])
+        Adict5['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict5['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict5['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict5['a' + pair[m][1]][M[m] + 1:] = a0
 
-    #     Adict10['A' + pair[m][0]][M[m] + 1:, :] = A2
-    #     Adict10['A' + pair[m][1]][M[m] + 1:, :] = A0
-    #     Adict10['a' + pair[m][0]][M[m] + 1:] = a2
-    #     Adict10['a' + pair[m][1]][M[m] + 1:] = a0
+    # pair of eigs
+    qs = [567.1]
+    pair = [['18', '20']]  # pair whose eigvals cross.
+    Adict6 = copy.deepcopy(Adict5)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict6['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict6['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict6['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict6['a' + pair[m][1]][M[m] + 1:])
+
+        Adict6['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict6['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict6['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict6['a' + pair[m][1]][M[m] + 1:] = a0
+
+    # pair of eigs
+    qs = []
+    pair = [['14', '20']]  # pair whose eigvals cross.
+    Adict7 = copy.deepcopy(Adict6)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict7['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict7['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict7['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict7['a' + pair[m][1]][M[m] + 1:])
+
+        Adict7['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict7['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict7['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict7['a' + pair[m][1]][M[m] + 1:] = a0
 
 
-    # # 6th mode, asymptotes to 2n=18
-    # qs = [561.75]
-    # Adict6 = copy.deepcopy(Adict5)
-    # M = []
-    # for k in range(len(qs)):
-    #     M.append(_np.where(Q.imag <= qs[k])[0][-1])
-    # M.append(len(Q))
-    # for m in range(len(M) - 1):
-    #     A18 = copy.deepcopy(Adict5['A18'][M[m] + 1:, :])  # anomalous mode  $ should be 4
-    #     Am = copy.deepcopy(Adict5['A' + str(2 * (m + 10))][M[m] + 1:, :])
-    #     a18 = copy.deepcopy(Adict5['a18'][M[m] + 1:])  # anomalous eigenvalue
-    #     am = copy.deepcopy(Adict5['a' + str(2 * (m + 10))][M[m] + 1:])
-    #     Adict6['A18'][M[m] + 1:, :] = Am
-    #     Adict6['A' + str(2 * (m + 10))][M[m] + 1:, :] = A18
-    #     Adict6['a18'][M[m] + 1:] = am
-    #     Adict6['a' + str(2 * (m + 10))][M[m] + 1:] = a18
 
     # # 7th mode, asymptotes to 2n=22
     # qs = [928.05]
@@ -1548,27 +1563,7 @@ def reorder_linear2(Avals, Q):
     #     Adict9['a14'][M[m] + 1:] = am
     #     Adict9['a' + str(2 * (m + 10))][M[m] + 1:] = a14
 
-    # # pair of eigs
-    # qs = [823.]
-    # pair = [['10', '20']]  # pair whose eigvals cross.
-    # Adict10 = copy.deepcopy(Adict9)
-    # M = []
-    # for k in range(len(qs)):
-    #     M.append(_np.where(Q.imag <= qs[k])[0][-1])
-    # M.append(len(Q))
-
-    # for m in range(len(qs)):
-    #     A0 = copy.deepcopy(Adict9['A' + pair[m][0]][M[m] + 1:, :])
-    #     A2 = copy.deepcopy(Adict9['A' + pair[m][1]][M[m] + 1:, :])
-    #     a0 = copy.deepcopy(Adict9['a' + pair[m][0]][M[m] + 1:])
-    #     a2 = copy.deepcopy(Adict9['a' + pair[m][1]][M[m] + 1:])
-
-    #     Adict10['A' + pair[m][0]][M[m] + 1:, :] = A2
-    #     Adict10['A' + pair[m][1]][M[m] + 1:, :] = A0
-    #     Adict10['a' + pair[m][0]][M[m] + 1:] = a2
-    #     Adict10['a' + pair[m][1]][M[m] + 1:] = a0
-
-    return Adict5
+    return Adict7
 
 
 def reorder_linear3(Avals, Q):
