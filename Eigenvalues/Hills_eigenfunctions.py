@@ -6,6 +6,7 @@ import numpy as _np
 import copy
 from eig_system import matrix_system, eig_pairs
 import copy as _copy
+import xarray as _xr
 
 
 class eigenfunctions:
@@ -98,7 +99,49 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(q, N, coeffs, K, symmetry='even', case='None'):
+def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
+    """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
+    Hill's equation.
+
+    Input:
+        K: 1d-array, all along-jet (x) wavenumbers.
+        Pe: Peclet number.
+        N: size of (square) Matrix
+        coeffs: 1d-array, containing Fourier coefficients associated with
+            periodic coefficient in Hill's equation.
+        Kj: range(1, M, d) defining the jet. M is highest harmonic in coeffs. d is either 1 or
+            two. if d=1, Fourier sum is : cos(y)+cos(2*y)+... if d=2, the sum
+            : cos(y)+cos(3*y)+cos(5*y)... 
+        cosine: True (default). This has to do with Fourier approx to periodic
+            coefficient in HIlls equation. If False, then periodic coeff has a
+            sine Fourier series.
+
+    Output:
+        xarrat.Dataset: 'a_{2n}(q)' (dims: n, k) and 'A^{2n}_{2r}(q)' with dims
+            (n, k, r).
+    """
+    
+    q = (1j) * (2 * K* Pe)  # canonical parameter
+
+    # initialize two dataArrays, one for Fourier coefficients As and another for eigenvalues
+    A_coords =  {"n": range(N), "k": K, 'r':range(N)} 
+    dAs = _xr.DataArray((1j) * _np.nan, coords=A_coords, dims=['n','k', 'r'])
+
+    a_coords = {"n": range(N), "k": K}
+    das = _xr.DataArray((1j)* _np.nan, coords=a_coords, dims=['n','k'])
+
+    for k in range(len(Q)):
+        ak, Ak = eig_pairs(matrix_system(q[k], N, coeffs, Kj, symmetry), symmetry)
+        for n in range(N):
+            dAs.isel(k=k, n=n).data[:] = Anorm(Ak[:, n], symmetry='even')
+        das.isel(k=k).data[:] = ak
+
+    As_ds = _xr.Dataset({'A_2n': dAs, 'a_2n': das})
+    return As_ds
+
+
+
+def A_coefficients_old(q, N, coeffs, K, symmetry='even', case='None'):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
