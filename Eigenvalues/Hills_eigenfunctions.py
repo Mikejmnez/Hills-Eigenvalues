@@ -11,17 +11,53 @@ import xarray as _xr
 
 class eigenfunctions:
 
-    def __init__(self, q, N, coeffs, K, symmetry, case):
+    def __init__(self, q, K, Pe, y, N, coeffs, Kj, symmetry, case):
         self._q = q
+        self._K = K
+        self._Pe = Pe
+        self._y = y
         self._N = N
         self._coeffs = coeffs
-        self._K = K
+        self._Kj = Kj
         self._symmetry = symmetry
         self._case = case
 
 
     @classmethod
     def phi_even(
+        cls,
+        K,
+        Pe,
+        y,
+        N,
+        coeffs,
+        Kj,
+        symmetry='None',
+        case='None',
+        As=None,
+    ):
+        """Even eigenfunctions that solve Hill's equation associated with
+        the case where Neumann BC and coeffs are associated with a purely
+        cosine Fourier series. Simplest case is that of Mathieu's ce_2n
+        associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
+        """
+        if As is None:
+            dAs = A_coefficients(K, Pe, N, coeffs, Kj, symmetry)
+        # initialize a dataarray with right dimensions
+
+        cos_coords = {'r':range(N), 'y':y} 
+        dcos = _xr.DataArray((1j) * _np.nan, coords=cos_coords, dims=['r', 'y'])
+
+        for r in range(N):  # populate with the base
+            dcos.sel(r = r)[:] =  _np.cos(2 * r * y)
+
+        dphi = _xr.dot(dcos, dAs, dims='r')  # dataarray
+
+        return dphi
+
+
+    @classmethod
+    def phi_even_old(
         cls,
         q,
         x,
@@ -58,6 +94,9 @@ class eigenfunctions:
                 phi = _np.append(vals['phi' + str(2 * n)], phi, axis=0)
                 vals.update({'phi' + str(2 * n): phi})
         return vals
+
+
+
 
     @classmethod
     def phi_odd(
