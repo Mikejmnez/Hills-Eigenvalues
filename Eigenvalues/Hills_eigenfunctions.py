@@ -34,14 +34,14 @@ class eigenfunctions:
         Kj,
         symmetry='None',
         case='None',
-        As=None,
+        dAs=None,
     ):
         """Even eigenfunctions that solve Hill's equation associated with
         the case where Neumann BC and coeffs are associated with a purely
         cosine Fourier series. Simplest case is that of Mathieu's ce_2n
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
-        if As is None:
+        if dAs is None:
             dAs = A_coefficients(K, Pe, N, coeffs, Kj, symmetry)
         # initialize a dataarray with right dimensions
 
@@ -51,9 +51,11 @@ class eigenfunctions:
         for r in range(N):  # populate with the base
             dcos.sel(r = r)[:] =  _np.cos(2 * r * y)
 
-        dphi = _xr.dot(dcos, dAs, dims='r')  # dataarray
+        dphi = _xr.dot(dcos, dAs['A_2n'], dims='r').transpose('n', 'k', 'y')  # dataarray
 
-        return dphi
+        dAs['phi_2n'] = dphi
+
+        return dAs
 
 
     @classmethod
@@ -75,7 +77,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if As is None:
-            As = A_coefficients(q, N, coeffs, K, symmetry)
+            As = A_coefficients_old(q, N, coeffs, K, symmetry)
         vals = {}
         if Ncut != 0:
             N = Ncut
