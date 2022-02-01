@@ -51,7 +51,7 @@ class eigenfunctions:
         for r in range(N):  # populate with the base
             dcos.sel(r = r)[:] =  _np.cos(2 * r * y)
 
-        dphi = _xr.dot(dcos, dAs['A^2n_2r'], dims='r').transpose('n', 'k', 'y')  # dataarray
+        dphi = _xr.dot(dcos, dAs['A_2r'], dims='r').transpose('n', 'k', 'y')  # dataarray
 
         dAs['phi_2n'] = dphi
 
@@ -177,7 +177,7 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
             dAs.isel(k=k, n=n).data[:] = Anorm(Ak[:, n], symmetry='even')
         das.isel(k=k).data[:] = ak
 
-    As_ds = _xr.Dataset({'A^2n_2n': dAs, 'a_2n': das})
+    As_ds = _xr.Dataset({'A_2r': dAs, 'a_2n': das})
     return As_ds
 
 
