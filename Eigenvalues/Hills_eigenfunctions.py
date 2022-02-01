@@ -98,6 +98,54 @@ class eigenfunctions:
         return vals
 
 
+def A_coefficients_old(q, N, coeffs, K, symmetry='even'):
+    """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
+    Hill's equation.
+
+    Input:
+        q: 1d-array, all elements must be imaginary and in ascending order.
+        N: size of (square) Matrix
+        coeffs: 1d-array, containing Fourier coefficients associated with
+            periodic coefficient in Hill's equation.
+        K: range(1, M, d). M is highest harmonic in coeffs. d is either 1 or
+            two. if d=1, Fourier sum is : cos(y)+cos(2*y)+... if d=2, the sum
+            : cos(y)+cos(3*y)+cos(5*y)...
+        cosine: True (default). This has to do with Fourier approx to periodic
+            coefficient in HIlls equation. If False, then periodic coeff has a
+            sine Fourier series.
+
+    Output:
+        dict: 'a_{2n}(q)' (2d-array, key: 'a2n') and 'A^{2n}_{2r}(q)' (key:
+            'A2n', 3D array).
+    """
+    vals = {}
+    if len(q)>1:
+        if q.imag.any() == 0:
+            raise Warning("q must be imaginary")
+    else:
+        if q.imag == 0:
+            raise Warning("q must be imaginary")
+    for n in range(N):
+        am, Am = eig_pairs(matrix_system(q[0], N, coeffs, K, symmetry), symmetry)
+        a = [am[n]]  # makes a list of the nth eigenvalue
+        As = Anorm(Am[:, n], symmetry)
+        As = As[_np.newaxis, :]
+        for k in range(1, len(q)):
+            an, An = eig_pairs(matrix_system(q[k], N, coeffs, K, symmetry), symmetry)
+            a.append(an[n])
+            nA = Anorm(An[:, n], symmetry)
+            nAs = nA[_np.newaxis, :]
+            As = _np.append(As, nAs, axis=0)
+        if symmetry in ['None', 'even']:
+            vals.update({'a' + str(2 * n): _np.array(a)})
+            vals.update({'A' + str(2 * n): As})
+        elif symmetry is 'odd':
+            vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
+            vals.update({'B' + str(2 * (n + 1)): As})
+    return vals
+
+
+
 def A_coefficients_old(q, N, coeffs, K, symmetry='even', case='None'):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
