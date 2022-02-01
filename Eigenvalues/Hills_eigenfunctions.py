@@ -99,7 +99,7 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients_old(q, N, coeffs, K, symmetry='even'):
+def A_coefficients(q, N, coeffs, K, symmetry='even'):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
