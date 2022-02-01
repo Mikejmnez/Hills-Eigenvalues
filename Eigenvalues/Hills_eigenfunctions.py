@@ -6,6 +6,7 @@ import numpy as _np
 import copy
 from eig_system import matrix_system, eig_pairs
 import copy as _copy
+import xarray as _xr
 
 
 class eigenfunctions:
