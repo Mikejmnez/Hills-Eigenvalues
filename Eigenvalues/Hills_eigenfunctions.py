@@ -228,7 +228,7 @@ def A_coefficients_old(q, N, coeffs, K, symmetry='even', case='None'):
         if symmetry in ['None', 'even']:
             vals.update({'a' + str(2 * n): _np.array(a)})
             vals.update({'A' + str(2 * n): As})
-        elif symmetry is 'odd':
+        elif symmetry == 'odd':
             vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
             vals.update({'B' + str(2 * (n + 1)): As})
     if case in cases:
@@ -293,25 +293,25 @@ def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
             Corrected Eigenvector with same shape as original
     """
     # Estimate limiting value for small q (pos or neg) and correct.
-    if case is 'linear':
+    if case == 'linear':
         As = linCoeffs(As, n, q)
-    elif case is 'linear0':
+    elif case == 'linear0':
         As = lin0Coeffs(As, n, q)
-    elif case is 'linear2':
+    elif case == 'linear2':
         As = linCoeffs2(As, n, q)
-    elif case is 'nlinear':
+    elif case == 'nlinear':
         As = linnCoeffs(As, n, q)
-    elif case is 'square3':
+    elif case == 'square3':
         As = sqrCoeffs(As, n, q)
-    elif case is 'step':  # sine flow, associated with odd symmetry
+    elif case == 'step':  # sine flow, associated with odd symmetry
         As = stepCoeffs(As, n, q)
-    elif case is 'gaussian':
+    elif case == 'gaussian':
         As = gaussCoeffs(As, n, q)
-    elif case is 'gaussian3':
+    elif case == 'gaussian3':
         As = gauss3Coeffs(As, n, q)
-    elif case is 'cosine':
+    elif case == 'cosine':
         As = cCoeffs(As, n, q)
-    elif case is 'cosine_shifted':
+    elif case == 'cosine_shifted':
         nAs = cCoeffs(As, n, q)
         As = copy.deepcopy(nAs)
         for r in range(len(As[0, :])):
