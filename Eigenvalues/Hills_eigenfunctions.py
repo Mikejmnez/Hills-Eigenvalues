@@ -130,7 +130,7 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
     a_coords = {"n": range(N), "k": K}
     das = _xr.DataArray((1j)* _np.nan, coords=a_coords, dims=['n','k'])
 
-    for k in range(len(Q)):
+    for k in range(len(q)):
         ak, Ak = eig_pairs(matrix_system(q[k], N, coeffs, Kj, symmetry), symmetry)
         for n in range(N):
             dAs.isel(k=k, n=n).data[:] = Anorm(Ak[:, n], symmetry='even')
