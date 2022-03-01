@@ -2289,7 +2289,7 @@ def reorder_sixth(Avals, Q):
     between an interval. This represents the case of a jet with cuartic polynomial dep.
     """
     # first mode, asymptotes to 2n=2
-    qs = [29.1, 130.1, 404.4, 965]
+    qs = [29.1, 130.1, 404.4, 965, 1948., 3516.2, 5910, 9511.3]
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
@@ -2306,7 +2306,7 @@ def reorder_sixth(Avals, Q):
         Adict1['a' + str(2 * (m + 2))][M[m] + 1:] = a2
 
     # 2n mode, asymptotes to 2n=10
-    qs = [199.08,  301.125, 459.5, 691.5, 992.125]
+    qs = [199.08,  301.125, 459.5, 691.5, 992.125, 1376.5, 1865.1, 2432.7]
     Adict2 = copy.deepcopy(Adict1)
     M = []
     for k in range(len(qs)):
@@ -2324,7 +2324,7 @@ def reorder_sixth(Avals, Q):
 
 
     # 3n mode, asymptotes to 2n=18
-    qs = [555.125, 710.4, 895.]
+    qs = [555.125, 710.4, 895., 1194.5, 1489.7, 1844.1]
     Adict3 = copy.deepcopy(Adict2)
     M = []
     for k in range(len(qs)):
