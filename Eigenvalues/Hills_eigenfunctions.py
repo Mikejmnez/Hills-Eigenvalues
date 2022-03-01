@@ -2076,9 +2076,27 @@ def reorder_gauss3(Avals, Q):
 def reorder_quad(Avals, Q):
     """ changes the ordering"""
 
+    # # first mode, asymptotes to 2n=2
+    qs = [1650.3]
+    Adict = copy.deepcopy(Avals)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+    for m in range(len(M) - 1):
+        A2 = copy.deepcopy(Adict['A2'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        Am = copy.deepcopy(Adict['A' + str(2 * (m + 2))][M[m] + 1:, :])
+        a2 = copy.deepcopy(Adict['a2'][M[m] + 1:])  # anomalous eigenvalue
+        am = copy.deepcopy(Adict['a' + str(2 * (m + 2))][M[m] + 1:])
+        Adict['A2'][M[m] + 1:, :] = Am
+        Adict['A' + str(2 * (m + 2))][M[m] + 1:, :] = A2
+        Adict['a2'][M[m] + 1:] = am
+        Adict['a' + str(2 * (m + 2))][M[m] + 1:] = a2
+
+
     # # first mode, asymptotes to 2n=6
     qs = [121.4, 703.1]
-    Adict0 = copy.deepcopy(Avals)
+    Adict0 = copy.deepcopy(Adict)
     M = []
     for k in range(len(qs)):
         M.append(_np.where(Q.imag <= qs[k])[0][-1])
@@ -2174,7 +2192,7 @@ def reorder_cuartic(Avals, Q):
     between an interval. This represents the case of a jet with cuartic polynomial dep.
     """
     # first mode, asymptotes to 2n=2
-    qs = [46.2, 360.2, ]
+    qs = [46.2, 360.2, 1390.3]
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
@@ -2373,7 +2391,7 @@ def reorder_sqr3(Avals, Q):
     between an interval. This represents the case of a jet with cuartic polynomial dep.
     """
     # first mode, asymptotes to 2n=4
-    qs = [38.2, 137.5]
+    qs = [38.2, 137.5] #[35.6, 89.7, 376.6]
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
@@ -2409,7 +2427,7 @@ def reorder_sqr3(Avals, Q):
 
     # 3rd mode, asymptotes to 2n=46
 
-    qs = [931.]
+    qs = [] #[931.]
     Adict3 = copy.deepcopy(Adict2)
     M = []
     for k in range(len(qs)):
