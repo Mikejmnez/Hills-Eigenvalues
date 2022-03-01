@@ -2349,7 +2349,9 @@ def reorder_tenth(Avals, Q):
     between an interval. This represents the case of a jet with cuartic polynomial dep.
     """
     # first mode, asymptotes to 2n=2
-    qs = [23.9, 71.125, 167.4, 362.9, 661.875]
+    qs = [23.9, 71.125, 167.4, 362.9, 661.875,
+          1109.2, 1734.7, 2580.4, 3707.3, 5215.8, 
+          7097.6, 8818.5, 10786.7]
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
@@ -2366,7 +2368,8 @@ def reorder_tenth(Avals, Q):
         Adict1['a' + str(2 * (m + 2))][M[m] + 1:] = a2
 
     # 2nd mode, asymptotes to 2n=14
-    qs = [368.8, 484.4, 620.25, 782.65, 1019.8]
+    qs = [368.8, 484.4, 620.25, 782.65, 1019.8, 1296., 1578.95, 
+          1939.4, 2190.7, 2371.8]
     Adict2 = copy.deepcopy(Adict1)
     M = []
     for k in range(len(qs)):
