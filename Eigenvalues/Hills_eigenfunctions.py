@@ -2192,7 +2192,7 @@ def reorder_cuartic(Avals, Q):
     between an interval. This represents the case of a jet with cuartic polynomial dep.
     """
     # first mode, asymptotes to 2n=2
-    qs = [46.2, 360.2, 3833.5]
+    qs = [46.2, 360.2, 1390.3, 3833.5]
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
