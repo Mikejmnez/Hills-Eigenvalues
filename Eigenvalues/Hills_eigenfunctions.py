@@ -1908,9 +1908,8 @@ def reorder_gauss(Avals, Q):
     between an interval. This represents the case of a narrow gaussian jet.
     """
     # first mode, asymptotes to n=2
-    qs = [17.15, 55.3,
-          162, 434.85, 
-          988.1]
+    qs = [17.15, 55.3, 162, 434.85, 988.1, 
+          1991.1, 3655.9, 6240.7, 10070.]
 
     Adict1 = copy.deepcopy(Avals)
     M = []
@@ -1929,8 +1928,7 @@ def reorder_gauss(Avals, Q):
         Adict1['a' + str(2 * (m + 2))][M[m] + 1:] = a2
 
     # second mode, asymptotes to 2n=18
-    qs = [348.15, 470.9, 
-          635.75, 866.8]
+    qs = [348.15, 470.9, 635.75, 866.8, 1164.5, 1538.3, 2008.3, 2589.6]
     Adict2 = copy.deepcopy(Adict1)
     M = []
     for k in range(len(qs)):
@@ -1946,26 +1944,25 @@ def reorder_gauss(Avals, Q):
         Adict2['a18'][M[m] + 1:] = am
         Adict2['a' + str(2 * (m + 10))][M[m] + 1:] = a18
 
-    # third mode, asymptotes to 2n=32
-    qs = [972.375]
+    # # third mode, asymptotes to 2n=32
+    # qs = [972.375]
 
-    Adict = copy.deepcopy(Adict2)
-    M = []
-    for k in range(len(qs)):
-        M.append(_np.where(Q.imag <= qs[k])[0][-1])
-    M.append(len(Q))
-    for m in range(len(M) - 1):
-        A32 = copy.deepcopy(Adict['A32'][M[m] + 1:, :])  # anomalous mode  $ should be 4
-        Am = copy.deepcopy(Adict['A' + str(2 * (m + 17))][M[m] + 1:, :])
-        a32 = copy.deepcopy(Adict['a32'][M[m] + 1:])  # anomalous eigenvalue
-        am = copy.deepcopy(Adict['a' + str(2 * (m + 17))][M[m] + 1:])
-        Adict['A32'][M[m] + 1:, :] = Am
-        Adict['A' + str(2 * (m + 17))][M[m] + 1:, :] = A32
-        Adict['a32'][M[m] + 1:] = am
-        Adict['a' + str(2 * (m + 17))][M[m] + 1:] = a32
+    # Adict = copy.deepcopy(Adict2)
+    # M = []
+    # for k in range(len(qs)):
+    #     M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    # M.append(len(Q))
+    # for m in range(len(M) - 1):
+    #     A32 = copy.deepcopy(Adict['A32'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+    #     Am = copy.deepcopy(Adict['A' + str(2 * (m + 17))][M[m] + 1:, :])
+    #     a32 = copy.deepcopy(Adict['a32'][M[m] + 1:])  # anomalous eigenvalue
+    #     am = copy.deepcopy(Adict['a' + str(2 * (m + 17))][M[m] + 1:])
+    #     Adict['A32'][M[m] + 1:, :] = Am
+    #     Adict['A' + str(2 * (m + 17))][M[m] + 1:, :] = A32
+    #     Adict['a32'][M[m] + 1:] = am
+    #     Adict['a' + str(2 * (m + 17))][M[m] + 1:] = a32
 
-
-    return Adict
+    return Adict2
 
 
 def reorder_gauss2(Avals, Q):
@@ -1974,7 +1971,7 @@ def reorder_gauss2(Avals, Q):
     between an interval. This represents the case of a intermediate (Ld=0.5) gaussian jet.
     """
     # first mode, asymptotes to 2n=2
-    qs = [42.8, 628, ]
+    qs = [42.8, 628, 3852.7, ]
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
@@ -1990,61 +1987,61 @@ def reorder_gauss2(Avals, Q):
         Adict1['a2'][M[m] + 1:] = am
         Adict1['a' + str(2 * (m + 2))][M[m] + 1:] = a2
 
-    # second mode, asymptotes to 2n=10
-    qs = [167.15, 393.5,
-          848.15, ]
+    # # second mode, asymptotes to 2n=10
+    # qs = [167.15, 393.5,
+    #       848.15, ]
 
-    Adict2 = copy.deepcopy(Adict1)
-    M = []
-    for k in range(len(qs)):
-        M.append(_np.where(Q.imag <= qs[k])[0][-1])
-    M.append(len(Q))
-    for m in range(len(M) - 1):
-        A10 = copy.deepcopy(Adict2['A10'][M[m] + 1:, :])  # anomalous mode  $ should be 4
-        Am = copy.deepcopy(Adict2['A' + str(2 * (m + 6))][M[m] + 1:, :])
-        a10 = copy.deepcopy(Adict2['a10'][M[m] + 1:])  # anomalous eigenvalue
-        am = copy.deepcopy(Adict2['a' + str(2 * (m + 6))][M[m] + 1:])
-        Adict2['A10'][M[m] + 1:, :] = Am
-        Adict2['A' + str(2 * (m + 6))][M[m] + 1:, :] = A10
-        Adict2['a10'][M[m] + 1:] = am
-        Adict2['a' + str(2 * (m + 6))][M[m] + 1:] = a10
+    # Adict2 = copy.deepcopy(Adict1)
+    # M = []
+    # for k in range(len(qs)):
+    #     M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    # M.append(len(Q))
+    # for m in range(len(M) - 1):
+    #     A10 = copy.deepcopy(Adict2['A10'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+    #     Am = copy.deepcopy(Adict2['A' + str(2 * (m + 6))][M[m] + 1:, :])
+    #     a10 = copy.deepcopy(Adict2['a10'][M[m] + 1:])  # anomalous eigenvalue
+    #     am = copy.deepcopy(Adict2['a' + str(2 * (m + 6))][M[m] + 1:])
+    #     Adict2['A10'][M[m] + 1:, :] = Am
+    #     Adict2['A' + str(2 * (m + 6))][M[m] + 1:, :] = A10
+    #     Adict2['a10'][M[m] + 1:] = am
+    #     Adict2['a' + str(2 * (m + 6))][M[m] + 1:] = a10
 
-    # third mode, asymptotes to 2n=16
-    qs = [280.3, 439.2,
-          721.7,]
-    Adict3 = copy.deepcopy(Adict2)
-    M = []
-    for k in range(len(qs)):
-        M.append(_np.where(Q.imag <= qs[k])[0][-1])
-    M.append(len(Q))
-    for m in range(len(M) - 1):
-        A16 = copy.deepcopy(Adict3['A16'][M[m] + 1:, :])  # anomalous mode  $ should be 4
-        Am = copy.deepcopy(Adict3['A' + str(2 * (m + 9))][M[m] + 1:, :])
-        a16 = copy.deepcopy(Adict3['a16'][M[m] + 1:])  # anomalous eigenvalue
-        am = copy.deepcopy(Adict3['a' + str(2 * (m + 9))][M[m] + 1:])
-        Adict3['A16'][M[m] + 1:, :] = Am
-        Adict3['A' + str(2 * (m + 9))][M[m] + 1:, :] = A16
-        Adict3['a16'][M[m] + 1:] = am
-        Adict3['a' + str(2 * (m + 9))][M[m] + 1:] = a16
+    # # third mode, asymptotes to 2n=16
+    # qs = [280.3, 439.2,
+    #       721.7,]
+    # Adict3 = copy.deepcopy(Adict2)
+    # M = []
+    # for k in range(len(qs)):
+    #     M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    # M.append(len(Q))
+    # for m in range(len(M) - 1):
+    #     A16 = copy.deepcopy(Adict3['A16'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+    #     Am = copy.deepcopy(Adict3['A' + str(2 * (m + 9))][M[m] + 1:, :])
+    #     a16 = copy.deepcopy(Adict3['a16'][M[m] + 1:])  # anomalous eigenvalue
+    #     am = copy.deepcopy(Adict3['a' + str(2 * (m + 9))][M[m] + 1:])
+    #     Adict3['A16'][M[m] + 1:, :] = Am
+    #     Adict3['A' + str(2 * (m + 9))][M[m] + 1:, :] = A16
+    #     Adict3['a16'][M[m] + 1:] = am
+    #     Adict3['a' + str(2 * (m + 9))][M[m] + 1:] = a16
 
-    # third mode, asymptotes to 2n=24
-    qs = [611.5, 852.7]
-    Adict4 = copy.deepcopy(Adict3)
-    M = []
-    for k in range(len(qs)):
-        M.append(_np.where(Q.imag <= qs[k])[0][-1])
-    M.append(len(Q))
-    for m in range(len(M) - 1):
-        A24 = copy.deepcopy(Adict4['A24'][M[m] + 1:, :])  # anomalous mode  $ should be 4
-        Am = copy.deepcopy(Adict4['A' + str(2 * (m + 13))][M[m] + 1:, :])
-        a24 = copy.deepcopy(Adict4['a24'][M[m] + 1:])  # anomalous eigenvalue
-        am = copy.deepcopy(Adict4['a' + str(2 * (m + 13))][M[m] + 1:])
-        Adict4['A24'][M[m] + 1:, :] = Am
-        Adict4['A' + str(2 * (m + 13))][M[m] + 1:, :] = A24
-        Adict4['a24'][M[m] + 1:] = am
-        Adict4['a' + str(2 * (m + 13))][M[m] + 1:] = a24
+    # # third mode, asymptotes to 2n=24
+    # qs = [611.5, 852.7]
+    # Adict4 = copy.deepcopy(Adict3)
+    # M = []
+    # for k in range(len(qs)):
+    #     M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    # M.append(len(Q))
+    # for m in range(len(M) - 1):
+    #     A24 = copy.deepcopy(Adict4['A24'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+    #     Am = copy.deepcopy(Adict4['A' + str(2 * (m + 13))][M[m] + 1:, :])
+    #     a24 = copy.deepcopy(Adict4['a24'][M[m] + 1:])  # anomalous eigenvalue
+    #     am = copy.deepcopy(Adict4['a' + str(2 * (m + 13))][M[m] + 1:])
+    #     Adict4['A24'][M[m] + 1:, :] = Am
+    #     Adict4['A' + str(2 * (m + 13))][M[m] + 1:, :] = A24
+    #     Adict4['a24'][M[m] + 1:] = am
+    #     Adict4['a' + str(2 * (m + 13))][M[m] + 1:] = a24
 
-    return Adict4
+    return Adict1
 
 
 def reorder_gauss3(Avals, Q):
