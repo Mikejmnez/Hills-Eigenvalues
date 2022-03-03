@@ -1476,7 +1476,7 @@ def reorder_linear2(Avals, Q):
 
 
     # 2nd mode, asymptotes to 2n=6
-    qs = [86.725, 314.4, 764.9, 1506.5]
+    qs = [86.725, 314.4, 764.9, 1506.5, 2613.9, 4158.4, 6180.3, 8768]
     Adict2 = copy.deepcopy(Adict1)
     M = []
     for k in range(len(qs)):
@@ -1492,171 +1492,331 @@ def reorder_linear2(Avals, Q):
         Adict2['a6'][M[m] + 1:] = am
         Adict2['a' + str(2 * (m + 4))][M[m] + 1:] = a6
 
-#     # pair of eigs
-#     qs = [181.2]
-#     pair = [['10', '12']]  # pair whose eigvals cross.
-#     Adict3 = copy.deepcopy(Adict2)
-#     M = []
-#     for k in range(len(qs)):
-#         M.append(_np.where(Q.imag <= qs[k])[0][-1])
-#     M.append(len(Q))
+    # pair of eigs
+    qs = [181.2]
+    pair = [['10', '12']]  # pair whose eigvals cross.
+    Adict3 = copy.deepcopy(Adict2)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
 
-#     for m in range(len(qs)):
-#         A0 = copy.deepcopy(Adict3['A' + pair[m][0]][M[m] + 1:, :])
-#         A2 = copy.deepcopy(Adict3['A' + pair[m][1]][M[m] + 1:, :])
-#         a0 = copy.deepcopy(Adict3['a' + pair[m][0]][M[m] + 1:])
-#         a2 = copy.deepcopy(Adict3['a' + pair[m][1]][M[m] + 1:])
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict3['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict3['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict3['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict3['a' + pair[m][1]][M[m] + 1:])
 
-#         Adict3['A' + pair[m][0]][M[m] + 1:, :] = A2
-#         Adict3['A' + pair[m][1]][M[m] + 1:, :] = A0
-#         Adict3['a' + pair[m][0]][M[m] + 1:] = a2
-#         Adict3['a' + pair[m][1]][M[m] + 1:] = a0
-
-
-#     # pair of eigs
-#     qs = [395.153]
-#     pair = [['14', '16']]  # pair whose eigvals cross.
-#     Adict4 = copy.deepcopy(Adict3)
-#     M = []
-#     for k in range(len(qs)):
-#         M.append(_np.where(Q.imag <= qs[k])[0][-1])
-#     M.append(len(Q))
-
-#     for m in range(len(qs)):
-#         A0 = copy.deepcopy(Adict4['A' + pair[m][0]][M[m] + 1:, :])
-#         A2 = copy.deepcopy(Adict4['A' + pair[m][1]][M[m] + 1:, :])
-#         a0 = copy.deepcopy(Adict4['a' + pair[m][0]][M[m] + 1:])
-#         a2 = copy.deepcopy(Adict4['a' + pair[m][1]][M[m] + 1:])
-
-#         Adict4['A' + pair[m][0]][M[m] + 1:, :] = A2
-#         Adict4['A' + pair[m][1]][M[m] + 1:, :] = A0
-#         Adict4['a' + pair[m][0]][M[m] + 1:] = a2
-#         Adict4['a' + pair[m][1]][M[m] + 1:] = a0
+        Adict3['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict3['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict3['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict3['a' + pair[m][1]][M[m] + 1:] = a0
 
 
-#     # pair of eigs
-#     qs = [411.8]
-#     pair = [['10', '16']]  # pair whose eigvals cross.
-#     Adict5 = copy.deepcopy(Adict4)
-#     M = []
-#     for k in range(len(qs)):
-#         M.append(_np.where(Q.imag <= qs[k])[0][-1])
-#     M.append(len(Q))
+    # pair of eigs
+    qs = [395.153]
+    pair = [['14', '16']]  # pair whose eigvals cross.
+    Adict4 = copy.deepcopy(Adict3)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
 
-#     for m in range(len(qs)):
-#         A0 = copy.deepcopy(Adict5['A' + pair[m][0]][M[m] + 1:, :])
-#         A2 = copy.deepcopy(Adict5['A' + pair[m][1]][M[m] + 1:, :])
-#         a0 = copy.deepcopy(Adict5['a' + pair[m][0]][M[m] + 1:])
-#         a2 = copy.deepcopy(Adict5['a' + pair[m][1]][M[m] + 1:])
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict4['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict4['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict4['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict4['a' + pair[m][1]][M[m] + 1:])
 
-#         Adict5['A' + pair[m][0]][M[m] + 1:, :] = A2
-#         Adict5['A' + pair[m][1]][M[m] + 1:, :] = A0
-#         Adict5['a' + pair[m][0]][M[m] + 1:] = a2
-#         Adict5['a' + pair[m][1]][M[m] + 1:] = a0
-
-#     # pair of eigs
-#     qs = [567.1]
-#     pair = [['18', '20']]  # pair whose eigvals cross.
-#     Adict6 = copy.deepcopy(Adict5)
-#     M = []
-#     for k in range(len(qs)):
-#         M.append(_np.where(Q.imag <= qs[k])[0][-1])
-#     M.append(len(Q))
-
-#     for m in range(len(qs)):
-#         A0 = copy.deepcopy(Adict6['A' + pair[m][0]][M[m] + 1:, :])
-#         A2 = copy.deepcopy(Adict6['A' + pair[m][1]][M[m] + 1:, :])
-#         a0 = copy.deepcopy(Adict6['a' + pair[m][0]][M[m] + 1:])
-#         a2 = copy.deepcopy(Adict6['a' + pair[m][1]][M[m] + 1:])
-
-#         Adict6['A' + pair[m][0]][M[m] + 1:, :] = A2
-#         Adict6['A' + pair[m][1]][M[m] + 1:, :] = A0
-#         Adict6['a' + pair[m][0]][M[m] + 1:] = a2
-#         Adict6['a' + pair[m][1]][M[m] + 1:] = a0
-
-#     # pair of eigs
-#     qs = [793.8]
-#     pair = [['14', '20']]  # pair whose eigvals cross.
-#     Adict7 = copy.deepcopy(Adict6)
-#     M = []
-#     for k in range(len(qs)):
-#         M.append(_np.where(Q.imag <= qs[k])[0][-1])
-#     M.append(len(Q))
-
-#     for m in range(len(qs)):
-#         A0 = copy.deepcopy(Adict7['A' + pair[m][0]][M[m] + 1:, :])
-#         A2 = copy.deepcopy(Adict7['A' + pair[m][1]][M[m] + 1:, :])
-#         a0 = copy.deepcopy(Adict7['a' + pair[m][0]][M[m] + 1:])
-#         a2 = copy.deepcopy(Adict7['a' + pair[m][1]][M[m] + 1:])
-
-#         Adict7['A' + pair[m][0]][M[m] + 1:, :] = A2
-#         Adict7['A' + pair[m][1]][M[m] + 1:, :] = A0
-#         Adict7['a' + pair[m][0]][M[m] + 1:] = a2
-#         Adict7['a' + pair[m][1]][M[m] + 1:] = a0
-
-# # pair of eigs
-#     qs = [830.8]
-#     pair = [['10', '20']]  # pair whose eigvals cross.
-#     Adict8 = copy.deepcopy(Adict7)
-#     M = []
-#     for k in range(len(qs)):
-#         M.append(_np.where(Q.imag <= qs[k])[0][-1])
-#     M.append(len(Q))
-
-#     for m in range(len(qs)):
-#         A0 = copy.deepcopy(Adict8['A' + pair[m][0]][M[m] + 1:, :])
-#         A2 = copy.deepcopy(Adict8['A' + pair[m][1]][M[m] + 1:, :])
-#         a0 = copy.deepcopy(Adict8['a' + pair[m][0]][M[m] + 1:])
-#         a2 = copy.deepcopy(Adict8['a' + pair[m][1]][M[m] + 1:])
-
-#         Adict8['A' + pair[m][0]][M[m] + 1:, :] = A2
-#         Adict8['A' + pair[m][1]][M[m] + 1:, :] = A0
-#         Adict8['a' + pair[m][0]][M[m] + 1:] = a2
-#         Adict8['a' + pair[m][1]][M[m] + 1:] = a0
+        Adict4['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict4['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict4['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict4['a' + pair[m][1]][M[m] + 1:] = a0
 
 
-# # pair of eigs
-#     qs = [936.9]
-#     pair = [['22', '24']]  # pair whose eigvals cross.
-#     Adict9 = copy.deepcopy(Adict8)
-#     M = []
-#     for k in range(len(qs)):
-#         M.append(_np.where(Q.imag <= qs[k])[0][-1])
-#     M.append(len(Q))
+    # pair of eigs
+    qs = [411.8]
+    pair = [['10', '16']]  # pair whose eigvals cross.
+    Adict5 = copy.deepcopy(Adict4)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
 
-#     for m in range(len(qs)):
-#         A0 = copy.deepcopy(Adict9['A' + pair[m][0]][M[m] + 1:, :])
-#         A2 = copy.deepcopy(Adict9['A' + pair[m][1]][M[m] + 1:, :])
-#         a0 = copy.deepcopy(Adict9['a' + pair[m][0]][M[m] + 1:])
-#         a2 = copy.deepcopy(Adict9['a' + pair[m][1]][M[m] + 1:])
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict5['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict5['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict5['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict5['a' + pair[m][1]][M[m] + 1:])
 
-#         Adict9['A' + pair[m][0]][M[m] + 1:, :] = A2
-#         Adict9['A' + pair[m][1]][M[m] + 1:, :] = A0
-#         Adict9['a' + pair[m][0]][M[m] + 1:] = a2
-#         Adict9['a' + pair[m][1]][M[m] + 1:] = a0
+        Adict5['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict5['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict5['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict5['a' + pair[m][1]][M[m] + 1:] = a0
+
+    # pair of eigs
+    qs = [567.1]
+    pair = [['18', '20']]  # pair whose eigvals cross.
+    Adict6 = copy.deepcopy(Adict5)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict6['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict6['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict6['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict6['a' + pair[m][1]][M[m] + 1:])
+
+        Adict6['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict6['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict6['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict6['a' + pair[m][1]][M[m] + 1:] = a0
+
+    # pair of eigs
+    qs = [793.8]
+    pair = [['14', '20']]  # pair whose eigvals cross.
+    Adict7 = copy.deepcopy(Adict6)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict7['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict7['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict7['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict7['a' + pair[m][1]][M[m] + 1:])
+
+        Adict7['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict7['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict7['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict7['a' + pair[m][1]][M[m] + 1:] = a0
+
+# pair of eigs
+    qs = [830.8]
+    pair = [['10', '20']]  # pair whose eigvals cross.
+    Adict8 = copy.deepcopy(Adict7)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict8['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict8['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict8['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict8['a' + pair[m][1]][M[m] + 1:])
+
+        Adict8['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict8['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict8['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict8['a' + pair[m][1]][M[m] + 1:] = a0
 
 
-# # pair of eigs
-#     qs = [954.2,]
-#     pair = [['18', '24']]  # pair whose eigvals cross.
-#     Adict10 = copy.deepcopy(Adict9)
-#     M = []
-#     for k in range(len(qs)):
-#         M.append(_np.where(Q.imag <= qs[k])[0][-1])
-#     M.append(len(Q))
+# pair of eigs
+    qs = [936.9]
+    pair = [['22', '24']]  # pair whose eigvals cross.
+    Adict9 = copy.deepcopy(Adict8)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
 
-#     for m in range(len(qs)):
-#         A0 = copy.deepcopy(Adict10['A' + pair[m][0]][M[m] + 1:, :])
-#         A2 = copy.deepcopy(Adict10['A' + pair[m][1]][M[m] + 1:, :])
-#         a0 = copy.deepcopy(Adict10['a' + pair[m][0]][M[m] + 1:])
-#         a2 = copy.deepcopy(Adict10['a' + pair[m][1]][M[m] + 1:])
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict9['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict9['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict9['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict9['a' + pair[m][1]][M[m] + 1:])
 
-#         Adict10['A' + pair[m][0]][M[m] + 1:, :] = A2
-#         Adict10['A' + pair[m][1]][M[m] + 1:, :] = A0
-#         Adict10['a' + pair[m][0]][M[m] + 1:] = a2
-#         Adict10['a' + pair[m][1]][M[m] + 1:] = a0
+        Adict9['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict9['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict9['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict9['a' + pair[m][1]][M[m] + 1:] = a0
 
-    return Adict2
+
+# pair of eigs
+    qs = [954.2,]
+    pair = [['18', '24']]  # pair whose eigvals cross.
+    Adict10 = copy.deepcopy(Adict9)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict10['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict10['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict10['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict10['a' + pair[m][1]][M[m] + 1:])
+
+        Adict10['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict10['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict10['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict10['a' + pair[m][1]][M[m] + 1:] = a0
+
+# pair of eigs
+    qs = [1456.3]
+    pair = [['10', '14']]  # pair whose eigvals cross.
+    Adict11 = copy.deepcopy(Adict10)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict11['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict11['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict11['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict11['a' + pair[m][1]][M[m] + 1:])
+
+        Adict11['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict11['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict11['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict11['a' + pair[m][1]][M[m] + 1:] = a0
+
+    qs = [1393.0125]
+    pair = [['14', '24']]  # pair whose eigvals cross.
+    Adict12 = copy.deepcopy(Adict11)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict12['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict12['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict12['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict12['a' + pair[m][1]][M[m] + 1:])
+
+        Adict12['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict12['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict12['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict12['a' + pair[m][1]][M[m] + 1:] = a0
+
+# pair of eigs
+    qs = [2334.4]
+    pair = [['10', '14']]  # pair whose eigvals cross.
+    Adict13 = copy.deepcopy(Adict12)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict13['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict13['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict13['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict13['a' + pair[m][1]][M[m] + 1:])
+
+        Adict13['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict13['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict13['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict13['a' + pair[m][1]][M[m] + 1:] = a0
+
+# pair of eigs
+    qs = [2233.175]
+    pair = [['14', '18']]  # pair whose eigvals cross.
+    Adict14 = copy.deepcopy(Adict13)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict14['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict14['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict14['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict14['a' + pair[m][1]][M[m] + 1:])
+
+        Adict14['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict14['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict14['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict14['a' + pair[m][1]][M[m] + 1:] = a0
+
+# pair of eigs
+    qs = [3516.1]
+    pair = [['10', '14']]  # pair whose eigvals cross.
+    Adict15 = copy.deepcopy(Adict14)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict15['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict15['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict15['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict15['a' + pair[m][1]][M[m] + 1:])
+
+        Adict15['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict15['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict15['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict15['a' + pair[m][1]][M[m] + 1:] = a0
+
+# pair of eigs
+    qs = [3363.8]
+    pair = [['14', '22']]  # pair whose eigvals cross.
+    Adict16 = copy.deepcopy(Adict15)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict16['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict16['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict16['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict16['a' + pair[m][1]][M[m] + 1:])
+
+        Adict16['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict16['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict16['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict16['a' + pair[m][1]][M[m] + 1:] = a0
+
+# pair of eigs
+    qs = [5116.5]
+    pair = [['10', '14']]  # pair whose eigvals cross.
+    Adict17 = copy.deepcopy(Adict16)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict17['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict17['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict17['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict17['a' + pair[m][1]][M[m] + 1:])
+
+        Adict17['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict17['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict17['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict17['a' + pair[m][1]][M[m] + 1:] = a0
+
+
+# pair of eigs
+    qs = [4729.4]
+    pair = [['14', '26']]  # pair whose eigvals cross.
+    Adict18 = copy.deepcopy(Adict17)
+    M = []
+    for k in range(len(qs)):
+        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+    M.append(len(Q))
+
+    for m in range(len(qs)):
+        A0 = copy.deepcopy(Adict18['A' + pair[m][0]][M[m] + 1:, :])
+        A2 = copy.deepcopy(Adict18['A' + pair[m][1]][M[m] + 1:, :])
+        a0 = copy.deepcopy(Adict18['a' + pair[m][0]][M[m] + 1:])
+        a2 = copy.deepcopy(Adict18['a' + pair[m][1]][M[m] + 1:])
+
+        Adict18['A' + pair[m][0]][M[m] + 1:, :] = A2
+        Adict18['A' + pair[m][1]][M[m] + 1:, :] = A0
+        Adict18['a' + pair[m][0]][M[m] + 1:] = a2
+        Adict18['a' + pair[m][1]][M[m] + 1:] = a0
+
+    return Adict18
 
 
 def reorder_linear3(Avals, Q):
