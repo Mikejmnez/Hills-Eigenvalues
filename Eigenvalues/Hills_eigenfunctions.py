@@ -1825,7 +1825,8 @@ def reorder_linear3(Avals, Q):
     between an interval. This represents the case of a narrow gaussian jet.
     """
     # first mode, asymptotes to 2n=2
-    qs = [18, 66.468, 205.3, 465.5, 882.1] #  328.875, 743
+    qs = [18, 66.468, 205.3, 465.5, 882.1, 1487.6, 2327.8, 
+          3435.4, 4855., 6643.2, 8864.6, 11584.]
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
@@ -1843,7 +1844,8 @@ def reorder_linear3(Avals, Q):
 
 
     # 2nd mode, asymptotes to 2n=16
-    qs =  [363.7, 576.7, 805.35]  #[210.1, 385.2, 598, 896.3]
+    qs =  [363.7, 576.7, 805.35, 1090.2, 1455., 1888.525, 2395.1, 
+           2976.4, 3648.1]  
     Adict2 = copy.deepcopy(Adict1)
     M = []
     for k in range(len(qs)):
