@@ -45,7 +45,7 @@ class eigenfunctions:
             dAs = A_coefficients(K, Pe, N, coeffs, Kj, symmetry)
         # initialize a dataarray with right dimensions
 
-        cos_coords = {'r':range(N), 'y':y} 
+        cos_coords = {'r':range(N), 'y':y}
         dcos = _xr.DataArray((1j) * _np.nan, coords=cos_coords, dims=['r', 'y'])
 
         for r in range(N):  # populate with the base
@@ -2820,4 +2820,20 @@ def reorder_sqr5(Avals, Q):
     return Adict1
 
 
-
+def phi_array(N, y):
+    """creates an xarray with eigenvalues and eigenfunctions associated with the limit q=0.
+    We use these values as the complement to the truncated matrix calculation to optimize code.
+    
+    Input:
+        N: total number of cosine modes required to, say, accurately approximate a Gaussian.
+        y: 
+    """
+    n_coords =  {"n": range(N)}
+    phi_coords = {"n": range(N), "y": y}
+    a_2n = _xr.DataArray(coords=n_coords, dims=['n'])
+    phi_2n = _xr.DataArray(coords=phi_coords, dims=['n', 'y'])
+    a_2n.data[:] = (2 * _np.arange(N))**2
+    for n in range(N):
+        phi_2n.isel(n=n).data[:] = _np.cos(2*n*y)
+    eig_fns = _xr.Dataset({'a_2n': a_2n, 'phi_2n': phi_2n})
+    return eig_fns
