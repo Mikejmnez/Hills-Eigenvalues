@@ -163,6 +163,7 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
     """
     
     q = (1j) * (2 * K* Pe)  # canonical parameter
+    R = round(_np.sqrt(10 * (q.imag) * abs(coeffs[0]) / 4)) #  
 
     # initialize two dataArrays, one for Fourier coefficients As and another for eigenvalues
     A_coords =  {"n": range(N), "k": K, 'r':range(N)} 
@@ -2559,7 +2560,7 @@ def reorder_sqr3(Avals, Q):
         M.append(_np.where(Q.imag <= qs[k])[0][-1])
     M.append(len(Q))
     for m in range(len(M) - 1):
-        A4 = copy.deepcopy(Adict1['A4'][M[m] + 1:, :])  # anomalous mode  $ should be 4
+        A4 = copy.deepcopy(Adict1['A4'][M[m] + 1:, :])  # anomalous mode
         Am = copy.deepcopy(Adict1['A' + str(2 * (m + 3))][M[m] + 1:, :])
         a4 = copy.deepcopy(Adict1['a4'][M[m] + 1:])  # anomalous eigenvalue
         am = copy.deepcopy(Adict1['a' + str(2 * (m + 3))][M[m] + 1:])
