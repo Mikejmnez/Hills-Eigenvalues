@@ -2826,7 +2826,7 @@ def reorder_sqr5(Avals, Q):
     return Adict1
 
 
-def phi_array(N, y):
+def phi_array(N, K, y, coeffs=True, eigs=False):
     """creates an xarray with eigenvalues and eigenfunctions associated with the limit q=0.
     We use these values as the complement to the truncated matrix calculation to optimize code.
     
@@ -2834,12 +2834,25 @@ def phi_array(N, y):
         N: total number of cosine modes required to, say, accurately approximate a Gaussian.
         y: 
     """
-    n_coords =  {"n": range(N)}
-    phi_coords = {"n": range(N), "y": y}
-    a_2n = _xr.DataArray(coords=n_coords, dims=['n'])
-    phi_2n = _xr.DataArray(coords=phi_coords, dims=['n', 'y'])
-    a_2n.data[:] = (2 * _np.arange(N))**2
+    if coeffs:
+        A_coords =  {"n": range(N), "k": K, 'r':range(N)} 
+        A_2r = _xr.DataArray(0, coords=A_coords, dims=['n', 'k', 'r'])
+        n_coords =  {"n": range(N), "k": K}
+        a_2n = _xr.DataArray(coords=n_coords, dims=['n', 'k'])
+    if eigs:
+        phi_coords = {"n": range(N), "y": y}
+        phi_2n = _xr.DataArray(coords=phi_coords, dims=['n', 'y'])
     for n in range(N):
-        phi_2n.isel(n=n).data[:] = _np.cos(2*n*y)
-    eig_fns = _xr.Dataset({'a_2n': a_2n, 'phi_2n': phi_2n})
+        if coeffs:
+            a_2n.isel(n=n).data[:] = ((2 * n)**2) * _np.ones(_np.shape(K))
+            A_2r.isel(n=n, r=n).data[:] = _np.ones(_np.shape(K))
+        if eigs:
+            phi_2n.isel(n=n).data[:] = _np.cos(2*n*y)
+    if coeffs:
+        if eigs:
+            eig_fns = _xr.Dataset({'a_2n': a_2n, 'phi_2n': phi_2n, 'A_2r':A_2r})
+        else:
+            eig_fns = _xr.Dataset({'a_2n': a_2n, 'A_2r':A_2r})
+    else:
+        eig_fns = 0 
     return eig_fns
