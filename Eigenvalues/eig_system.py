@@ -29,7 +29,7 @@ def matrix_system(q, N, coeffs, K, symmetry='even'):
         A: (N X N) (if a 'even' or 'odd' symmetry) or (2N+1)X(2N+1) matrix.
     '''
     M = len(coeffs)
-    if M > N:  # e.g. q -> 0 for which we don't need a large matrix. Only need few coeffs
+    if M > N:  # e.g. q -> 0 for which we don't need a large matrix. Only need greavest coeffs
         _coeffs = coeffs[:N]
     else:
         _coeffs = coeffs
@@ -37,11 +37,11 @@ def matrix_system(q, N, coeffs, K, symmetry='even'):
         raise Warning("symmetry argument not recognized. Acceptable options"
                       "are: `None`, `even` and `odd`.")
     if symmetry == 'None':
-        A = FFH_matrix(q, N, coeffs, K)
+        A = FFH_matrix(q, N, _coeffs, K)
     elif symmetry == 'even':
-        A = even_matrix(q, N, coeffs, K)
+        A = even_matrix(q, N, _coeffs, K)
     elif symmetry == 'odd':
-        A = odd_matrix(q, N, coeffs, K)
+        A = odd_matrix(q, N, _coeffs, K)
     return A
 
 
