@@ -99,7 +99,6 @@ class eigenfunctions:
 
 
 
-
     @classmethod
     def phi_odd(
         cls,
@@ -154,16 +153,16 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
             two. if d=1, Fourier sum is : cos(y)+cos(2*y)+... if d=2, the sum
             : cos(y)+cos(3*y)+cos(5*y)... 
         cosine: True (default). This has to do with Fourier approx to periodic
-            coefficient in HIlls equation. If False, then periodic coeff has a
+            coefficient in Hills equation. If False, then periodic coeff has a
             sine Fourier series.
 
     Output:
-        xarrat.Dataset: 'a_{2n}(q)' (dims: n, k) and 'A^{2n}_{2r}(q)' with dims
+        xarray.Dataset: 'a_{2n}(q)' (dims: n, k) and 'A^{2n}_{2r}(q)' with dims
             (n, k, r).
     """
     
     q = (1j) * (2 * K* Pe)  # canonical parameter
-    R = round(_np.sqrt(10 * (q.imag) * abs(coeffs[0]) / 4)) #  
+    R = round(_np.sqrt(10 * (q.imag) * abs(coeffs[0]) / 4)) #  minimum sized matrix should be 4
 
     # initialize two dataArrays, one for Fourier coefficients As and another for eigenvalues
     A_coords =  {"n": range(N), "k": K, 'r':range(N)} 
@@ -173,9 +172,12 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
     das = _xr.DataArray((1j)* _np.nan, coords=a_coords, dims=['n','k'])
 
     for k in range(len(q)):
-        ak, Ak = eig_pairs(matrix_system(q[k], N, coeffs, Kj, symmetry), symmetry)
+        Nr = R[k]
+        if Nr < 4:  # minimum size matrix
+            Nr = 4
+        ak, Ak = eig_pairs(matrix_system(q[k], Nr, coeffs, Kj, symmetry), symmetry)
         for n in range(N):
-            dAs.isel(k=k, n=n).data[:] = Anorm(Ak[:, n], symmetry='even')
+            dAs.isel(k=k, n=n, r=slice(Nr)).data[:] = Anorm(Ak[:, n], symmetry='even')
         das.isel(k=k).data[:] = ak
 
     As_ds = _xr.Dataset({'A_2r': dAs, 'a_2n': das})
