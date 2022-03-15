@@ -162,18 +162,20 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
     """
     coeffs = _np.array(coeffs)
     q = (1j) * (2 * K * Pe)  # canonical parameter
-    R = _np.round(_np.sqrt(10 * (q.imag) * abs(coeffs[0]) / 4)) #  minimum sized matrix should be 4
+    R = _np.round(_np.sqrt(15 * (q.imag) * abs(coeffs[0]) / 4)) #  minimum sized matrix should be 4
 
     Rmax = int(_np.max(R))
     if N < Rmax:  # if proposed size to sufficiently large enough, re calibrate.
         N = Rmax
 
     # initialize two dataArrays, one for Fourier coefficients As and another for eigenvalues
-    A_coords =  {"n": range(N), "k": K, 'r':range(N)} 
-    dAs = _xr.DataArray((1j) * _np.nan, coords=A_coords, dims=['n','k', 'r'])
+    A_coords =  {"n": range(N), "k": K, 'r':range(N)}
+    dAs = _xr.DataArray((1j) * _np.nan, coords=A_coords, dims=['n', 'k', 'r'])
 
     a_coords = {"n": range(N), "k": K}
     das = _xr.DataArray((1j)* _np.nan, coords=a_coords, dims=['n','k'])
+
+    ds_t = phi_array(N, K)  # calculates the values in the case q=0.
 
     for k in range(len(q)):
         Nr = int(R[k])  # must be integer
@@ -182,7 +184,9 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
         ak, Ak = eig_pairs(matrix_system(q[k], Nr, coeffs, Kj, symmetry), symmetry)
         for n in range(Nr):
             dAs.isel(k=k, n=n, r=slice(Nr)).data[:] = Anorm(Ak[:, n], symmetry='even')
+        # dAs.isel(k=k).data[Nr:, Nr:] = ds_t['A_2r'].isel(k=k).data[Nr:, Nr:]
         das.isel(k=k, n=slice(Nr)).data[:] = ak
+        # das.isel(k=k).data[Nr:] = ds_t['a_2n'].isel(k=k)[Nr:].data
 
     As_ds = _xr.Dataset({'A_2r': dAs, 'a_2n': das})
     return As_ds
@@ -2826,7 +2830,7 @@ def reorder_sqr5(Avals, Q):
     return Adict1
 
 
-def phi_array(N, K, y, coeffs=True, eigs=False):
+def phi_array(N, K, y=0, coeffs=True, eigs=False):
     """creates an xarray with eigenvalues and eigenfunctions associated with the limit q=0.
     We use these values as the complement to the truncated matrix calculation to optimize code.
     
