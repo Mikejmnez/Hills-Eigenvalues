@@ -33,15 +33,16 @@ def matrix_system(q, N, coeffs, K, symmetry='even'):
         _coeffs = coeffs[:N]
     else:
         _coeffs = coeffs
+        _K = K[:N]  # take into account only the gravest modes (len(K)=len(coeffs))
     if symmetry not in ['None', 'even', 'odd']:
         raise Warning("symmetry argument not recognized. Acceptable options"
                       "are: `None`, `even` and `odd`.")
     if symmetry == 'None':
-        A = FFH_matrix(q, N, _coeffs, K)
+        A = FFH_matrix(q, N, _coeffs, _K)
     elif symmetry == 'even':
-        A = even_matrix(q, N, _coeffs, K)
+        A = even_matrix(q, N, _coeffs, _K)
     elif symmetry == 'odd':
-        A = odd_matrix(q, N, _coeffs, K)
+        A = odd_matrix(q, N, _coeffs, _K)
     return A
 
 
