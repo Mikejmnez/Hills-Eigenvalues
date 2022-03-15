@@ -30,11 +30,10 @@ def matrix_system(q, N, coeffs, K, symmetry='even'):
     '''
     M = len(coeffs)
     if M > N:  # e.g. q -> 0 for which we don't need a large matrix. Only need greavest coeffs
-        _coeffs = _np.array(coeffs[:N])
+        _coeffs = coeffs[:N]
         _K = K[:N]  # take into account only the gravest modes (len(K)=len(coeffs))
-        print(_coeffs)
     else:
-        _coeffs = _np.array(coeffs)
+        _coeffs = coeffs
         _K = K
     if symmetry not in ['None', 'even', 'odd']:
         raise Warning("symmetry argument not recognized. Acceptable options"
