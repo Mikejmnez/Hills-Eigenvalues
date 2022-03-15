@@ -160,9 +160,13 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
         xarray.Dataset: 'a_{2n}(q)' (dims: n, k) and 'A^{2n}_{2r}(q)' with dims
             (n, k, r).
     """
-    
-    q = (1j) * (2 * K* Pe)  # canonical parameter
-    R = round(_np.sqrt(10 * (q.imag) * abs(coeffs[0]) / 4)) #  minimum sized matrix should be 4
+    coeffs = _np.array(coeffs)
+    q = (1j) * (2 * K * Pe)  # canonical parameter
+    R = _np.round(_np.sqrt(10 * (q.imag) * abs(coeffs[0]) / 4)) #  minimum sized matrix should be 4
+
+    Rmax = int(_np.max(R))
+    if N < Rmax:  # if proposed size to sufficiently large enough, re calibrate.
+        N = Rmax
 
     # initialize two dataArrays, one for Fourier coefficients As and another for eigenvalues
     A_coords =  {"n": range(N), "k": K, 'r':range(N)} 
@@ -172,13 +176,13 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
     das = _xr.DataArray((1j)* _np.nan, coords=a_coords, dims=['n','k'])
 
     for k in range(len(q)):
-        Nr = R[k]
+        Nr = int(R[k])  # must be integer
         if Nr < 4:  # minimum size matrix
             Nr = 4
         ak, Ak = eig_pairs(matrix_system(q[k], Nr, coeffs, Kj, symmetry), symmetry)
-        for n in range(N):
+        for n in range(Nr):
             dAs.isel(k=k, n=n, r=slice(Nr)).data[:] = Anorm(Ak[:, n], symmetry='even')
-        das.isel(k=k).data[:] = ak
+        das.isel(k=k, n=slice(Nr)).data[:] = ak
 
     As_ds = _xr.Dataset({'A_2r': dAs, 'a_2n': das})
     return As_ds
