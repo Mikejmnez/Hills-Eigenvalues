@@ -29,8 +29,10 @@ def matrix_system(q, N, coeffs, K, symmetry='even'):
         A: (N X N) (if a 'even' or 'odd' symmetry) or (2N+1)X(2N+1) matrix.
     '''
     M = len(coeffs)
-    if M > N:  # this shouldn't happen, but if it does just increase N.
-        N = M
+    if M > N:  # e.g. q -> 0 for which we don't need a large matrix. Only need few coeffs
+        _coeffs = coeffs[:N]
+    else:
+        _coeffs = coeffs
     if symmetry not in ['None', 'even', 'odd']:
         raise Warning("symmetry argument not recognized. Acceptable options"
                       "are: `None`, `even` and `odd`.")
@@ -68,12 +70,9 @@ def even_matrix(q, N, alphas, K, symmetry='even'):
             eigenvalue matrix
     Output:
         A: nd-array. Square matrix with off-diagonal terms that are purely imag
-            and a purely reakl diagonal term that increases with the size of A.
+            and a purely real diagonal term that increases with the size of A.
     '''
     # make sure q is purely imaginary, N is an integer.
-    M = len(alphas)
-    if M > N:  # this shouldn't happen, but if it does just increase N.
-        N = M
     diag = [4 * (k**2) for k in range(N)]  # diagonal of A.
     A = _np.diag(diag, 0)
     nA = _np.zeros(_np.shape(A))*1j
