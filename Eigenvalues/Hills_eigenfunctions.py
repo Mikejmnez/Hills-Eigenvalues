@@ -44,7 +44,7 @@ class eigenfunctions:
         if dAs is None:
             dAs = A_coefficients(K, Pe, N, coeffs, Kj, symmetry)
         # initialize a dataarray with right dimensions
-
+        N = len(dAs.n)  # update the size of the array
         cos_coords = {'r':range(N), 'y':y}
         dcos = _xr.DataArray((1j) * _np.nan, coords=cos_coords, dims=['r', 'y'])
 
@@ -168,11 +168,11 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False):
     if opt:  # perform this calculation
         R = _np.round(_np.sqrt(15 * (q.imag) * abs(coeffs[0]) / 4))
         Rmax = int(_np.max(R))
-        ll = _np.where(R < 4)[0]
-        R[ll] = 4 # set minimum value
+        ll = _np.where(R < 20)[0]
+        R[ll] = 20 # set minimum value
         if N < Rmax:  # if proposed size not sufficiently large enough, re calibrate.
             N = Rmax
-        ds_t = phi_array(N, K)  # calculates the theoretical values in the limit q=0.
+        ds_t = phi_array(N)  # calculates the theoretical values in the limit q=0 (k=0).
 
     # initialize two dataArrays, one for Fourier coefficients As and another for eigenvalues
     A_coords =  {"n": range(N), "k": K, 'r':range(N)}
@@ -187,12 +187,16 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False):
             Nr = int(R[k])  # must be integer
         else:
             Nr = N  # matrix size constant for all q
-        ak, Ak = eig_pairs(matrix_system(q[k], Nr, coeffs, Kj, symmetry), symmetry)
+        ak, Ak = eig_pairs(matrix_system(q[k], Nr + 5, coeffs, Kj, symmetry), symmetry)
         for n in range(Nr):
-            dAs.isel(k=k, n=n, r=slice(Nr)).data[:] = Anorm(Ak[:, n], symmetry='even')
-        # dAs.isel(k=k).data[Nr:, Nr:] = ds_t['A_2r'].isel(k=k).data[Nr:, Nr:]
-        das.isel(k=k, n=slice(Nr)).data[:] = ak
-        # das.isel(k=k).data[Nr:] = ds_t['a_2n'].isel(k=k)[Nr:].data
+            if opt is True and (Nr + 5) < Rmax:
+                dAs.isel(k=k, n=n, r=slice(0, Nr + 5)).data[:] = Anorm(Ak[:, n], symmetry='even')
+                # dAs.isel(k=k, n=n).data[Nr:, Nr:] = ds_t['A_2r'].data[Nr:, Nr:]
+            else:
+                dAs.isel(k=k, n=n, r=slice(0, Nr)).data[:] = Anorm(Ak[:-5, n], symmetry='even')
+        das.isel(k=k, n=slice(Nr)).data[:] = ak[:-5]
+        if opt:  # supplement higher modes from theory.
+            das.isel(k=k).data[Nr:] = ds_t['a_2n'].data[Nr:]
 
     As_ds = _xr.Dataset({'A_2r': dAs, 'a_2n': das})
     return As_ds
@@ -2836,7 +2840,7 @@ def reorder_sqr5(Avals, Q):
     return Adict1
 
 
-def phi_array(N, K, y=0, coeffs=True, eigs=False):
+def phi_array(N, y=0, coeffs=True, eigs=False):
     """creates an xarray with eigenvalues and eigenfunctions associated with the limit q=0.
     We use these values as the complement to the truncated matrix calculation to optimize code.
     
@@ -2845,17 +2849,17 @@ def phi_array(N, K, y=0, coeffs=True, eigs=False):
         y: 
     """
     if coeffs:
-        A_coords =  {"n": range(N), "k": K, 'r':range(N)} 
-        A_2r = _xr.DataArray(0, coords=A_coords, dims=['n', 'k', 'r'])
-        n_coords =  {"n": range(N), "k": K}
-        a_2n = _xr.DataArray(coords=n_coords, dims=['n', 'k'])
+        A_coords =  {"n": range(N), 'r':range(N)} 
+        A_2r = _xr.DataArray(0, coords=A_coords, dims=['n', 'r'])
+        n_coords =  {"n": range(N)}
+        a_2n = _xr.DataArray(0, coords=n_coords, dims=['n'])
     if eigs:
         phi_coords = {"n": range(N), "y": y}
         phi_2n = _xr.DataArray(coords=phi_coords, dims=['n', 'y'])
     for n in range(N):
         if coeffs:
-            a_2n.isel(n=n).data[:] = ((2 * n)**2) * _np.ones(_np.shape(K))
-            A_2r.isel(n=n, r=n).data[:] = _np.ones(_np.shape(K))
+            a_2n.data[n] = ((2 * n)**2) 
+            A_2r.data[n, n] = 1
         if eigs:
             phi_2n.isel(n=n).data[:] = _np.cos(2*n*y)
     if coeffs:
