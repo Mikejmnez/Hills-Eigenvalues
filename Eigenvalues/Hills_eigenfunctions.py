@@ -139,7 +139,7 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
+def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -152,9 +152,12 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
         Kj: range(1, M, d) defining the jet. M is highest harmonic in coeffs. d is either 1 or
             two. if d=1, Fourier sum is : cos(y)+cos(2*y)+... if d=2, the sum
             : cos(y)+cos(3*y)+cos(5*y)... 
-        cosine: True (default). This has to do with Fourier approx to periodic
-            coefficient in Hills equation. If False, then periodic coeff has a
-            sine Fourier series.
+        symmetry: `even` (default). Implies solution has even periodic solutions. If `odd`, 
+            then periodic coeff has a sine Fourier series.
+        opt: `False` (default): If `True`, optimizes the calculation of the eigenvalues. This is achieved
+            by truncating the matrix differently at each value of q (while making matrix is diagonally dominant)
+            and thus performing eigenvalue calculation on a submatrix, supplementing the rest with theoretical 
+            limiting values a_2n -> 4n^2 and A_{2n}^{(2n)} --> 1, zero otherwise.
 
     Output:
         xarray.Dataset: 'a_{2n}(q)' (dims: n, k) and 'A^{2n}_{2r}(q)' with dims
@@ -162,11 +165,14 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
     """
     coeffs = _np.array(coeffs)
     q = (1j) * (2 * K * Pe)  # canonical parameter
-    R = _np.round(_np.sqrt(15 * (q.imag) * abs(coeffs[0]) / 4)) #  minimum sized matrix should be 4
-
-    Rmax = int(_np.max(R))
-    if N < Rmax:  # if proposed size to sufficiently large enough, re calibrate.
-        N = Rmax
+    if opt:  # perform this calculation
+        R = _np.round(_np.sqrt(15 * (q.imag) * abs(coeffs[0]) / 4))
+        Rmax = int(_np.max(R))
+        ll = _np.where(R < 4)[0]
+        R[ll] = 4 # set minimum value
+        if N < Rmax:  # if proposed size not sufficiently large enough, re calibrate.
+            N = Rmax
+        ds_t = phi_array(N, K)  # calculates the theoretical values in the limit q=0.
 
     # initialize two dataArrays, one for Fourier coefficients As and another for eigenvalues
     A_coords =  {"n": range(N), "k": K, 'r':range(N)}
@@ -175,12 +181,12 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even'):
     a_coords = {"n": range(N), "k": K}
     das = _xr.DataArray((1j)* _np.nan, coords=a_coords, dims=['n','k'])
 
-    ds_t = phi_array(N, K)  # calculates the values in the case q=0.
 
     for k in range(len(q)):
-        Nr = int(R[k])  # must be integer
-        if Nr < 4:  # minimum size matrix
-            Nr = 4
+        if opt:
+            Nr = int(R[k])  # must be integer
+        else:
+            Nr = N  # matrix size constant for all q
         ak, Ak = eig_pairs(matrix_system(q[k], Nr, coeffs, Kj, symmetry), symmetry)
         for n in range(Nr):
             dAs.isel(k=k, n=n, r=slice(Nr)).data[:] = Anorm(Ak[:, n], symmetry='even')
