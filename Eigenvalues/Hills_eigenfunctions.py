@@ -2095,7 +2095,7 @@ def reorder_gauss(Avals, Q):
     Adict1 = copy.deepcopy(Avals)
     M = []
     for k in range(len(qs)):
-        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+        M.append(_np.where(abs(Q.imag) <= qs[k])[0][-1])
     M.append(len(Q))
 
     for m in range(len(M) - 1):
@@ -2113,7 +2113,7 @@ def reorder_gauss(Avals, Q):
     Adict2 = copy.deepcopy(Adict1)
     M = []
     for k in range(len(qs)):
-        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+        M.append(_np.where(abs(Q.imag) <= qs[k])[0][-1])
     M.append(len(Q))
     for m in range(len(M) - 1):
         A18 = copy.deepcopy(Adict2['A18'][M[m] + 1:, :])  # anomalous mode  $ should be 4
@@ -2131,7 +2131,7 @@ def reorder_gauss(Avals, Q):
     Adict = copy.deepcopy(Adict2)
     M = []
     for k in range(len(qs)):
-        M.append(_np.where(Q.imag <= qs[k])[0][-1])
+        M.append(_np.where(abs(Q.imag) <= qs[k])[0][-1])
     M.append(len(Q))
     for m in range(len(M) - 1):
         A32 = copy.deepcopy(Adict['A32'][M[m] + 1:, :])  # anomalous mode  $ should be 4
