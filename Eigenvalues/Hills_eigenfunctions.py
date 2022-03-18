@@ -11,7 +11,7 @@ import xarray as _xr
 
 class eigenfunctions:
 
-    def __init__(self, q, K, Pe, y, N, coeffs, Kj, symmetry, case):
+    def __init__(self, q, K, Pe, y, N, coeffs, Kj, symmetry, case, opt):
         self._q = q
         self._K = K
         self._Pe = Pe
@@ -21,6 +21,7 @@ class eigenfunctions:
         self._Kj = Kj
         self._symmetry = symmetry
         self._case = case
+        self._opt = opt
 
 
     @classmethod
@@ -34,6 +35,7 @@ class eigenfunctions:
         Kj,
         symmetry='None',
         case='None',
+        opt=False,
         dAs=None,
     ):
         """Even eigenfunctions that solve Hill's equation associated with
@@ -42,7 +44,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dAs is None:
-            dAs = A_coefficients(K, Pe, N, coeffs, Kj, symmetry)
+            dAs = A_coefficients(K, Pe, N, coeffs, Kj, symmetry, opt)
         # initialize a dataarray with right dimensions
         N = len(dAs.n)  # update the size of the array
         cos_coords = {'r':range(N), 'y':y}
@@ -175,12 +177,6 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False):
     
     As_ds = phi_array(N, K)  # initializes with the theoretical values in the limit q=0 (k=0).
 
-    # # initialize two dataArrays, one for Fourier coefficients As and another for eigenvalues
-    # A_coords =  {"n": range(N), "k": K, 'r':range(N)}
-    # dAs = As_ds['A_2r']
-
-    # das = As_ds['a_2n']
-
     for k in range(len(q)):
         if opt:
             Nr = int(R[k])  # must be integer
@@ -193,9 +189,6 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False):
             else:
                 As_ds['A_2r'].isel(k=k, n=n, r=slice(0, Nr)).data[:] = Anorm(Ak[:-5, n], symmetry='even')
         As_ds['a_2n'].isel(k=k, n=slice(0, Nr)).data[:] = ak[:-5]
-        # if opt:  # supplement higher modes from theory.
-        #     das.isel(k=k).data[Nr:] = ds_t['a_2n'].data[Nr:]
-    # As_ds = _xr.Dataset({'A_2r': dAs, 'a_2n': das})
     return As_ds
 
 
