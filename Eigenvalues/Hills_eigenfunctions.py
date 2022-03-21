@@ -168,10 +168,13 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False):
     coeffs = _np.array(coeffs)
     q = (1j) * (2 * K * Pe)  # canonical parameter
     if opt:  # perform this calculation
+        lll = _np.where(K >= 0)[0]
+        K = K[lll]
+        q = q[lll] 
         R = _np.round(_np.sqrt(15 * (q.imag) * abs(coeffs[0]) / 4))
         Rmax = int(_np.max(R))
-        ll = _np.where(R < 20)[0]
-        R[ll] = 20 # set minimum value
+        ll = _np.where(R < 35)[0]
+        R[ll] = 35 # set minimum value
         if N < Rmax:  # if proposed size not sufficiently large enough, re calibrate.
             N = Rmax
     
@@ -189,6 +192,19 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False):
             else:
                 As_ds['A_2r'].isel(k=k, n=n, r=slice(0, Nr)).data[:] = Anorm(Ak[:-5, n], symmetry='even')
         As_ds['a_2n'].isel(k=k, n=slice(0, Nr)).data[:] = ak[:-5]
+
+    if opt:  # complement the k<0 values (based on symmetry properties) and merge two datasets.
+        As_dsc = _xr.ones_like(As_ds)
+        As_dsc['nk'] =  -As_dsc['k'].data[::-1]
+        As_dsc = As_dsc.drop_dims('k').rename({'nk':'k'})
+        As_dsc['a_2n'] = _xr.ones_like(As_ds['a_2n'])
+        As_dsc['A_2r'] = _xr.ones_like(As_ds['A_2r'])
+        As_dsc['a_2n'].data = As_ds.conjugate()['a_2n'][:, ::-1]
+        As_dsc['A_2r'].data = As_ds.conjugate()['A_2r'][:, ::-1, :]
+
+        As_ds = As_dsc.combine_first(As_ds)  # combine along k values.
+
+
     return As_ds
 
 
