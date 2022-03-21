@@ -141,7 +141,7 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False):
+def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=True):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -193,7 +193,7 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False):
                 As_ds['A_2r'].isel(k=k, n=n, r=slice(0, Nr)).data[:] = Anorm(Ak[:-5, n], symmetry='even')
         As_ds['a_2n'].isel(k=k, n=slice(0, Nr)).data[:] = ak[:-5]
 
-    if opt:  # complement the k<0 values (based on symmetry properties) and merge two datasets.
+    if reflect:  # complement the k<0 values (based on symmetry properties) and merge two datasets.
         As_dsc = _xr.ones_like(As_ds)
         As_dsc['nk'] =  -As_dsc['k'].data[::-1]
         As_dsc = As_dsc.drop_dims('k').rename({'nk':'k'})
