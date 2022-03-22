@@ -2873,6 +2873,9 @@ def phi_array(N, K, y=0, coeffs=True, eigs=False):
             eig_fns = _xr.Dataset({'a_2n': a_2n, 'phi_2n': phi_2n, 'A_2r':A_2r})
         else:
             eig_fns = _xr.Dataset({'a_2n': a_2n, 'A_2r':A_2r})
+    elif eigs:
+        if coeffs == False:
+            eig_fns = _xr.Dataset({'phi_2n': phi_2n})
     else:
         eig_fns = 0 
     return eig_fns
