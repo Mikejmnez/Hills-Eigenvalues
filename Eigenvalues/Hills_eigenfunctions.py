@@ -2861,7 +2861,7 @@ def phi_array(N, K, y=0, coeffs=True, eigs=False):
         a_2n = _xr.DataArray((1j)*0, coords=n_coords, dims=['n', 'k'])
     if eigs:
         phi_coords = {"n": range(N), "y": y}
-        phi_2n = _xr.DataArray(coords=phi_coords, dims=['n', 'y'])
+        phi_2n = _xr.DataArray((1j)*0, coords=phi_coords, dims=['n', 'y'])
     for n in range(N):
         if coeffs:
             a_2n.isel(n=n).data[:] = ((2 * n)**2) * _np.ones(_np.shape(K))
@@ -2879,3 +2879,25 @@ def phi_array(N, K, y=0, coeffs=True, eigs=False):
     else:
         eig_fns = 0 
     return eig_fns
+
+
+def complement_dot(_gauss_alps, _ds_As):
+    """complement the dot product when calculating solutions. This is the case where initial condition 
+    is localized in y.
+    Input
+        _gauss_alps : (1+delta_p0)gamma_p in theory.
+
+    """
+    _Nr = len(_ds_As.r)  # this is the truncated array. 
+    _Nt = len(_gauss_alps)  # total length - set at the initial condition.
+    _K = _ds_As['k'].data
+    _ndAs = _xr.dot(_gauss_alps.isel(r=slice(_Nr)), _ds_As['A_2r'], dims='r')
+    if _Nr < _Nt:
+        _coeffs_alps = copy.deepcopy(_gauss_alps[_Nr:])
+        _coeffs_alps = _coeffs_alps.rename({'r':'n'})
+        _coeffs_alps = _coeffs_alps.expand_dims({'k':_K})
+        _coeffs_alps = _ndAs.combine_first(_coeffs_alps)
+    else:
+        _coeffs_alps = _ndAs
+    return _coeffs_alps
+
