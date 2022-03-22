@@ -175,8 +175,8 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
         Rmax = int(_np.max(R))
         ll = _np.where(R < 35)[0]
         R[ll] = 35 # set minimum value
-        if N < Rmax:  # if proposed size not sufficiently large enough, re calibrate.
-            N = Rmax
+        # if N < Rmax:  # if proposed size not sufficiently large enough, re calibrate.
+        N = Rmax + 5
     
     As_ds = phi_array(N, K)  # initializes with the theoretical values in the limit q=0 (k=0).
 
