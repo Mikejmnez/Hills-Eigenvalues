@@ -2846,7 +2846,7 @@ def reorder_sqr5(Avals, Q):
     return Adict1
 
 
-def phi_array(N, K, y=0, coeffs=True, eigs=False):
+def phi_array(N, K, y=0, coeffs=True, eigs=True, phis=False):
     """creates an xarray with eigenvalues and eigenfunctions associated with the limit q=0.
     We use these values as the complement to the truncated matrix calculation to optimize code.
     
@@ -2857,27 +2857,27 @@ def phi_array(N, K, y=0, coeffs=True, eigs=False):
     if coeffs:
         A_coords =  {"n": range(N), "k":K, 'r':range(N)} 
         A_2r = _xr.DataArray((1j)*0, coords=A_coords, dims=['n', 'k', 'r'])
+    if eigs:
         n_coords =  {"n": range(N), "k":K, }
         a_2n = _xr.DataArray((1j)*0, coords=n_coords, dims=['n', 'k'])
-    if eigs:
+    if phis:
         phi_coords = {"n": range(N), "y": y}
         phi_2n = _xr.DataArray((1j)*0, coords=phi_coords, dims=['n', 'y'])
     for n in range(N):
         if coeffs:
-            a_2n.isel(n=n).data[:] = ((2 * n)**2) * _np.ones(_np.shape(K))
             A_2r.isel(n=n, r=n).data[:] = _np.ones(_np.shape(K))
         if eigs:
+            a_2n.isel(n=n).data[:] = ((2 * n)**2) * _np.ones(_np.shape(K))
+        if phis:
             phi_2n.isel(n=n).data[:] = _np.cos(2*n*y)
+    data_vars = {}
     if coeffs:
-        if eigs:
-            eig_fns = _xr.Dataset({'a_2n': a_2n, 'phi_2n': phi_2n, 'A_2r':A_2r})
-        else:
-            eig_fns = _xr.Dataset({'a_2n': a_2n, 'A_2r':A_2r})
-    elif eigs:
-        if coeffs == False:
-            eig_fns = _xr.Dataset({'phi_2n': phi_2n})
-    else:
-        eig_fns = 0 
+        data_vars = {**data_vars, **{'A_2r': A_2r}}
+    if eigs:
+        data_vars = {**data_vars, **{'a_2n': a_2n}}
+    if phis:
+        data_vars = {**data_vars, **{'phi_2n': phi_2n}}
+    eig_fns =  _xr.Dataset(data_vars)
     return eig_fns
 
 
