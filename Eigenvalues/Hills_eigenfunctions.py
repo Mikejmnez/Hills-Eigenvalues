@@ -2902,3 +2902,30 @@ def complement_dot(_gauss_alps, _ds_As):
         _coeffs_alps = _ndAs
     return _coeffs_alps
 
+def ragged_sum(_datasets,  _gauss_alps, alpha0, Pe, tk):
+    """Computed the double sum (in p and n) necessary for calculating the (averaged) analytical solution. 
+    Returns a dataarray with only one dimension: k spanning both positive and negative values.
+    Input:
+        datasets: list of datasets spanning a subset of wavenumbers k>0. The dimensions in p and r
+    """
+    
+    PHI2n = []
+    for i in range(len(_datasets)):
+        Ki = _datasets[i].k.data
+        NR = len(_datasets[i].n)
+        exp_arg = (1j) * alpha0*Ki*Pe + Ki**2
+        ndAs = complement_dot(_gauss_alps, _datasets[i])  # has final size in n (sum in p)
+        phi2n = _xr.dot(ndAs.isel(n=slice(NR)), _datasets[i]['A_2r'].isel(r=0, n=slice(NR)) * _np.exp(-(0.25*_datasets[i]['a_2n'].isel(n=slice(NR)) + exp_arg)*tk), dims='n')
+        if i==0:
+            PHI2n = phi2n
+        else:
+            PHI2n = PHI2n.combine_first(phi2n)  # upto here, k>0 is considered.
+    
+    # using symmetry arguments, expand into k<0
+    phi_2n = _xr.ones_like(PHI2n)
+    phi_2n['k'] = -phi_2n['k'][::-1]
+    phi_2n.data = PHI2n.conjugate()[::-1]
+    
+    PHI = phi_2n.combine_first(PHI2n)
+
+    return PHI
