@@ -2892,7 +2892,7 @@ def complement_dot(_gauss_alps, _ds_As):
     _Nr = len(_ds_As.r)  # this is the truncated array. 
     _Nt = len(_gauss_alps)  # total length - set at the initial condition.
     _K = _ds_As['k'].data
-    _ndAs = _xr.dot(_gauss_alps.isel(r=slice(_Nr)), _ds_As['A_2r'].persist(), dims='r')
+    _ndAs = _xr.dot(_gauss_alps.isel(r=slice(_Nr)), _ds_As['A_2r'], dims='r').compute()
     if _Nr < _Nt:
         _coeffs_alps = copy.deepcopy(_gauss_alps[_Nr:])
         _coeffs_alps = _coeffs_alps.rename({'r':'n'})
@@ -2914,10 +2914,10 @@ def ragged_sum(_datasets, _gauss_alps, alpha0, Pe, tk):
         Ki = _datasets[i].k.data
         NR = len(_datasets[i].n)
         exp_arg = (1j) * alpha0*Ki*Pe + Ki**2
-        ndAs = complement_dot(_gauss_alps, _datasets[i])  # has final size in n (sum in p)
-        A_0 = _datasets[i]['A_2r'].isel(r=0, n=slice(NR)).persist()
-        a_2n = _datasets[i]['a_2n'].isel(n=slice(NR)).persist()
-        phi2n = _xr.dot(ndAs.isel(n=slice(NR)), A_0 * _np.exp(-(0.25*a_2n+ exp_arg)*tk), dims='n')
+        ndAs = complement_dot(_gauss_alps, _datasets[i]).compute()  # has final size in n (sum in p)
+        A_0 = _datasets[i]['A_2r'].isel(r=0, n=slice(NR))
+        a_2n = _datasets[i]['a_2n'].isel(n=slice(NR))
+        phi2n = _xr.dot(ndAs.isel(n=slice(NR)), A_0 * _np.exp(-(0.25*a_2n+ exp_arg)*tk), dims='n').compute()
         if i==0:
             PHI2n = phi2n
         else:
