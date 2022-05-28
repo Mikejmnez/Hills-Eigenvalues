@@ -84,13 +84,12 @@ def even_matrix(q, N, alphas, K, symmetry='even'):
     for n in range(1, len(K)):
         nA[1: len(K) + (1 - n), n] = _copy.deepcopy(1j*(q.imag * alphas[n:]))
     A = A + nA
-    if symmetry == 'even':
-        A[0, 1:] = _copy.deepcopy(A[0, 1:]) * _np.sqrt(2)
-        A[1:, 0] = _copy.deepcopy(A[1:, 0]) * _np.sqrt(2)
+    A[0, 1:] = _copy.deepcopy(A[0, 1:]) * _np.sqrt(2)
+    A[1:, 0] = _copy.deepcopy(A[1:, 0]) * _np.sqrt(2)
     return A
 
 
-def odd_matrix(q, N, betas, K):
+def even_matrix(q, N, alphas, K, symmetry='even'):
     ''' Creates a matrix of order NxN. The size N is
     determined (for now) outside, but it should be larger than the order of
     approximation of the Fourier series.

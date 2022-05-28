@@ -2905,6 +2905,9 @@ def complement_dot(_gauss_alps, _ds_As):
 def ragged_sum(_datasets, _gauss_alps, alpha0, Pe, tk):
     """Computed the double sum (in p and n) necessary for calculating the (averaged) analytical solution. 
     Returns a dataarray with only one dimension: k spanning both positive and negative values.
+    There is a factor of `2 * np.pi` when calculating the exponential term. This is because 
+    it is used with xrft which normalizes the wavenumber differently-hence the need to always
+    multiply K by a factor of 2 * np.pi. 
     Input:
         datasets: list of datasets spanning a subset of wavenumbers k>0. The dimensions in p and r
     """
@@ -2913,7 +2916,7 @@ def ragged_sum(_datasets, _gauss_alps, alpha0, Pe, tk):
     for i in range(len(_datasets)):
         Ki = _datasets[i].k.data
         NR = len(_datasets[i].n)
-        exp_arg = (1j) * alpha0*Ki*Pe + Ki**2
+        exp_arg = (1j) * alpha0*(2 *_np.pi *Ki)*Pe + (2 * _np.pi *Ki)**2
         ndAs = complement_dot(_gauss_alps, _datasets[i]).compute()  # has final size in n (sum in p)
         A_0 = _datasets[i]['A_2r'].isel(r=0, n=slice(NR))
         a_2n = _datasets[i]['a_2n'].isel(n=slice(NR))
