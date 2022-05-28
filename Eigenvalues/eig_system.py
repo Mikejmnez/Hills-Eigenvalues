@@ -47,7 +47,7 @@ def matrix_system(q, N, coeffs, K, symmetry='even'):
     return A
 
 
-def even_matrix(q, N, alphas, K, symmetry='even'):
+def even_matrix(q, N, alphas, K):
     ''' Creates a matrix of order NxN. The size N is
     determined (for now) outside, but it should be larger than the order of
     approximation of the Fourier series.
@@ -89,7 +89,7 @@ def even_matrix(q, N, alphas, K, symmetry='even'):
     return A
 
 
-def even_matrix(q, N, alphas, K, symmetry='even'):
+def even_matrix(q, N, alphas, K):
     ''' Creates a matrix of order NxN. The size N is
     determined (for now) outside, but it should be larger than the order of
     approximation of the Fourier series.
