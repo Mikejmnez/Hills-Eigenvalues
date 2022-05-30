@@ -89,7 +89,7 @@ def even_matrix(q, N, alphas, K):
     return A
 
 
-def even_matrix(q, N, alphas, K):
+def odd_matrix(q, N, alphas, K):
     ''' Creates a matrix of order NxN. The size N is
     determined (for now) outside, but it should be larger than the order of
     approximation of the Fourier series.
@@ -113,15 +113,17 @@ def even_matrix(q, N, alphas, K):
             and a purely reakl diagonal term that increases with the size of A.
     '''
     # make sure q is purely imaginary, N is an integer.
-    M = len(betas)
-    if M > N:  # this shouldn't happen, but if it does just increase N.
-        N = M
-    diag = [4 * (k**2) for k in range(1, N + 1)]  # diagonal of A.
+    # make sure q is purely imaginary, N is an integer.
+    diag = [4 * (k**2) for k in range(N)] # diagonal of A.
     A = _np.diag(diag, 0)
+    nA = _np.zeros(_np.shape(A))*1j
     for k in range(len(K)):
-        a = q * betas[k] * _np.ones(N - K[k])  # defines the off-diagonal term
-        A = A + _np.diag(a, K[k]) + _np.diag(a, -K[k])  # adds off-diagonals
-    return A
+        a = q * alphas[k] * _np.ones(N - int(K[k]))  # defines the off-diagonal term
+        A = A + _np.diag(a, int(K[k])) + _np.diag(a, -int(K[k]))  # adds off-diagonals
+    for n in range(1, len(K)):
+        nA[1: len(K) + (1 - n), n] = -_copy.deepcopy(1j*(q.imag * alphas[n:]))
+    odd_A = A[1:, 1:] + nA[1:, 1:]
+    return odd_A
 
 
 def FFH_matrix(q, N, gammas, K):
