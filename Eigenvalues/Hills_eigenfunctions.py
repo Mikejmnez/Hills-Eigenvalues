@@ -33,7 +33,6 @@ class eigenfunctions:
         N,
         coeffs,
         Kj,
-        symmetry='None',
         case='None',
         opt=False,
         dAs=None,
@@ -44,7 +43,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dAs is None:
-            dAs = A_coefficients(K, Pe, N, coeffs, Kj, symmetry, opt)
+            dAs = A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt)
         # initialize a dataarray with right dimensions
         N = len(dAs.n)  # update the size of the array
         cos_coords = {'r':range(N), 'y':y}
@@ -54,6 +53,41 @@ class eigenfunctions:
             dcos.sel(r = r)[:] =  _np.cos(2 * r * y)
 
         dphi = _xr.dot(dcos, dAs['A_2r'], dims='r').transpose('n', 'k', 'y')  # dataarray
+
+        dAs['phi_2n'] = dphi
+
+        return dAs
+
+
+    @classmethod
+    def phi_odd(
+        cls,
+        K,
+        Pe,
+        y,
+        N,
+        coeffs,
+        Kj,
+        case='None',
+        opt=False,
+        dAs=None,
+    ):
+        """Even eigenfunctions that solve Hill's equation associated with
+        the case where Neumann BC and coeffs are associated with a purely
+        cosine Fourier series. Simplest case is that of Mathieu's ce_2n
+        associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
+        """
+        if dAs is None:
+            dAs = A_coefficients(K, Pe, N, coeffs, Kj, symmetry='odd', opt)
+        # initialize a dataarray with right dimensions
+        N = len(dAs.n)  # update the size of the array
+        sin_coords = {'r':range(1, N), 'y':y}
+        dsin = _xr.DataArray((1j) * _np.nan, coords=sin_coords, dims=['r', 'y'])
+
+        for r in range(1, N):  # populate with the base
+            dsin.sel(r = r)[:] =  _np.sin(2 * r * y)
+
+        dphi = _xr.dot(dsin, dAs['B_2r'], dims='r').transpose('n', 'k', 'y')  # dataarray
 
         dAs['phi_2n'] = dphi
 
@@ -102,7 +136,7 @@ class eigenfunctions:
 
 
     @classmethod
-    def phi_odd(
+    def phi_odd_old(
         cls,
         q,
         x,
@@ -167,6 +201,14 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
     """
     coeffs = _np.array(coeffs)
     q = (1j) * (2 * K * Pe)  # canonical parameter
+    if symmetry=='even':
+        _eigv = 'A_2r'
+        _eigs = 'a_2n'
+        _r0 = 0
+    elif symmetry=='odd':
+        _eigv = 'B_2r'
+        _eigs = 'b_2n'
+        _r0 = 1
     if opt:  # perform this calculation
         lll = _np.where(K >= 0)[0]
         K = K[lll]
@@ -187,21 +229,21 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
         else:
             Nr = N  # matrix size constant for all q
         ak, Ak = eig_pairs(matrix_system(q[k], Nr + 5, coeffs, Kj, symmetry), symmetry)
-        for n in range(Nr):
+        for n in range(_r0, Nr):
             if opt is True and (Nr + 5) < Rmax:
-                As_ds['A_2r'].isel(k=k, n=n, r=slice(0, Nr + 5)).data[:] = Anorm(Ak[:, n], symmetry='even')
+                As_ds[_eigv].isel(k=k, n=n, r=slice(r0, Nr + 5)).data[:] = Anorm(Ak[:, n - _r0], symmetry)
             else:
-                As_ds['A_2r'].isel(k=k, n=n, r=slice(0, Nr)).data[:] = Anorm(Ak[:-5, n], symmetry='even')
-        As_ds['a_2n'].isel(k=k, n=slice(0, Nr)).data[:] = ak[:-5]
+                As_ds[_eigv].isel(k=k, n=n, r=slice(r0, Nr)).data[:] = Anorm(Ak[:-5, n - _r0], symmetry)
+        As_ds[_eigs].isel(k=k, n=slice(r0, Nr)).data[:] = ak[:-5]
 
-    if reflect:  # complement the k<0 values (based on symmetry properties) and merge two datasets.
+    if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
         As_dsc = _xr.ones_like(As_ds)
         As_dsc['nk'] =  -As_dsc['k'].data[::-1]
         As_dsc = As_dsc.drop_dims('k').rename({'nk':'k'})
-        As_dsc['a_2n'] = _xr.ones_like(As_ds['a_2n'])
-        As_dsc['A_2r'] = _xr.ones_like(As_ds['A_2r'])
-        As_dsc['a_2n'].data = As_ds.conjugate()['a_2n'][:, ::-1]
-        As_dsc['A_2r'].data = As_ds.conjugate()['A_2r'][:, ::-1, :]
+        As_dsc[_eigs] = _xr.ones_like(As_ds[_eigs])
+        As_dsc[_eigv] = _xr.ones_like(As_ds[_eigv])
+        As_dsc[_eigs].data = As_ds.conjugate()[_eigs][:, ::-1]
+        As_dsc[_eigv].data = As_ds.conjugate()[_eigv][:, ::-1, :]
 
         As_ds = As_dsc.combine_first(As_ds)  # combine along k values.
 
