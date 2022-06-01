@@ -229,12 +229,12 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
         else:
             Nr = N  # matrix size constant for all q
         ak, Ak = eig_pairs(matrix_system(q[k], Nr + 5, coeffs, Kj, symmetry), symmetry)
-        for n in range(_r0, Nr):
+        for n in range(Nr - _r0):
             if opt is True and (Nr + 5) < Rmax:
-                As_ds[_eigv].isel(k=k, n=n, r=slice(_r0, Nr + 5)).data[:] = Anorm(Ak[:, n - _r0], symmetry)
+                As_ds[_eigv].isel(k=k, n=n, r=slice(Nr + 5 - _r0)).data[:] = Anorm(Ak[:, n], symmetry)
             else:
-                As_ds[_eigv].isel(k=k, n=n, r=slice(_r0, Nr)).data[:] = Anorm(Ak[:-5, n - _r0], symmetry)
-        As_ds[_eigs].isel(k=k, n=slice(_r0, Nr)).data[:] = ak[:-5]
+                As_ds[_eigv].isel(k=k, n=n, r=slice(Nr - _r0)).data[:] = Anorm(Ak[:-5, n], symmetry)
+        As_ds[_eigs].isel(k=k, n=slice(Nr - _r0)).data[:] = ak[:-5]
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
         As_dsc = _xr.ones_like(As_ds)
