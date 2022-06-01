@@ -43,7 +43,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dAs is None:
-            dAs = A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt)
+            dAs = A_coefficients(K, Pe, N, coeffs, Kj, 'even', opt)
         # initialize a dataarray with right dimensions
         N = len(dAs.n)  # update the size of the array
         cos_coords = {'r':range(N), 'y':y}
@@ -78,7 +78,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dAs is None:
-            dAs = A_coefficients(K, Pe, N, coeffs, Kj, symmetry='odd', opt)
+            dAs = A_coefficients(K, Pe, N, coeffs, Kj, 'odd', opt)
         # initialize a dataarray with right dimensions
         N = len(dAs.n)  # update the size of the array
         sin_coords = {'r':range(1, N), 'y':y}
@@ -221,7 +221,7 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
             Rmax = 50  # always set the minimum size of matrix
         N = Rmax + 5
     
-    As_ds = phi_array(N, K)  # initializes with the theoretical values in the limit q=0 (k=0).
+    As_ds = phi_array(N, K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
 
     for k in range(len(q)):
         if opt:
@@ -231,10 +231,10 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
         ak, Ak = eig_pairs(matrix_system(q[k], Nr + 5, coeffs, Kj, symmetry), symmetry)
         for n in range(_r0, Nr):
             if opt is True and (Nr + 5) < Rmax:
-                As_ds[_eigv].isel(k=k, n=n, r=slice(r0, Nr + 5)).data[:] = Anorm(Ak[:, n - _r0], symmetry)
+                As_ds[_eigv].isel(k=k, n=n, r=slice(_r0, Nr + 5)).data[:] = Anorm(Ak[:, n - _r0], symmetry)
             else:
-                As_ds[_eigv].isel(k=k, n=n, r=slice(r0, Nr)).data[:] = Anorm(Ak[:-5, n - _r0], symmetry)
-        As_ds[_eigs].isel(k=k, n=slice(r0, Nr)).data[:] = ak[:-5]
+                As_ds[_eigv].isel(k=k, n=n, r=slice(_r0, Nr)).data[:] = Anorm(Ak[:-5, n - _r0], symmetry)
+        As_ds[_eigs].isel(k=k, n=slice(_r0, Nr)).data[:] = ak[:-5]
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
         As_dsc = _xr.ones_like(As_ds)
@@ -2889,7 +2889,7 @@ def reorder_sqr5(Avals, Q):
     return Adict1
 
 
-def phi_array(N, K, y=0, coeffs=True, eigs=True, phis=False):
+def phi_array(N, K, symmetry='even',y = 0, coeffs=True, eigs=True, phis=False):
     """creates an xarray with eigenvalues and eigenfunctions associated with the limit q=0.
     We use these values as the complement to the truncated matrix calculation to optimize code.
     
@@ -2897,27 +2897,42 @@ def phi_array(N, K, y=0, coeffs=True, eigs=True, phis=False):
         N: total number of cosine modes required to, say, accurately approximate a Gaussian.
         y: 
     """
+    if symmetry=='even':
+        _eigv = 'A_2r'
+        _eigs = 'a_2n'
+        _r0 = 0
+    elif symmetry=='odd':
+        _eigv = 'B_2r'
+        _eigs = 'b_2n'
+        _r0 = 1
     if coeffs:
-        A_coords =  {"n": range(N), "k":K, 'r':range(N)} 
+        A_coords =  {"n": range(N-_r0), "k":K, 'r':range(N-_r0)} 
         A_2r = _xr.DataArray((1j)*0, coords=A_coords, dims=['n', 'k', 'r'])
     if eigs:
-        n_coords =  {"n": range(N), "k":K, }
+        n_coords =  {"n": range(N-_r0), "k":K, }
         a_2n = _xr.DataArray((1j)*0, coords=n_coords, dims=['n', 'k'])
     if phis:
-        phi_coords = {"n": range(N), "y": y}
+        phi_coords = {"n": range(N-_r0), "y": y}
         phi_2n = _xr.DataArray((1j)*0, coords=phi_coords, dims=['n', 'y'])
-    for n in range(N):
+    for n in range(N-_r0):
         if coeffs:
             A_2r.isel(n=n, r=n).data[:] = _np.ones(_np.shape(K))
         if eigs:
-            a_2n.isel(n=n).data[:] = ((2 * n)**2) * _np.ones(_np.shape(K))
+            if symmetry == 'even':
+                _vals = (2 * n)**2
+            elif symmetry == 'odd':
+                _vals = (2 * (n+1))**2
+            a_2n.isel(n=n).data[:] = (_vals * _np.ones(_np.shape(K)))
         if phis:
-            phi_2n.isel(n=n).data[:] = _np.cos(2*n*y)
+            if symmetry == 'even':
+                phi_2n.isel(n=n).data[:] = _np.cos(2*n*y)
+            elif symmetry == "odd":
+                phi_2n.isel(n=n).data[:] = _np.sin(2*(n+1)*y)
     data_vars = {}
     if coeffs:
-        data_vars = {**data_vars, **{'A_2r': A_2r}}
+        data_vars = {**data_vars, **{_eigv: A_2r}}
     if eigs:
-        data_vars = {**data_vars, **{'a_2n': a_2n}}
+        data_vars = {**data_vars, **{_eigs: a_2n}}
     if phis:
         data_vars = {**data_vars, **{'phi_2n': phi_2n}}
     eig_fns =  _xr.Dataset(data_vars)
