@@ -186,9 +186,9 @@ def order_check(a, v, symmetry = 'even'):
         nv = 0 * _np.copy(v)
         for k in range(len(Ind)):
             nv[:, k] = v[:, Ind[k]]
-    if symmetry == 'None':
-        inv = _np.arange(len(Ind))
-        mv = 0 * _np.copy(nv)
-        ordered_a = ordered_a[inv]
-        # for k in range(Ind):
+    # if symmetry == 'None':
+    #     inv = _np.arange(len(Ind))
+    #     mv = 0 * _np.copy(nv)
+    #     ordered_a = ordered_a[inv]
+    #     # for k in range(Ind):
     return ordered_a, nv
