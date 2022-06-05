@@ -80,12 +80,12 @@ class eigenfunctions:
         if dAs is None:
             dAs = A_coefficients(K, Pe, N, coeffs, Kj, 'odd', opt)
         # initialize a dataarray with right dimensions
-        N = len(dAs.n)  # update the size of the array
-        sin_coords = {'r':range(1, N), 'y':y}
+        _range = dAs.n.data  # update the size of the array
+        sin_coords = {'r':_range, 'y':y}
         dsin = _xr.DataArray((1j) * _np.nan, coords=sin_coords, dims=['r', 'y'])
 
-        for r in range(1, N):  # populate with the base
-            dsin.sel(r = r)[:] =  _np.sin(2 * r * y)
+        for r in _range:  # populate with the base
+            dsin.sel(r = r)[:] =  _np.sin(2 * (r + 1) * y)
 
         dphi = _xr.dot(dsin, dAs['B_2r'], dims='r').transpose('n', 'k', 'y')  # dataarray
 
