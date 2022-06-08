@@ -70,28 +70,28 @@ class eigenfunctions:
         Kj,
         case='None',
         opt=False,
-        dAs=None,
+        dBs=None,
     ):
         """Even eigenfunctions that solve Hill's equation associated with
         the case where Neumann BC and coeffs are associated with a purely
         cosine Fourier series. Simplest case is that of Mathieu's ce_2n
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
-        if dAs is None:
-            dAs = A_coefficients(K, Pe, N, coeffs, Kj, 'odd', opt)
+        if dBs is None:
+            dBs = A_coefficients(K, Pe, N, coeffs, Kj, 'odd', opt)
         # initialize a dataarray with right dimensions
-        _range = dAs.n.data  # update the size of the array
+        _range = dBs.n.data  # update the size of the array
         sin_coords = {'r':_range, 'y':y}
         dsin = _xr.DataArray((1j) * _np.nan, coords=sin_coords, dims=['r', 'y'])
 
         for r in _range:  # populate with the base
             dsin.sel(r = r)[:] =  _np.sin(2 * (r + 1) * y)
 
-        dphi = _xr.dot(dsin, dAs['B_2r'], dims='r').transpose('n', 'k', 'y')  # dataarray
+        dphi = _xr.dot(dsin, dBs['B_2r'], dims='r').transpose('n', 'k', 'y')  # dataarray
 
-        dAs['phi_2n'] = dphi
+        dBs['phi_2n'] = dphi
 
-        return dAs
+        return dBs
 
 
     @classmethod
