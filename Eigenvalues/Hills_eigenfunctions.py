@@ -282,6 +282,13 @@ def A_coefficients_old(q, N, coeffs, K, symmetry='even', case='None'):
     else:
         if q.imag == 0:
             raise Warning("q must be imaginary")
+    if symmetry == 'odd':
+        N = N - 1
+        _eigv = 'B'
+        _eigs = 'b'
+    else:
+        _eigv = 'A'
+        _eigs = 'a'
     for n in range(N):
         am, Am = eig_pairs(matrix_system(q[0], N, coeffs, K, symmetry), symmetry)
         a = [am[n]]  # makes a list of the nth eigenvalue
@@ -295,12 +302,8 @@ def A_coefficients_old(q, N, coeffs, K, symmetry='even', case='None'):
             As = _np.append(As, nAs, axis=0)
         if case not in cases:
             As = Fcoeffs(As, n, q, case)
-        if symmetry in ['None', 'even']:
-            vals.update({'a' + str(2 * n): _np.array(a)})
-            vals.update({'A' + str(2 * n): As})
-        elif symmetry == 'odd':
-            vals.update({'b' + str(2 * (n + 1)): _np.array(a)})
-            vals.update({'B' + str(2 * (n + 1)): As})
+        vals.update({_eigs + str(2 * n): _np.array(a)})
+        vals.update({_eigv + str(2 * n): As})
     if case in cases:
         if case == 'linear':
             vals = reorder_linear(vals, q)
@@ -315,9 +318,9 @@ def A_coefficients_old(q, N, coeffs, K, symmetry='even', case='None'):
         elif case == 'square3':
             vals = reorder_sqr3(vals, q)
             for n in range(N):
-                As = copy.deepcopy(vals['A' + str(2 * n)])
+                As = copy.deepcopy(vals[_eigv + str(2 * n)])
                 As = Fcoeffs(As, n, q, case)
-                vals.update({'A' + str(2 * n): As})
+                vals.update({_eigv + str(2 * n): As})
         elif case == 'square4':
             vals = reorder_sqr4(vals, q)
         elif case == 'square5':
@@ -337,7 +340,7 @@ def A_coefficients_old(q, N, coeffs, K, symmetry='even', case='None'):
             for n in range(N):
                 As = copy.deepcopy(vals['A' + str(2 * n)])
                 As = Fcoeffs(As, n, q, case)
-                vals.update({'A' + str(2 * n): As})
+                vals.update({_eigv + str(2 * n): As})
         elif case == 'gaussian2':
             vals = reorder_gauss2(vals, q)
         elif case == 'gaussian3':  # wide gaussian
