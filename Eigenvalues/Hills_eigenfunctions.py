@@ -283,13 +283,14 @@ def A_coefficients_old(q, N, coeffs, K, symmetry='even', case='None'):
         if q.imag == 0:
             raise Warning("q must be imaginary")
     if symmetry == 'odd':
-        N = N - 1
+        n0 = 1
         _eigv = 'B'
         _eigs = 'b'
     else:
+        n0 = 0
         _eigv = 'A'
         _eigs = 'a'
-    for n in range(N):
+    for n in range(N - n0):
         am, Am = eig_pairs(matrix_system(q[0], N, coeffs, K, symmetry), symmetry)
         a = [am[n]]  # makes a list of the nth eigenvalue
         As = Anorm(Am[:, n], symmetry)
@@ -2949,10 +2950,14 @@ def complement_dot(_gauss_alps, _ds_As):
         _gauss_alps : (1+delta_p0)gamma_p in theory.
 
     """
+    if 'A_2r' in _ds_As.data_vars:
+        _eigv = 'A_2r'
+    elif 'B_2r' in _ds_As.data_vars:
+        _eigv = 'B_2r'
     _Nr = len(_ds_As.r)  # this is the truncated array. 
     _Nt = len(_gauss_alps)  # total length - set at the initial condition.
     _K = _ds_As['k'].data
-    _ndAs = _xr.dot(_gauss_alps.isel(r=slice(_Nr)), _ds_As['A_2r'], dims='r').compute()
+    _ndAs = _xr.dot(_gauss_alps.isel(r=slice(_Nr)), _ds_As[_eigv], dims='r').compute()
     if _Nr < _Nt:
         _coeffs_alps = copy.deepcopy(_gauss_alps[_Nr:])
         _coeffs_alps = _coeffs_alps.rename({'r':'n'})
