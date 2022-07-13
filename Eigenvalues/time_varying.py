@@ -4,7 +4,7 @@ defines functions that allow time-evolution
 
 import numpy as _np
 import copy
-from eig_system import matrix_system, eig_pairs
+from Hills_eigenfunctions import complement_dot
 import copy as _copy
 import xarray as _xr
 import xrft as _xrft
@@ -76,8 +76,27 @@ def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _X, _Y, _time, _tf=0):
     return ds, PHI2n.isel(x=0).drop_vars({'x', 'r', 'k'})  # return the eigenfunction sum
 
 
+def evolve_ds_modal_gaussian(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _time, _tf=0):
+    """Constructs the modal solution to the IVP that is localized across the jet."""
 
-
+    coords = {"t": copy.deepcopy(_time),
+              "y": 2 * _Y[:, 0],
+              "x": _X[0, :]}
+    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x'])
+    ds = _xr.Dataset({'Theta': Temp})
+    Nr = len(_dAs.n) # length of truncated array
+    ndAs = complement_dot(_facs * _gauss_alps, _dAs)  # has final size in n (sum in p)
+    for i in range(len(_time)):
+        exp_arg =  (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+        if Nr < len(facs):  # Is this necessary?
+            PHI2n = _xr.dot(_ndAs.isel(n=slice(Nr)), _dAs['phi_2n'].isel(n=slice(Nr)) * _np.exp(-(0.25*_dAs['a_2n'].isel(n=slice(Nr)) + exp_arg)*(_time[i]-_tf)), dims='n')
+            PHI2n = PHI2n + _xr.dot(_ndAs[Nr:], _dAs['phi_2n'][Nr:] * _np.exp(-(0.25*_dAs['a_2n'][Nr:] + exp_arg)*(_time[i]-_tf)), dims='n')
+        else:
+            PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i]-_tf)), dims='n')
+        PHI2n = PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
+        T0 = (PHI2n * _np.exp((2*_np.pi* _K * _X) * (1j))).real
+        ds['Theta'].data[i, :, :] = T0.data
+    return ds, PHI2n.isel(x=0).drop_vars({'x', 'k'})  # return the eigenfunction sum
 
 
 
