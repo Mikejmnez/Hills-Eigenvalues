@@ -60,4 +60,29 @@ def coeff_project(_phi, _y, symmetri='even'):
 	return gauss_coeffs
 
 
+def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _X, _Y, _time, _tf=0):
+    """Constructs the modal solution to the IVP with uniform cross-jet initial condition """
+    coords = {"t": copy.deepcopy(_time),
+              "y": 2 * _Y[:, 0],
+              "x": _X[0, :]}
+    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x'])
+    ds = _xr.Dataset({'Theta': Temp})
+    for i in range(len(_time)):
+        exp_arg = (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+        PHI2n = _xr.dot(2*_dAs['A_2r'].isel(r=0), _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i]-_tf)), dims='n')
+        PHI2n = PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
+        T0 = (PHI2n * _np.exp((2*_np.pi* _K * _X) * (1j))).real
+        ds['Theta'].data[i, :, :] = T0.data
+    return ds, PHI2n.isel(x=0).drop_vars({'x', 'r', 'k'})  # return the eigenfunction sum
+
+
+
+
+
+
+
+
+
+
+
 
