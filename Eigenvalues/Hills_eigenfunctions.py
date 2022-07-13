@@ -213,7 +213,7 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
         lll = _np.where(K >= 0)[0]
         K = K[lll]
         q = q[lll]
-        R = _np.round(_np.sqrt(20 * (q.imag) * abs(coeffs[0]) / 4))
+        R = _np.round(_np.sqrt(50 * (q.imag) * abs(coeffs[0]) / 4))
         Rmax = int(_np.max(R))
         ll = _np.where(R < 50)[0]
         R[ll] = 50 # set minimum value
