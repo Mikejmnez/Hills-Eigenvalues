@@ -169,10 +169,13 @@ def loc_vals(_flip, _vals):
 	"""returns an array of indices that reference the source its numerical value (i.e. to the value in _vals). The map from _vals to flip. 
 	"""
 	ind_vals = _np.nan*_np.ones(_np.shape(_flip))  # initial array of nans.
+	
 	for i in range(len(_vals)):  # iterate over all values
 		l = _np.where(_flip == _vals[i])[0]
 		ind_vals[l] = int(i)
-	return ind_vals
+
+	_ivals = [int(i) for i in ind_vals]  # turn into a list of integers
+	return _ivals
 
 
 
