@@ -129,35 +129,38 @@ def re_sample(ft, nt=0):
     output:
         nft: time-periodic function. 1d numpy array. same lenght as original, but with only discrete values sampled from {0, 1/i, i in nt>=1}.
     """
-    KK = _np.arange(0, 1.000001, 1/(2**nt))
-    mids =[]
-    for i in range(1, len(KK)):
-        mids.append((KK[i] - KK[i-1]) / 2 + KK[i-1])
+	KK = _np.arange(0, 1.000001, 1/(2**nt))
+	mids =[]
+	for i in range(1, len(KK)):
+		mids.append((KK[i] - KK[i-1]) / 2 + KK[i-1])
 
-    nft = _np.ones(_np.shape(ft))  # new function
+	nft = _np.ones(_np.shape(ft))  # new function
 
-    for i in range(len(mids)):
-        if i == 0:
-            l = _np.where(abs(ft) < mids[i])[0]
-            nft[l] = KK[i]
-        else:
-            l = _np.where(_np.logical_and(ft <= mids[i], ft >= mids[i-1]))[0]
-            nft[l] = KK[i]
-        
+	for i in range(len(mids)):
+		if i == 0:
+			l = _np.where(abs(ft) < mids[i])[0]
+			nft[l] = KK[i]
+		else:
+			l = _np.where(_np.logical_and(ft <= mids[i], ft >= mids[i-1]))[0]
+			nft[l] = KK[i]
+
     # then last one
-    l = _np.where(ft > mids[-1])[0]
-    _nft[l] = KK[-1]
+	l = _np.where(ft > mids[-1])[0]
+	_nft[l] = KK[-1]
 
 
     # now reverse sign
-    for i in range(1, len(mids)):
-        l = _np.where(_np.logical_and(ft <= -mids[i-1], ft >= -mids[i]))[0]
-        nft[l] = -KK[i]
+	for i in range(1, len(mids)):
+		l = _np.where(_np.logical_and(ft <= -mids[i-1], ft >= -mids[i]))[0]
+		nft[l] = -KK[i]
         
     # then last one
-    l = _np.where(ft < -mids[-1])[0]
-    nft[l] = -KK[-1]
-    return nft
+	l = _np.where(ft < -mids[-1])[0]
+	nft[l] = -KK[-1]
+
+	vals = list(-KK[::-1]) + list(KK[1:])  ## all values
+
+	return nft, vals
 
 
 
