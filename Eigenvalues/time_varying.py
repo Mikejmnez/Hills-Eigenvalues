@@ -12,7 +12,7 @@ import xrft as _xrft
 
 
 
-def coeff_project(_phi, _y, symmetri='even'):
+def coeff_project(_phi, _y, symmetry='even'):
 	"""Takes a 1D-array and returns the Fourier coefficients that reproduce phi.
 
 	Input:
@@ -24,23 +24,23 @@ def coeff_project(_phi, _y, symmetri='even'):
 		coeffs = 1D np.array. Complex.
 
 	"""
-	if np.max(_y) == _np.pi:
+	if _np.max(_y) == _np.pi:
 		nf = 2
-	elif np.max(_y) == 2*_np.pi:
+	elif _np.max(_y) == 2*_np.pi:
 		nf = 1
 
 	fac = _np.pi  # divides the Fourier coefficients (xrft scales them).
 
 	L = len(_y)  # number of wavenumbers
 	if (L - 1) % 2 == 0:  # number should be odd.
-		Nl = int((L - 1) / 2)
+		nL = int((L - 1) / 2)
 
 	da_phi_r = _xr.DataArray(_phi.real, dims=('y',), coords={'y': nf * _y})
 	da_phi_i = _xr.DataArray(_phi.imag, dims=('y',), coords={'y': nf * _y})
 	da_dft_phi_r = _xrft.fft(da_phi_r, true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
 	da_dft_phi_i = _xrft.fft(da_phi_i, true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
 
-	if default:
+	if symmetry == 'even':
 		da_dft_phi_r = da_dft_phi_r.real.rename({'freq_y':'l'})
 		da_dft_phi_i = da_dft_phi_i.real.rename({'freq_y':'l'})
 	else:
@@ -100,6 +100,64 @@ def evolve_ds_modal_gaussian(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y,
 
 
 
+## definition of time-varying shear flows (jets)
+
+def time_reverse(_jet, _nt, _y, _t, _samp):
+	"""Takes a jet and adds time periodicity, which reverses its orientation periodically.
+	input:
+		_jet: 1d np.numpy array. For now, a jet.
+		_nt: frequency (how many time it reverses sign).
+		_y: 1d np.numpy array.
+		_t: 1d npumpy array. 
+		_samp: int, sampling. Discretizes a single period of the time-varying function.
+	"""
+	if _np.max(_y) == _np.pi:
+		nf = 2
+	elif _np.max(_y) == 2*_np.pi:
+		nf = 1
+
+	sig = _nt * 2*_np.pi  # periodicity of time-variation.
+	return sig
+
+
+def re_sample(ft, nt=0):
+    """Samples a time-periodic function and returns a new function of same length with discrete values sampled from the original periodic signal.
+    Input:
+        ft: time-periodic function. 1d numpy array.
+        nt: int. Defines how many values a periodic function can take between 0 and 1. nt=0 is default, and only values {-1, 0, 1} are considered. 
+            nt=1 implies {-1, -0.5, 0, 0.5, 1} are consideredm, and so on.
+    output:
+        nft: time-periodic function. 1d numpy array. same lenght as original, but with only discrete values sampled from {0, 1/i, i in nt>=1}.
+    """
+    KK = _np.arange(0, 1.000001, 1/(2**nt))
+    mids =[]
+    for i in range(1, len(KK)):
+        mids.append((KK[i] - KK[i-1]) / 2 + KK[i-1])
+
+    nft = _np.ones(_np.shape(ft))  # new function
+
+    for i in range(len(mids)):
+        if i == 0:
+            l = _np.where(abs(ft) < mids[i])[0]
+            nft[l] = KK[i]
+        else:
+            l = _np.where(_np.logical_and(ft <= mids[i], ft >= mids[i-1]))[0]
+            nft[l] = KK[i]
+        
+    # then last one
+    l = _np.where(ft > mids[-1])[0]
+    _nft[l] = KK[-1]
+
+
+    # now reverse sign
+    for i in range(1, len(mids)):
+        l = _np.where(_np.logical_and(ft <= -mids[i-1], ft >= -mids[i]))[0]
+        nft[l] = -KK[i]
+        
+    # then last one
+    l = _np.where(ft < -mids[-1])[0]
+    nft[l] = -KK[-1]
+    return nft
 
 
 
