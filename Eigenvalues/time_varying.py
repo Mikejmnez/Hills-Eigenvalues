@@ -121,15 +121,15 @@ def time_reverse(_jet, _nt, _y, _t, _samp):
 
 
 def re_sample(ft, nt=0):
-    """Samples a time-periodic function and returns a new function of same length with discrete values sampled from the original periodic signal.
-    Input:
-        ft: time-periodic function. 1d numpy array.
-        nt: int. Defines how many values a periodic function can take between 0 and 1. nt=0 is default, and only values {-1, 0, 1} are considered. 
-            nt=1 implies {-1, -0.5, 0, 0.5, 1} are consideredm, and so on.
-    output:
-        nft: time-periodic function. 1d numpy array. same lenght as original, but with only discrete values sampled from {0, 1/i, i in nt>=1}.
-    """
-	KK = _np.arange(0, 1.000001, 1/(2**nt))
+	"""Samples a time-periodic function and returns a new function of same length with discrete values sampled from the original periodic signal.
+	Input:
+		ft: time-periodic function. 1d numpy array.
+		nt: int. Defines how many values a periodic function can take between 0 and 1. nt=0 is default, and only values {-1, 0, 1} are considered. 
+			nt=1 implies {-1, -0.5, 0, 0.5, 1} are consideredm, and so on.
+	output:
+		nft: time-periodic function. 1d numpy array. same lenght as original, but with only discrete values sampled from {0, 1/i, i in nt>=1}.
+	"""
+	KK = _np.arange(0, 1.000001, 1 / (2**nt))
 	mids =[]
 	for i in range(1, len(KK)):
 		mids.append((KK[i] - KK[i-1]) / 2 + KK[i-1])
@@ -146,7 +146,7 @@ def re_sample(ft, nt=0):
 
     # then last one
 	l = _np.where(ft > mids[-1])[0]
-	_nft[l] = KK[-1]
+	nft[l] = KK[-1]
 
 
     # now reverse sign
@@ -158,20 +158,20 @@ def re_sample(ft, nt=0):
 	l = _np.where(ft < -mids[-1])[0]
 	nft[l] = -KK[-1]
 
-	vals = list(-KK[::-1]) + list(KK[1:])  ## all values
+	vals = list(-KK[::-1][:-1]) + list(KK)  ## all values
 
-	ivals = loc_vals(flip, vals)
+	ivals = loc_vals(nft, vals)
 
 	return nft, vals, ivals
 
 
 def loc_vals(_flip, _vals):
-    """returns an array of indices that reference the source its numerical value (i.e. to the value in _vals). The map from _vals to flip. 
-    """
+	"""returns an array of indices that reference the source its numerical value (i.e. to the value in _vals). The map from _vals to flip. 
+	"""
 	ind_vals = _np.nan*_np.ones(_np.shape(_flip))  # initial array of nans.
 	for i in range(len(_vals)):  # iterate over all values
 		l = _np.where(_flip == _vals[i])[0]
-		ind_vals[l] = i
+		ind_vals[l] = int(i)
 	return ind_vals
 
 
