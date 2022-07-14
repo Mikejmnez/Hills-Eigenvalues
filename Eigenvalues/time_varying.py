@@ -160,7 +160,9 @@ def re_sample(ft, nt=0):
 
 	vals = list(-KK[::-1]) + list(KK[1:])  ## all values
 
-	return nft, vals
+	ivals = loc_vals(flip, vals)
+
+	return nft, vals, ivals
 
 
 def loc_vals(_flip, _vals):
