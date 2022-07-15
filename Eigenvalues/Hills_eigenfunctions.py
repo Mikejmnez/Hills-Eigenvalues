@@ -200,7 +200,7 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
             (n, k, r).
     """
     coeffs = _np.array(coeffs)
-    q = (1j) * (2 * K * Pe)  # canonical parameter
+    q = (1j) * (2 * 2 * _np.pi * K * Pe)  # canonical parameter - note the scaling consistent with xrft
     if symmetry=='even':
         _eigv = 'A_2r'
         _eigs = 'a_2n'
