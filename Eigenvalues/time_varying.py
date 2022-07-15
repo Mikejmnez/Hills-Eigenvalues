@@ -169,13 +169,47 @@ def loc_vals(_flip, _vals):
 	"""returns an array of indices that reference the source its numerical value (i.e. to the value in _vals). The map from _vals to flip. 
 	"""
 	ind_vals = _np.nan*_np.ones(_np.shape(_flip))  # initial array of nans.
-	
+
 	for i in range(len(_vals)):  # iterate over all values
 		l = _np.where(_flip == _vals[i])[0]
 		ind_vals[l] = int(i)
 
 	_ivals = [int(i) for i in ind_vals]  # turn into a list of integers
 	return _ivals
+
+
+def indt_intervals(_ivals):
+	"""identifies the length of time that the tracer is advected by the same shear flow, which has
+	functional dependence that is piecewise constant in time. 
+	Input:
+		_ivals: list contanining the mapping of indexes. When two contiguous indexes are repeated, 
+			it implies shear flow is constant in time.
+		N: int. Number of steady flows that approximate a time varying flow.
+	output:
+		indt: list. len(indt) = N. Each element is an pair of [start,end] time indexes.
+		
+	"""
+	ll = _np.where(abs(_np.array(_ivals)[1:] - _np.array(_ivals)[:-1])==1)[0]
+	Nf = len(ll) + 1
+
+	t0 = 0
+	indt = []
+	for jj in range(Nflats):
+		for kk in range(t0, len(ivals)-1):
+			if ivals[kk] != ivals[kk+1]:  # only when two continuous indexes are different, stop. test this
+				indt.append([t0, kk+1])
+				break
+		t0 = kk + 1
+	t0 = indt[-1][-1]
+	tf = len(ivals)
+	return indt
+
+
+
+
+
+
+
 
 
 
