@@ -56,7 +56,21 @@ def test_re_sample(ft, nt, expected):
 	assert max(ivals) + 1 == len(vals)
 
 
-
+@pytest.mark.parametrize(
+	"ft, nt",
+	[
+		(sine_func, 0),
+		(sine_func, 1),
+		(sine_func, 2),
+		(sine_func, 5),
+	]
+)
+def test_loc_vals(ft, nt):
+	""" tests items so that there are no nans in ivals. This array is initialized as all nans.
+	"""
+	nft, vals, ivals = re_sample(ft, nt)  # iterate through nt to increase the approx
+	ivals = loc_vals(nft, vals)  # this is a double calculation. But calls directly loc_vals.
+	assert _np.isnan(ivals).all() == False
 
 
 
