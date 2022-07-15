@@ -73,4 +73,19 @@ def test_loc_vals(ft, nt):
 	assert _np.isnan(ivals).all() == False
 
 
+# @pytest.mark.parametrize(
+# 	"ft, nt",
+# 	[
+# 		(sine_func, 0),
+# 		(sine_func, 1),
+# 		(sine_func, 2),
+# 		(sine_func, 5),
+# 	]
+# )
+# def test_indt_intervals(ft, nt):
+# 	""" test that output is consistent.
+# 	"""
+	
+
+
 
