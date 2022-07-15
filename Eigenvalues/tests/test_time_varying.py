@@ -77,9 +77,9 @@ def test_loc_vals(ft, nt):
 	"ft, nt",
 	[
 		(sine_func, 0),
-		(_np.cos(4*np.pi*np.linspace(0, 1, 10)), 0),
-		(_np.cos(4*np.pi*np.linspace(0, 1, 50)), 0),
-		(_np.cos(4*np.pi*np.linspace(0, 1, 9)), 0),
+		(_np.cos(4*_np.pi*_np.linspace(0, 1, 10)), 0),
+		(_np.cos(4*_np.pi*_np.linspace(0, 1, 50)), 0),
+		(_np.cos(4*_np.pi*_np.linspace(0, 1, 9)), 0),
 		(sine_func, 1),
 		(sine_func, 2),
 		(sine_func, 5),
@@ -89,15 +89,15 @@ def test_indt_intervals(ft, nt):
 	""" test that output is consistent.
 	"""
 	nft, vals, ivals = re_sample(ft, nt)
-	indft = indt_intervals(ivals)
-	assert indft[-1][-1] == len(nft)
+	indt = indt_intervals(ivals)
+	assert indt[-1][-1] == len(nft)
 	for i in range(len(indt)-1):
 		assert indt[i][-1] == indt[i + 1][0] # so data is continuosly sampled
 
 	for i in range(len(indt)):
-    	sample = ivals[indt[0][0]:indt[0][1]][0]
-    	nlist = [ans(kk - sample) for kk in ivals[indt[0][0]:indt[0][1]]]
-    	assert 0 == max(nlist)  # assert all elements are the same
+		sample = ivals[indt[0][0]:indt[0][1]][0]
+		nlist = [abs(kk - sample) for kk in ivals[indt[0][0]:indt[0][1]]]
+		assert 0 == max(nlist)  # assert all elements are the same
 
 
 
