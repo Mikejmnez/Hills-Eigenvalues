@@ -194,14 +194,14 @@ def indt_intervals(_ivals):
 
 	t0 = 0
 	indt = []
-	for jj in range(Nflats):
-		for kk in range(t0, len(ivals)-1):
-			if ivals[kk] != ivals[kk+1]:  # only when two continuous indexes are different, stop. test this
+	for jj in range(Nf):
+		for kk in range(t0, len(_ivals)-1):
+			if _ivals[kk] != _ivals[kk+1]:  # only when two continuous indexes are different, stop. test this
 				indt.append([t0, kk+1])
 				break
 		t0 = kk + 1
 	t0 = indt[-1][-1]
-	tf = len(ivals)
+	tf = len(_ivals)
 	indt.append([t0, tf])
 	return indt
 
