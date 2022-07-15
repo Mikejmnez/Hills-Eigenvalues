@@ -37,19 +37,22 @@ def test_re_sample_convergence(ft, nt, expected):
 	assert _np.round(delf, 3) == expected
 
 
-# @pytest.mark.parametrize(
-# 	"ft, nt, expected",
-# 	[
-# 		(_np.sin((2*_np.pi)*t), 0, 0.486),
-# 		(_np.sin((2*_np.pi)*t), 1, 0.249),
-# 		(_np.sin((2*_np.pi)*t), 2, 0.123),
-# 		(_np.sin((2*_np.pi)*t), 5, 0.015),
-# 	]
-# )
-# def test_re_sample(ft, nt, expected):
-# 	""" tests convergenve of approximation.
-# 	"""
-# 	nft, vals, ivals = re_sample(ft, nt)  # iterate through nt to increase the approx
+@pytest.mark.parametrize(
+	"ft, nt, expected",
+	[
+		(_np.sin((2*_np.pi)*t), 0, [-1.0, 0, 1.0]),
+		(_np.sin((2*_np.pi)*t), 1, [-1, -0.5, 0, 0.5, 1.0]),
+		(_np.sin((2*_np.pi)*t), 2, [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1]),
+		(_np.sin((2*_np.pi)*t), 5, list(_np.arange(-1, 1.01, 1/(2**5)))),
+	]
+)
+
+def test_re_sample(ft, nt, expected):
+	""" tests coefficients in vals. this approximate a sin fn.
+	"""
+	nft, vals, ivals = re_sample(ft, nt)  # iterate through nt to increase the approx
+	assert vals == expected
+	assert max(ivals) + 1 == len(vals)
 
 
 
