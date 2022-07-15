@@ -202,6 +202,7 @@ def indt_intervals(_ivals):
 		t0 = kk + 1
 	t0 = indt[-1][-1]
 	tf = len(ivals)
+	indt.append([t0, tf])
 	return indt
 
 
