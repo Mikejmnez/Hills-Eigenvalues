@@ -2961,7 +2961,8 @@ def complement_dot(_gauss_alps, _ds_As):
     if _Nr < _Nt:
         _coeffs_alps = copy.deepcopy(_gauss_alps[_Nr:])
         _coeffs_alps = _coeffs_alps.rename({'r':'n'})
-        _coeffs_alps = _coeffs_alps.expand_dims({'k':_K})
+        if 'k' not in _coeffs_alps.dims:
+            _coeffs_alps = _coeffs_alps.expand_dims({'k':_K})
         _coeffs_alps = _ndAs.combine_first(_coeffs_alps)
     else:
         _coeffs_alps = _ndAs
