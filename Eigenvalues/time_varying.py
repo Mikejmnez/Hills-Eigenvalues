@@ -158,7 +158,7 @@ def re_sample(ft, nt=0):
 	l = _np.where(ft < -mids[-1])[0]
 	nft[l] = -KK[-1]
 
-	vals = list(-KK[::-1][:-1]) + list(KK)  ## all values
+	vals = list(-KK[::-1][:-1]) + list(KK)  ## all values - order with phase of nft
 
 	ivals = loc_vals(nft, vals)
 
@@ -205,6 +205,16 @@ def indt_intervals(_ivals):
 	indt.append([t0, tf])
 	return indt
 
+
+def get_order(_nft, _indt, _vals):
+	""" returns the maping from _vals (all possible values) into _nft, the time-oscillating
+	piece-wise constant approximation to a continuous periodic fn.
+	"""
+	ordered_ind = []
+	for i in range(len(_indt)):
+		el = _nft[_indt[i][0]:_indt[i][1]][0] 
+		ordered_ind.append(_np.where(_np.array(_vals) == el)[0][0])
+	return ordered_ind
 
 
 
