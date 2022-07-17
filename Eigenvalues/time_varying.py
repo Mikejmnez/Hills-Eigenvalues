@@ -24,39 +24,47 @@ def coeff_project(_phi, _y, symmetry='even'):
 		coeffs = 1D np.array. Complex.
 
 	"""
-	if _np.max(_y) == _np.pi:
-		nf = 2
-	elif _np.max(_y) == 2*_np.pi:
-		nf = 1
 
-	fac = _np.pi  # divides the Fourier coefficients (xrft scales them).
+	fac = _np.pi/2  # divides the Fourier coefficients (xrft scales them).
 
 	L = len(_y)  # number of wavenumbers
 	if (L - 1) % 2 == 0:  # number should be odd.
 		nL = int((L - 1) / 2)
 
-	da_phi_r = _xr.DataArray(_phi.real, dims=('y',), coords={'y': nf * _y})
-	da_phi_i = _xr.DataArray(_phi.imag, dims=('y',), coords={'y': nf * _y})
-	da_dft_phi_r = _xrft.fft(da_phi_r, true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
-	da_dft_phi_i = _xrft.fft(da_phi_i, true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
+	da_phi_r = _xr.DataArray(_phi.real, dims=_phi.dims, coords=_phi.coords)
+	da_phi_i = _xr.DataArray(_phi.imag, dims=_phi.dims, coords=_phi.coords)
+	da_dft_phi_r = _xrft.fft(da_phi_r, dim='y', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
+	da_dft_phi_i = _xrft.fft(da_phi_i, dim='y', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
 
 	if symmetry == 'even':
-		da_dft_phi_r = da_dft_phi_r.real.rename({'freq_y':'l'})
-		da_dft_phi_i = da_dft_phi_i.real.rename({'freq_y':'l'})
+		da_dft_phi_r = da_dft_phi_r.real.rename({'freq_y':'r'})
+		da_dft_phi_i = da_dft_phi_i.real.rename({'freq_y':'r'})
 	else:
-		da_dft_phi_r = da_dft_phi_r.rename({'freq_y':'l'})
-		da_dft_phi_i = da_dft_phi_i.rename({'freq_y':'l'})
+		da_dft_phi_r = da_dft_phi_r.rename({'freq_y':'r'})
+		da_dft_phi_i = da_dft_phi_i.rename({'freq_y':'r'})
 
-	gauss_alphs_a = list(da_dft_phi_r.isel(l=slice(nL,-1)).data/fac) + [da_dft_phi_r.data[-1]/fac]
-	gauss_alphs_a[0] = gauss_alphs_a[0] / 2
+	if len(da_dft_phi_r.dims) == 2:
+		gauss_alphs_a = copy.deepcopy(da_dft_phi_r[:, nL:])
+		gauss_alphs_a.data = gauss_alphs_a.data / fac
+		gauss_alphs_a.data[:, 0] = gauss_alphs_a.data[:, 0] / 2
 
-	gauss_alphs_b = list(da_dft_phi_i.isel(l=slice(nL,-1)).data/fac) + [da_dft_phi_i.data[-1]/fac]
-	gauss_alphs_b[0] = gauss_alphs_b[0] / 2
-    
-	rcoords = {'r':range(len(gauss_alphs_b))}
-	gauss_alpsA = _xr.DataArray(gauss_alphs_a, coords=rcoords, dims='r')
-	gauss_alpsB = _xr.DataArray(gauss_alphs_b, coords=rcoords, dims='r')
-	gauss_coeffs = gauss_alpsA + (1j)*gauss_alpsB
+		gauss_alphs_b = copy.deepcopy(da_dft_phi_i[:, nL:])
+		gauss_alphs_b.data = gauss_alphs_b.data / fac
+		gauss_alphs_b.data[:, 0] = gauss_alphs_b.data[:, 0] / 2
+	else:
+		gauss_alphs_A = list(da_dft_phi_r.isel(r=slice(nL,-1)).data/fac) + [da_dft_phi_r.data[-1]/fac]
+		gauss_alphs_A[0] = gauss_alphs_A[0] / 2
+		rcoords = {'r':range(len(gauss_alphs_A))}
+		gauss_alphs_a = _xr.DataArray(gauss_alphs_A, coords=rcoords, dims='r')
+
+
+		gauss_alphs_B = list(da_dft_phi_i.isel(r=slice(nL,-1)).data/fac) + [da_dft_phi_i.data[-1]/fac]
+		gauss_alphs_B[0] = gauss_alphs_B[0] / 2
+		gauss_alphs_b = _xr.DataArray(gauss_alphs_B, coords=rcoords, dims='r')
+
+	gauss_coeffs = gauss_alphs_a + (1j)*gauss_alphs_b
+	gauss_coeffs.r.data = _np.round(gauss_coeffs.r.data * _np.pi)
+
 	return gauss_coeffs
 
 
@@ -88,15 +96,38 @@ def evolve_ds_modal_gaussian(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y,
     ndAs = complement_dot(_facs * _gauss_alps, _dAs)  # has final size in n (sum in p)
     for i in range(len(_time)):
         exp_arg =  (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-        if Nr < len(_facs):  # Is this necessary?
-            PHI2n = _xr.dot(ndAs.isel(n=slice(Nr)), _dAs['phi_2n'].isel(n=slice(Nr)) * _np.exp(-(0.25*_dAs['a_2n'].isel(n=slice(Nr)) + exp_arg)*(_time[i]-_tf)), dims='n')
-            PHI2n = PHI2n + _xr.dot(ndAs[Nr:], _dAs['phi_2n'][Nr:] * _np.exp(-(0.25*_dAs['a_2n'][Nr:] + exp_arg)*(_time[i]-_tf)), dims='n')
-        else:
-            PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i]-_tf)), dims='n')
+        # if Nr < len(_facs):  # Is this necessary?
+        #     PHI2n = _xr.dot(ndAs.isel(n=slice(Nr)), _dAs['phi_2n'].isel(n=slice(Nr)) * _np.exp(-(0.25*_dAs['a_2n'].isel(n=slice(Nr)) + exp_arg)*(_time[i]-_tf)), dims='n')
+        #     PHI2n = PHI2n + _xr.dot(ndAs[Nr:], _dAs['phi_2n'][Nr:] * _np.exp(-(0.25*_dAs['a_2n'][Nr:] + exp_arg)*(_time[i]-_tf)), dims='n')
+        # else:
+        PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i]-_tf)), dims='n')
         PHI2n = PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
         T0 = (PHI2n * _np.exp((2*_np.pi* _K * _X) * (1j))).real
         ds['Theta'].data[i, :, :] = T0.data
-    return ds, PHI2n.isel(x=0).drop_vars({'x', 'k'})  # return the eigenfunction sum
+    return ds, PHI2n.isel(x=0).drop_vars({'x'})  # return the eigenfunction sum
+
+
+def evolve_ds_double_gaussian_time_varying(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_alps, __facs, _x, _y, _t, _tf=0):
+    """Constructs the solution to the IVP"""
+    ## Initialize the array.
+    coords = {"time": _t, "y": 2 * _y, "x": _x}
+    Temp = xr.DataArray(np.nan, coords=coords, dims=["time", 'y', 'x'])
+    ds = xr.Dataset({'Theta': Temp})
+    Nr = len(dAs.n) # length of truncated array
+#     ndAs = complement_dot(facs*gauss_alps, dAs)  # has final size in n (sum in p)
+    ndAs = xr.dot(facs*gauss_alps,  dAs['A_2r'], dims='r')
+    for i in range(len(t)):
+        exp_arg =  (1j)*alpha0*(2*np.pi*K)*Pe + (2*np.pi*K)**2
+#         if Nr < len(facs):
+#             PHI2n = xr.dot(ndAs.isel(n=slice(Nr)), dAs['phi_2n'].isel(n=slice(Nr)) * np.exp(-(0.25*dAs['a_2n'].isel(n=slice(Nr)) + exp_arg)*t[i]), dims='n')
+#             PHI2n = PHI2n + xr.dot(ndAs[Nr:], dAs['phi_2n'][Nr:] * np.exp(-(0.25*dAs['a_2n'][Nr:] + exp_arg)*t[i]), dims='n')
+#         else:
+        PHI2n = xr.dot(ndAs, dAs['phi_2n'] * np.exp(-(0.25*dAs['a_2n'] + exp_arg)*(t[i] - tf)), dims='n')
+        T0 = xrft.ifft(da_xrft * PHI2n, dim='k', true_phase=True, true_amplitude=True).real # Signal in direct space
+        nT0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
+        ds['Theta'].data[i, :, :] = nT0.data
+    return ds, PHI2n
+
 
 
 
