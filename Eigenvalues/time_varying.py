@@ -153,7 +153,7 @@ def evolve_ds_off(_dAs, _dBs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _b_al
     	T0 = _xrft.ifft(_da_xrft * _PHI2n, dim='k', true_phase=True, true_amplitude=True).real
     	nT0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
     	ds['Theta'].data[i, :, :] = nT0.data
-    return ds
+    return ds, _PHI2n
 
 
 
