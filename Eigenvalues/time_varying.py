@@ -44,32 +44,37 @@ def coeff_project(_phi, _y, symmetry='even'):
 		da_dft_phi_i = da_dft_phi_i.rename({'freq_y':'r'})
 
 	if len(da_dft_phi_r.dims) == 2:
-		gauss_alphs_a = copy.deepcopy(da_dft_phi_r[:, nL:])
-		gauss_alphs_a.data = gauss_alphs_a.data / fac
-		gauss_alphs_a.data[:, 0] = gauss_alphs_a.data[:, 0] / 2
+		gauss_alphs_A = copy.deepcopy(da_dft_phi_r[:, nL:])
+		gauss_alphs_A.data = gauss_alphs_A.data / fac
+		gauss_alphs_A.data[:, 0] = gauss_alphs_A.data[:, 0] / 2
 
-		gauss_alphs_b = copy.deepcopy(da_dft_phi_i[:, nL:])
-		gauss_alphs_b.data = gauss_alphs_b.data / fac
-		gauss_alphs_b.data[:, 0] = gauss_alphs_b.data[:, 0] / 2
+		gauss_alphs_B = copy.deepcopy(da_dft_phi_i[:, nL:])
+		gauss_alphs_B.data = gauss_alphs_B.data / fac
+		gauss_alphs_B.data[:, 0] = gauss_alphs_B.data[:, 0] / 2
+
+		coords = {'r':range(len(gauss_alphs_A.r)), 'k':gauss_alphs_A.k.data}
+
 	else:
 		gauss_alphs_A = list(da_dft_phi_r.isel(r=slice(nL,-1)).data/fac) + [da_dft_phi_r.data[-1]/fac]
 		gauss_alphs_A[0] = gauss_alphs_A[0] / 2
-		rcoords = {'r':range(len(gauss_alphs_A))}
-		gauss_alphs_a = _xr.DataArray(gauss_alphs_A, coords=rcoords, dims='r')
+		coords = {'r':range(len(gauss_alphs_A))}
 
 
 		gauss_alphs_B = list(da_dft_phi_i.isel(r=slice(nL,-1)).data/fac) + [da_dft_phi_i.data[-1]/fac]
 		gauss_alphs_B[0] = gauss_alphs_B[0] / 2
-		gauss_alphs_b = _xr.DataArray(gauss_alphs_B, coords=rcoords, dims='r')
+
+	gauss_alphs_a = _xr.DataArray(gauss_alphs_A, coords=coords, dims=gauss_alphs_A.dims)
+	gauss_alphs_b = _xr.DataArray(gauss_alphs_B, coords=coords, dims=gauss_alphs_B.dims)
 
 	gauss_coeffs = gauss_alphs_a + (1j)*gauss_alphs_b
-	gauss_coeffs.r.data = _np.round(gauss_coeffs.r.data * _np.pi)
+	# gauss_coeffs.r.data = _np.round(gauss_coeffs.r.data)  # round?
 
 	return gauss_coeffs
 
 
 def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _X, _Y, _time, _tf=0):
     """Constructs the modal solution to the IVP with uniform cross-jet initial condition """
+    # something wrong is hapenning?
     coords = {"t": copy.deepcopy(_time),
               "y": 2 * _Y[:, 0],
               "x": _X[0, :]}
@@ -77,7 +82,8 @@ def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _X, _Y, _time, _tf=0):
     ds = _xr.Dataset({'Theta': Temp})
     for i in range(len(_time)):
         exp_arg = (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-        PHI2n = _xr.dot(2*_dAs['A_2r'].isel(r=0), _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i]-_tf)), dims='n')
+        ndAs = 2*_dAs['A_2r'].isel(r=0)
+        PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i]-_tf)), dims='n')
         PHI2n = PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
         T0 = (PHI2n * _np.exp((2*_np.pi* _K * _X) * (1j))).real
         ds['Theta'].data[i, :, :] = T0.data
@@ -107,23 +113,22 @@ def evolve_ds_modal_gaussian(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y,
     return ds, PHI2n.isel(x=0).drop_vars({'x'})  # return the eigenfunction sum
 
 
-def evolve_ds_double_gaussian_time_varying(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_alps, __facs, _x, _y, _t, _tf=0):
+def evolve_ds_gaussian_time_oscillate(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _time, _tf=0):
     """Constructs the solution to the IVP"""
     ## Initialize the array.
-    coords = {"time": _t, "y": 2 * _y, "x": _x}
-    Temp = xr.DataArray(np.nan, coords=coords, dims=["time", 'y', 'x'])
-    ds = xr.Dataset({'Theta': Temp})
-    Nr = len(dAs.n) # length of truncated array
-#     ndAs = complement_dot(facs*gauss_alps, dAs)  # has final size in n (sum in p)
-    ndAs = xr.dot(facs*gauss_alps,  dAs['A_2r'], dims='r')
-    for i in range(len(t)):
-        exp_arg =  (1j)*alpha0*(2*np.pi*K)*Pe + (2*np.pi*K)**2
+    coords = {"t": _time, "y": 2 * _y, "x": _x}
+    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x'])
+    ds = _xr.Dataset({'Theta': Temp})
+    Nr = len(_dAs.n) # length of truncated array
+    ndAs = complement_dot(_facs*_gauss_alps, _dAs)  # has final size in n (sum in p)
+    for i in range(len(_time)):
+        exp_arg =  (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
 #         if Nr < len(facs):
 #             PHI2n = xr.dot(ndAs.isel(n=slice(Nr)), dAs['phi_2n'].isel(n=slice(Nr)) * np.exp(-(0.25*dAs['a_2n'].isel(n=slice(Nr)) + exp_arg)*t[i]), dims='n')
 #             PHI2n = PHI2n + xr.dot(ndAs[Nr:], dAs['phi_2n'][Nr:] * np.exp(-(0.25*dAs['a_2n'][Nr:] + exp_arg)*t[i]), dims='n')
 #         else:
-        PHI2n = xr.dot(ndAs, dAs['phi_2n'] * np.exp(-(0.25*dAs['a_2n'] + exp_arg)*(t[i] - tf)), dims='n')
-        T0 = xrft.ifft(da_xrft * PHI2n, dim='k', true_phase=True, true_amplitude=True).real # Signal in direct space
+        PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i] - _tf)), dims='n')
+        T0 = _xrft.ifft(_da_xrft * PHI2n, dim='k', true_phase=True, true_amplitude=True).real # Signal in direct space
         nT0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
         ds['Theta'].data[i, :, :] = nT0.data
     return ds, PHI2n
