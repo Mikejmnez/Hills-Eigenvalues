@@ -63,8 +63,8 @@ def coeff_project(_phi, _y, symmetry='even'):
 		gauss_alphs_B = list(da_dft_phi_i.isel(r=slice(nL,-1)).data/fac) + [da_dft_phi_i.data[-1]/fac]
 		gauss_alphs_B[0] = gauss_alphs_B[0] / 2
 
-	gauss_alphs_a = _xr.DataArray(gauss_alphs_A, coords=coords, dims=gauss_alphs_A.dims)
-	gauss_alphs_b = _xr.DataArray(gauss_alphs_B, coords=coords, dims=gauss_alphs_B.dims)
+	gauss_alphs_a = _xr.DataArray(gauss_alphs_A, coords=coords, dims=da_dft_phi_r.dims)
+	gauss_alphs_b = _xr.DataArray(gauss_alphs_B, coords=coords, dims=da_dft_phi_r.dims)
 
 	gauss_coeffs = gauss_alphs_a + (1j)*gauss_alphs_b
 	# gauss_coeffs.r.data = _np.round(gauss_coeffs.r.data)  # round?
