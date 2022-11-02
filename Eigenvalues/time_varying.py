@@ -113,7 +113,8 @@ def evolve_ds_modal_gaussian(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y,
     return ds, PHI2n.isel(x=0).drop_vars({'x'})  # return the eigenfunction sum
 
 
-def evolve_ds_gaussian_time_oscillate(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _time, _tf=0):
+
+def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _time, _tf=0):
     """Constructs the solution to the IVP"""
     ## Initialize the array.
     coords = {"t": _time, "y": 2 * _y, "x": _x}
@@ -123,10 +124,10 @@ def evolve_ds_gaussian_time_oscillate(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_a
     ndAs = complement_dot(_facs*_gauss_alps, _dAs)  # has final size in n (sum in p)
     for i in range(len(_time)):
         exp_arg =  (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-#         if Nr < len(facs):
-#             PHI2n = xr.dot(ndAs.isel(n=slice(Nr)), dAs['phi_2n'].isel(n=slice(Nr)) * np.exp(-(0.25*dAs['a_2n'].isel(n=slice(Nr)) + exp_arg)*t[i]), dims='n')
-#             PHI2n = PHI2n + xr.dot(ndAs[Nr:], dAs['phi_2n'][Nr:] * np.exp(-(0.25*dAs['a_2n'][Nr:] + exp_arg)*t[i]), dims='n')
-#         else:
+        # if Nr < len(_facs):  # Is this necessary?
+        #     PHI2n = _xr.dot(ndAs.isel(n=slice(Nr)), _dAs['phi_2n'].isel(n=slice(Nr)) * _np.exp(-(0.25*_dAs['a_2n'].isel(n=slice(Nr)) + exp_arg)*(_time[i]-_tf)), dims='n')
+        #     PHI2n = PHI2n + _xr.dot(ndAs[Nr:], _dAs['phi_2n'][Nr:] * _np.exp(-(0.25*_dAs['a_2n'][Nr:] + exp_arg)*(_time[i]-_tf)), dims='n')
+        # else:
         PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i] - _tf)), dims='n')
         T0 = _xrft.ifft(_da_xrft * PHI2n, dim='k', true_phase=True, true_amplitude=True).real # Signal in direct space
         nT0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
@@ -134,6 +135,52 @@ def evolve_ds_gaussian_time_oscillate(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_a
     return ds, PHI2n
 
 
+
+def evolve_ds_modal_time(_DAS, _indt, _order, _vals, _K0, _ALPHA0, _Pe, _gauss_alps, _facs, _X, _Y, _time):
+	"""
+	Evolve an initial condition defined in Fourier space by its y-F. coefficients, and the along-flow wavenumber k.
+
+	Input:
+		_DAS : List. each element contains a reference to the spectrum of the advection diffusion operator.
+		_indt: index in time.
+		_order:
+		_vals:
+
+	"""
+	DS = []
+	ncoeffs = copy.deepcopy(_gauss_alps)
+	for i in range(len(_indt)):
+		ds, phi = evolve_ds_modal_gaussian(_DAS[_order[i]], _K0, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _X, _Y, _time[_indt[i][0]:_indt[i][1]], _time[_indt[i][0]])
+		DS.append(ds)
+		ncoeffs  = coeff_project(phi, _Y[:, 0])
+	
+	for i in range(len(DS)):
+		if i ==0:
+			ds_f = DS[i]
+		else:
+			ds_f = ds_f.combine_first(DS[i])
+	
+	return ds_f
+
+
+def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gauss_alps, _facs, _x, _y, _time):
+	"""
+	evolves a localized initial condition defined by its 2d Fourier coefficients.
+	"""
+	DS = []
+	ncoeffs = copy.deepcopy(_gauss_alps)
+	for i in range(len(_indt)):
+		ds, Phi2n = evolve_ds(_DAS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _time[_indt[i][0]:_indt[i][1]], _time[_indt[i][0]])
+		DS.append(ds)
+		ncoeffs  = coeff_project(Phi2n, _y)
+    
+	for i in range(len(DS)):
+		if i ==0:
+			ds_f = DS[i]
+		else:
+			ds_f = ds_f.combine_first(DS[i])
+
+	return ds_f
 
 
 ## definition of time-varying shear flows (jets)
