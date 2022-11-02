@@ -11,65 +11,60 @@ import xrft as _xrft
 
 
 
-
-def coeff_project(_phi, _y, symmetry='even'):
-	"""Takes a 1D-array and returns the Fourier coefficients that reproduce phi.
+def coeff_project(_phi, _y, shift=False):
+	"""Takes a numpy-array and returns the even and odd Fourier coefficients that together,
+		recreate the original function as a Fourier series.
 
 	Input:
 		_phi: 1D np.array, complex. phi=phi(y)
 		_y: np.array.
-		symmetry: string. default is 'even'. If default then _phi has only real Fourier coefficients
-			and the Fourier series is even.
+		shift: fase shift - to be added later. 
+
 	output:
-		coeffs = 1D np.array. Complex.
-
+		even_coeffs = Even coefficients.
+		odd_coeffs = Odd coefficients
 	"""
-
-	fac = _np.pi/2  # divides the Fourier coefficients (xrft scales them).
+	
+	fac = _np.pi / 2   # divides the Fourier coefficients (xrft scales them).
+					   # factor o 1/2 because domain is y\in [0, \pi].
 
 	L = len(_y)  # number of wavenumbers
 	if (L - 1) % 2 == 0:  # number should be odd.
 		nL = int((L - 1) / 2)
 
-	da_phi_r = _xr.DataArray(_phi.real, dims=_phi.dims, coords=_phi.coords)
-	da_phi_i = _xr.DataArray(_phi.imag, dims=_phi.dims, coords=_phi.coords)
-	da_dft_phi_r = _xrft.fft(da_phi_r, dim='y', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
-	da_dft_phi_i = _xrft.fft(da_phi_i, dim='y', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
+	da_phi = _xr.DataArray(_phi, dims=_phi.dims, coords=_phi.coords)
+	da_dft_phi = _xrft.fft(da_phi, dim='y', true_phase=True, true_amplitude=True)
+	da_dft_phi = da_dft_phi.rename({'freq_y':'r'})
 
-	if symmetry == 'even':
-		da_dft_phi_r = da_dft_phi_r.real.rename({'freq_y':'r'})
-		da_dft_phi_i = da_dft_phi_i.real.rename({'freq_y':'r'})
-	else:
-		da_dft_phi_r = da_dft_phi_r.rename({'freq_y':'r'})
-		da_dft_phi_i = da_dft_phi_i.rename({'freq_y':'r'})
+	_dims = da_dft_phi.dims
+    
+	if len(da_dft_phi.dims) == 1:  # no k dependence 
 
-	if len(da_dft_phi_r.dims) == 2:
-		gauss_alphs_A = copy.deepcopy(da_dft_phi_r[:, nL:])
-		gauss_alphs_A.data = gauss_alphs_A.data / fac
-		gauss_alphs_A.data[:, 0] = gauss_alphs_A.data[:, 0] / 2
+		e_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data + da_dft_phi.isel(r=slice(0, nL+1)).data[::-1]) / fac
+		e_coeffs[0] = e_coeffs[0] / 2
+		o_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data - da_dft_phi.isel(r=slice(0, nL+1)).data[::-1]) / (-1j * fac)
 
-		gauss_alphs_B = copy.deepcopy(da_dft_phi_i[:, nL:])
-		gauss_alphs_B.data = gauss_alphs_B.data / fac
-		gauss_alphs_B.data[:, 0] = gauss_alphs_B.data[:, 0] / 2
+		e_coords = {'r':range(len(e_coeffs))}
+		o_coords = {'r':range(len(o_coeffs) - 1)}
 
-		coords = {'r':range(len(gauss_alphs_A.r)), 'k':gauss_alphs_A.k.data}
+		odd_coeffs = _xr.DataArray(o_coeffs[1:].real, coords=o_coords, dims=_dims)
 
-	else:
-		gauss_alphs_A = list(da_dft_phi_r.isel(r=slice(nL,-1)).data/fac) + [da_dft_phi_r.data[-1]/fac]
-		gauss_alphs_A[0] = gauss_alphs_A[0] / 2
-		coords = {'r':range(len(gauss_alphs_A))}
+	elif len(da_dft_phi.dims) == 2:
+
+		e_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data + da_dft_phi.isel(r=slice(0, nL+1)).data[:, ::-1]) / fac
+		e_coeffs[:, 0] = e_coeffs[:, 0] / 2
+
+		o_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data - da_dft_phi.isel(r=slice(0, nL+1)).data[:, ::-1]) / (-1j * fac)
+
+		e_coords = {'k': da_phi['k'].data, 'r':range(len(e_coeffs[0, :]))}
+		o_coords = {'k': da_phi['k'].data, 'r':range(len(o_coeffs[0, :]) - 1)}
+
+		odd_coeffs = _xr.DataArray(o_coeffs[:, 1:].real, coords=o_coords, dims=_dims)
 
 
-		gauss_alphs_B = list(da_dft_phi_i.isel(r=slice(nL,-1)).data/fac) + [da_dft_phi_i.data[-1]/fac]
-		gauss_alphs_B[0] = gauss_alphs_B[0] / 2
+	even_coeffs = _xr.DataArray(e_coeffs.real, coords=e_coords, dims=_dims)
 
-	gauss_alphs_a = _xr.DataArray(gauss_alphs_A, coords=coords, dims=da_dft_phi_r.dims)
-	gauss_alphs_b = _xr.DataArray(gauss_alphs_B, coords=coords, dims=da_dft_phi_r.dims)
-
-	gauss_coeffs = gauss_alphs_a + (1j)*gauss_alphs_b
-	# gauss_coeffs.r.data = _np.round(gauss_coeffs.r.data)  # round?
-
-	return gauss_coeffs
+	return even_coeffs, odd_coeffs
 
 
 def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _X, _Y, _time, _tf=0):
