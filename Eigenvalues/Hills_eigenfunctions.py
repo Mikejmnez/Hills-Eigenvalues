@@ -215,11 +215,11 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
         q = q[lll]
         R = _np.round(_np.sqrt(50 * (q.imag) * abs(coeffs[0]) / 4))
         Rmax = int(_np.max(R))
-        ll = _np.where(R < 50)[0]
-        R[ll] = 50 # set minimum value
-        if Rmax < 50:  # case where q is very small and Rmax is less than (arbitrary) minimum
-            Rmax = 50  # always set the minimum size of matrix
+        if Rmax < 75:  # case where q is very small and Rmax is less than (arbitrary) minimum
+            Rmax = 75  # always set the minimum size of matrix
         N = Rmax + 5
+        ll = _np.where(R < Rmax)[0]
+        R[ll] = Rmax # set minimum value
     
     As_ds = phi_array(N, K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
 
