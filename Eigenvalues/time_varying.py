@@ -11,7 +11,7 @@ import xrft as _xrft
 
 
 
-def coeff_project(_phi, _y, shift=False):
+def coeff_project(_phi, _y, dim='y', shift=False):
 	"""Takes a numpy-array and returns the even and odd Fourier coefficients that together,
 		recreate the original function as a Fourier series.
 
