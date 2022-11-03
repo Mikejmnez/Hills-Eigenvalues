@@ -131,7 +131,7 @@ def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _tim
 
 
 
-def evolve_ds_off(_dAs, _dBs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _x, _y, _t):
+def evolve_ds_off(_dAs, _dBs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _x, _y, _t, _tf=0):
     """Constructs the solution to the IVP"""
     ## Initialize the array
     coords = {"time": _t, "y": 2 * _y, "x": _x}
@@ -142,8 +142,8 @@ def evolve_ds_off(_dAs, _dBs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _b_al
     for i in range(len(_t)):
     	arg_e = 0.25*_dAs['a_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
     	arg_o = 0.25*_dBs['b_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-    	_PHI2n_e = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg_e*_t[i]), dims='n')
-    	_PHI2n_o = _xr.dot(_ndBs, _dBs['phi_2n'] * _np.exp(- arg_o*_t[i]), dims='n')
+    	_PHI2n_e = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg_e*(_t[i] - _tf)), dims='n')
+    	_PHI2n_o = _xr.dot(_ndBs, _dBs['phi_2n'] * _np.exp(- arg_o*(_t[i] - _tf)), dims='n')
     	_PHI2n = _PHI2n_e + _PHI2n_o
     	T0 = _xrft.ifft(_da_xrft * _PHI2n, dim='k', true_phase=True, true_amplitude=True).real
     	nT0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
@@ -168,7 +168,7 @@ def evolve_ds_modal_time(_DAS, _indt, _order, _vals, _K0, _ALPHA0, _Pe, _gauss_a
 	for i in range(len(_indt)):
 		ds, phi = evolve_ds_modal_gaussian(_DAS[_order[i]], _K0, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _X, _Y, _time[_indt[i][0]:_indt[i][1]], _time[_indt[i][0]])
 		DS.append(ds)
-		ncoeffs  = coeff_project(phi, _Y[:, 0])
+		ncoeffs, odd_coeffs  = coeff_project(phi, _Y[:, 0])
 	
 	for i in range(len(DS)):
 		if i ==0:
@@ -188,7 +188,7 @@ def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gaus
 	for i in range(len(_indt)):
 		ds, Phi2n = evolve_ds(_DAS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _time[_indt[i][0]:_indt[i][1]], _time[_indt[i][0]])
 		DS.append(ds)
-		ncoeffs  = coeff_project(Phi2n, _y)
+		ncoeffs, odd_coeffs  = coeff_project(Phi2n, _y)
     
 	for i in range(len(DS)):
 		if i ==0:
