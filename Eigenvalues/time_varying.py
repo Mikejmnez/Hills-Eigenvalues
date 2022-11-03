@@ -220,6 +220,22 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
     return ds_f
 
 
+def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _alps, _facs, _x, _y, _time,  _tf=0):
+    """Constructs the solution to the IVP. Shear flow aligned with y"""
+    
+    coords = {"time": t, "y": _y, "x": 2*_x}
+    Temp = _xr.DataArray(np.nan, coords=coords, dims=["time", 'y', 'x'])
+    ds = _xr.Dataset({'Theta': Temp})
+    _ndAs = _xr.dot(_facs * _alps, _dAs['A_2r'], dims='r')
+    for i in range(len(_time)):
+        arg = 0.25*_dAs['a_2n'] + (1j)*_alpha0*(2*_np.pi*_L)*_Pe + (2*_np.pi*_L)**2
+        _PHI2n = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg*(_time[i] - _tf)), dims='n')
+        T0 = _xrft.ifft(_da_xrft * _PHI2n, dim='l', true_phase=True, true_amplitude=True).real
+        nT0 = T0.rename({'freq_l':'y'})
+        ds['Theta'].data[i, :, :] = nT0.data
+    return ds
+
+
 ## definition of time-varying shear flows (jets)
 
 def time_reverse(_jet, _nt, _y, _t, _samp):
