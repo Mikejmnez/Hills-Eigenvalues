@@ -47,7 +47,7 @@ def coeff_project(_phi, _y, shift=False):
 		e_coords = {'r':range(len(e_coeffs))}
 		o_coords = {'r':range(len(o_coeffs) - 1)}
 
-		odd_coeffs = _xr.DataArray(o_coeffs[1:].real, coords=o_coords, dims=_dims)
+		odd_coeffs = _xr.DataArray(o_coeffs[1:], coords=o_coords, dims=_dims)
 
 	elif len(da_dft_phi.dims) == 2:
 
@@ -59,10 +59,10 @@ def coeff_project(_phi, _y, shift=False):
 		e_coords = {'k': da_phi['k'].data, 'r':range(len(e_coeffs[0, :]))}
 		o_coords = {'k': da_phi['k'].data, 'r':range(len(o_coeffs[0, :]) - 1)}
 
-		odd_coeffs = _xr.DataArray(o_coeffs[:, 1:].real, coords=o_coords, dims=_dims)
+		odd_coeffs = _xr.DataArray(o_coeffs[:, 1:], coords=o_coords, dims=_dims)
 
 
-	even_coeffs = _xr.DataArray(e_coeffs.real, coords=e_coords, dims=_dims)
+	even_coeffs = _xr.DataArray(e_coeffs, coords=e_coords, dims=_dims)
 
 	return even_coeffs, odd_coeffs
 
