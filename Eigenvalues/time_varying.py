@@ -223,8 +223,8 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _alps, _facs, _x, _y, _time,  _tf=0):
     """Constructs the solution to the IVP. Shear flow aligned with y"""
     
-    coords = {"time": t, "y": _y, "x": 2*_x}
-    Temp = _xr.DataArray(np.nan, coords=coords, dims=["time", 'y', 'x'])
+    coords = {"time": _time, "y": _y, "x": 2*_x}
+    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
     _ndAs = _xr.dot(_facs * _alps, _dAs['A_2r'], dims='r')
     for i in range(len(_time)):
