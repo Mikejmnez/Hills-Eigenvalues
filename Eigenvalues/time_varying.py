@@ -33,8 +33,8 @@ def coeff_project(_phi, _y, dim='y', shift=False):
 		nL = int((L - 1) / 2)
 
 	da_phi = _xr.DataArray(_phi, dims=_phi.dims, coords=_phi.coords)
-	da_dft_phi = _xrft.fft(da_phi, dim='y', true_phase=True, true_amplitude=True)
-	da_dft_phi = da_dft_phi.rename({'freq_y':'r'})
+	da_dft_phi = _xrft.fft(da_phi, dim=dim, true_phase=True, true_amplitude=True)
+	da_dft_phi = da_dft_phi.rename({'freq_'+dim:'r'})
 
 	_dims = da_dft_phi.dims
     
@@ -56,8 +56,8 @@ def coeff_project(_phi, _y, dim='y', shift=False):
 
 		o_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data - da_dft_phi.isel(r=slice(0, nL+1)).data[:, ::-1]) / (-1j * fac)
 
-		e_coords = {'k': da_phi['k'].data, 'r':range(len(e_coeffs[0, :]))}
-		o_coords = {'k': da_phi['k'].data, 'r':range(len(o_coeffs[0, :]) - 1)}
+		e_coords = {_dims[0]: da_phi[_dims[0]].data, 'r':range(len(e_coeffs[0, :]))}
+		o_coords = {_dims[0]: da_phi[_dims[0]].data, 'r':range(len(o_coeffs[0, :]) - 1)}
 
 		odd_coeffs = _xr.DataArray(o_coeffs[:, 1:], coords=o_coords, dims=_dims)
 
