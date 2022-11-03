@@ -233,7 +233,7 @@ def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _alps, _facs, _x, _y, _time,
         T0 = _xrft.ifft(_da_xrft * _PHI2n, dim='l', true_phase=True, true_amplitude=True).real
         nT0 = T0.rename({'freq_l':'y'})
         ds['Theta'].data[i, :, :] = nT0.data
-    return ds
+    return ds, _PHI2n
 
 
 ## definition of time-varying shear flows (jets)
