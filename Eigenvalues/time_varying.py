@@ -199,6 +199,27 @@ def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gaus
 	return ds_f
 
 
+def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _even_alps, e_facs, _odd_alps, o_facs, _x, _y, _time):
+    """
+    evolves a localized initial condition defined by its 2d Fourier coefficients.
+    """
+    DS = []
+    ecoeffs = copy.deepcopy(_even_alps)
+    ocoeffs = copy.deepcopy(_odd_alps)
+    for i in range(len(_indt)):
+        ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _time[_indt[i][0]:_indt[i][1]], _time[_indt[i][0]])
+        DS.append(ds)
+        ecoeffs, ocoeffs  = coeff_project(Phi2n, _y)
+    
+    for i in range(len(DS)):
+        if i == 0:
+            ds_f = DS[i]
+        else:
+            ds_f = ds_f.combine_first(DS[i])
+
+    return ds_f
+
+
 ## definition of time-varying shear flows (jets)
 
 def time_reverse(_jet, _nt, _y, _t, _samp):
