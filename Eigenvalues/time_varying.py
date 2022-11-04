@@ -167,7 +167,11 @@ def evolve_ds_modal_time(_DAS, _indt, _order, _vals, _K0, _ALPHA0, _Pe, _gauss_a
 	DS = []
 	ncoeffs = copy.deepcopy(_gauss_alps)
 	for i in range(len(_indt)):
-		ds, phi = evolve_ds_modal_gaussian(_DAS[_order[i]], _K0, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _X, _Y, _time[_indt[i][0]:_indt[i][1]], _time[_indt[i][0]])
+		if i == 0:
+			tf = 0
+		else:
+			tf =_time[_indt[i - 1][1] - 1]
+		ds, phi = evolve_ds_modal_gaussian(_DAS[_order[i]], _K0, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _X, _Y, _time[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(ds)
 		ncoeffs, odd_coeffs  = coeff_project(phi, _Y[:, 0])
 	
@@ -212,7 +216,11 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
     ecoeffs = copy.deepcopy(_even_alps)
     ocoeffs = copy.deepcopy(_odd_alps)
     for i in range(len(_indt)):
-        ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _time[_indt[i][0]:_indt[i][1]], _time[_indt[i][0]])
+		if i == 0:
+			tf = 0
+		else:
+			tf =_time[_indt[i - 1][1] - 1]
+        ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _time[_indt[i][0]:_indt[i][1]], tf)
         DS.append(ds)
         ecoeffs, ocoeffs  = coeff_project(Phi2n, _y)
     
@@ -249,7 +257,11 @@ def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _
 	DS = []
 	ncoeffs = copy.deepcopy(_gauss_alps)
 	for i in range(len(_indt)):
-		ds, Phi2n = evolve_ds_rot(_DAS[_order[i]], _da_dft, _Ln, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _time[_indt[i][0]:_indt[i][1]], _time[_indt[i][0]])
+		if i == 0:
+			tf = 0
+		else:
+			tf =_time[_indt[i - 1][1] - 1]
+		ds, Phi2n = evolve_ds_rot(_DAS[_order[i]], _da_dft, _Ln, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _time[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(ds)
 		ncoeffs, odd_coeffs  = coeff_project(Phi2n, _y, dim='x')
     
