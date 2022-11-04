@@ -123,7 +123,7 @@ def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _tim
         #     PHI2n = _xr.dot(ndAs.isel(n=slice(Nr)), _dAs['phi_2n'].isel(n=slice(Nr)) * _np.exp(-(0.25*_dAs['a_2n'].isel(n=slice(Nr)) + exp_arg)*(_time[i]-_tf)), dims='n')
         #     PHI2n = PHI2n + _xr.dot(ndAs[Nr:], _dAs['phi_2n'][Nr:] * _np.exp(-(0.25*_dAs['a_2n'][Nr:] + exp_arg)*(_time[i]-_tf)), dims='n')
         # else:
-        PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i] - _tf)), dims='n')
+        PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*_time[i]), dims='n')
         T0 = _xrft.ifft(_da_xrft * PHI2n, dim='k', true_phase=True, true_amplitude=True).real # Signal in direct space
         nT0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
         ds['Theta'].data[i, :, :] = nT0.data
@@ -142,12 +142,13 @@ def evolve_ds_off(_dAs, _dBs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _b_al
     for i in range(len(_t)):
     	arg_e = 0.25*_dAs['a_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
     	arg_o = 0.25*_dBs['b_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-    	_PHI2n_e = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg_e*(_t[i] - _tf)), dims='n')
-    	_PHI2n_o = _xr.dot(_ndBs, _dBs['phi_2n'] * _np.exp(- arg_o*(_t[i] - _tf)), dims='n')
+    	_PHI2n_e = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg_e*_t[i]), dims='n')
+    	_PHI2n_o = _xr.dot(_ndBs, _dBs['phi_2n'] * _np.exp(- arg_o*_t[i]), dims='n')
     	_PHI2n = _PHI2n_e + _PHI2n_o
     	T0 = _xrft.ifft(_da_xrft * _PHI2n, dim='k', true_phase=True, true_amplitude=True).real
     	nT0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
     	ds['Theta'].data[i, :, :] = nT0.data
+
     return ds, _PHI2n
 
 
@@ -186,7 +187,7 @@ def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gaus
 	DS = []
 	ncoeffs = copy.deepcopy(_gauss_alps)
 	for i in range(len(_indt)):
-		ds, Phi2n = evolve_ds(_DAS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _time[_indt[i][0]:_indt[i][1]], _time[_indt[i][0]])
+		ds, Phi2n = evolve_ds(_DAS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _time[_indt[i][0]:_indt[i][1]])
 		DS.append(ds)
 		ncoeffs, odd_coeffs  = coeff_project(Phi2n, _y)
     
