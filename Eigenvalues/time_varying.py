@@ -44,19 +44,23 @@ def coeff_project(_phi, _y, dim='y', shift=0):
 		e_coeffs[0] = e_coeffs[0] / 2
 		o_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data - da_dft_phi.isel(r=slice(0, nL+1)).data[::-1]) / (-1j * fac)
 
-		phi_e = _np.ones(_np.shape(e_coeffs))
-		phi_e = _np.array([phi_e[l] * _np.cos(-l*shift) for l in range(len(e_coeffs))])
+		phi_cos = _np.ones(_np.shape(e_coeffs))
+		phi_cos = _np.array([phi_cos[l] * _np.cos(-l*shift) for l in range(len(e_coeffs))])
+
 
 		e_coords = {'r':range(len(e_coeffs))}
 		o_coords = {'r':range(len(o_coeffs) - 1)}
 
-		phi_o = _np.ones(_np.shape(o_coeffs))
-		phi_o = _np.array([phi_o[l] * _np.sin(-l*shift) for l in range(len(o_coeffs))])
+		phi_sin = _np.ones(_np.shape(o_coeffs))
+		phi_sin = _np.array([phi_sin[l] * _np.sin(-l*shift) for l in range(len(o_coeffs))])
 
+		da_odd = o_coeffs * phi_cos + e_coeffs * phi_sin
 
-		odd_coeffs = _xr.DataArray(o_coeffs[1:] * phi_o[1:], coords=o_coords, dims=_dims)
+		da_even = e_coeffs * phi_cos - o_coeffs * phi_sin
 
-		even_coeffs = _xr.DataArray(e_coeffs * phi_e, coords=e_coords, dims=_dims)
+		odd_coeffs = _xr.DataArray(da_odd[1:], coords=o_coords, dims=_dims)
+
+		even_coeffs = _xr.DataArray(da_even, coords=e_coords, dims=_dims)
 
 	elif len(da_dft_phi.dims) == 2:
 
@@ -226,8 +230,10 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 	DS = []
 	ecoeffs = copy.deepcopy(_even_alps)
 	ocoeffs = copy.deepcopy(_odd_alps)
-	if shift == 0:
+	if _shift == 0:
 		_shift = [0 for i in range(len(_indt))]
+	else:
+		assert len(_shift) == len(_vals)
 	for i in range(len(_indt)):
 		if i == 0:
 			tf = 0
@@ -235,7 +241,7 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 			tf =_time[_indt[i - 1][1] - 1]
 		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _time[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(ds)
-		ecoeffs, ocoeffs  = coeff_project(Phi2n, _y, _shift[_order[i]])
+		ecoeffs, ocoeffs  = coeff_project(Phi2n, _y, shift=_shift[_order[i]])
     
 	for i in range(len(DS)):
 		if i == 0:
