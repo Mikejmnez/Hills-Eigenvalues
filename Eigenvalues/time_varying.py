@@ -221,11 +221,13 @@ def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gaus
 	return ds_f
 
 
-def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _even_alps, e_facs, _odd_alps, o_facs, _x, _y, _time):
+def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _even_alps, e_facs, _odd_alps, o_facs, _x, _y, _time, _shift=0):
 	"""evolves a localized initial condition defined by its 2d Fourier coefficients."""
 	DS = []
 	ecoeffs = copy.deepcopy(_even_alps)
 	ocoeffs = copy.deepcopy(_odd_alps)
+	if shift == 0:
+		_shift = [0 for i in range(len(_indt))]
 	for i in range(len(_indt)):
 		if i == 0:
 			tf = 0
@@ -233,7 +235,7 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 			tf =_time[_indt[i - 1][1] - 1]
 		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _time[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(ds)
-		ecoeffs, ocoeffs  = coeff_project(Phi2n, _y)
+		ecoeffs, ocoeffs  = coeff_project(Phi2n, _y, _shift[_order[i]])
     
 	for i in range(len(DS)):
 		if i == 0:
