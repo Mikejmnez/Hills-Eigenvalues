@@ -121,6 +121,8 @@ phi0 = 1 * _np.pi  # shift
 	[
 		(0.0*_np.pi, 0*_np.pi, y, _np.exp(-0.5*((y - 0.0*_np.pi)**2)/(0.5*Ld1**2))),
 		(0.25*_np.pi, 0.5*_np.pi, y, _np.exp(-0.5*((y - 0.25*_np.pi)**2)/(0.5*Ld1**2))),
+		(0.5*_np.pi, 1.5*_np.pi, y, _np.exp(-0.5*((y - _np.pi)**2)/(0.5*Ld1**2))),
+
 	]
 )
 def test_coeff_project(phi_new, phi_old, y, values):
