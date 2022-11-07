@@ -25,8 +25,9 @@ def coeff_project(_phi, _y, dim='y', shift=0):
 		odd_coeffs = Odd coefficients
 	"""
 	
-	fac = _np.pi / 2   # divides the Fourier coefficients (xrft scales them).
-					   # factor o 1/2 because domain is y\in [0, \pi].
+	frac = (_y[-1] - _y[0]) / (2 * _np.pi)  # unity if y in [0, 2\pi].
+
+	fac = _np.pi * frac   # divides the Fourier coefficients (xrft scales them).
 
 	L = len(_y)  # number of wavenumbers
 	if (L - 1) % 2 == 0:  # number should be odd.
@@ -67,20 +68,22 @@ def coeff_project(_phi, _y, dim='y', shift=0):
 		e_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data + da_dft_phi.isel(r=slice(0, nL+1)).data[:, ::-1]) / fac
 		e_coeffs[:, 0] = e_coeffs[:, 0] / 2
 
-		phi_e = _np.ones(_np.shape(e_coeffs))
-		phi_e = _np.array([phi_e[:, l] * _np.cos(-l*shift) for l in range(len(e_coeffs[0, :]))])
+		phi_cos = _np.ones(_np.shape(e_coeffs))
+		phi_cos = _np.array([phi_cos[:, l] * _np.cos(-l*shift) for l in range(len(e_coeffs[0, :]))])
 
 		o_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data - da_dft_phi.isel(r=slice(0, nL+1)).data[:, ::-1]) / (-1j * fac)
 
 		e_coords = {_dims[0]: da_phi[_dims[0]].data, 'r':range(len(e_coeffs[0, :]))}
 		o_coords = {_dims[0]: da_phi[_dims[0]].data, 'r':range(len(o_coeffs[0, :]) - 1)}
 
-		phi_o = _np.ones(_np.shape(o_coeffs))
-		phi_o = _np.array([phi_o[:, l] * _np.sin(-l*shift) for l in range(len(o_coeffs[0, :]))])
+		phi_sin = _np.ones(_np.shape(o_coeffs))
+		phi_sin = _np.array([phi_sin[:, l] * _np.sin(-l*shift) for l in range(len(o_coeffs[0, :]))])
 
-		odd_coeffs = _xr.DataArray(o_coeffs[:, 1:] * _np.transpose(phi_o[1:, :]), coords=o_coords, dims=_dims)
+		da_odd = o_coeffs * _np.transpose(phi_cos) + e_coeffs * _np.transpose(phi_sin)
+		da_even = e_coeffs * _np.transpose(phi_cos) - o_coeffs * _np.transpose(phi_sin)
 
-		even_coeffs = _xr.DataArray(e_coeffs * _np.transpose(phi_e), coords=e_coords, dims=_dims)
+		odd_coeffs = _xr.DataArray(da_odd[:, 1:], coords=o_coords, dims=_dims)
+		even_coeffs = _xr.DataArray(da_even, coords=e_coords, dims=_dims)
 
 	return even_coeffs, odd_coeffs
 
