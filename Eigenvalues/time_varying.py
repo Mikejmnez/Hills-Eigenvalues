@@ -11,14 +11,14 @@ import xrft as _xrft
 
 
 
-def coeff_project(_phi, _y, dim='y', shift=False):
+def coeff_project(_phi, _y, dim='y', shift=0):
 	"""Takes a numpy-array and returns the even and odd Fourier coefficients that together,
 		recreate the original function as a Fourier series.
 
 	Input:
 		_phi: 1D np.array, complex. phi=phi(y)
 		_y: np.array.
-		shift: fase shift - to be added later. 
+		shift: fase shift of the velocity field - negative that of the tracer. 
 
 	output:
 		even_coeffs = Even coefficients.
@@ -44,25 +44,39 @@ def coeff_project(_phi, _y, dim='y', shift=False):
 		e_coeffs[0] = e_coeffs[0] / 2
 		o_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data - da_dft_phi.isel(r=slice(0, nL+1)).data[::-1]) / (-1j * fac)
 
+		phi_e = _np.ones(_np.shape(e_coeffs))
+		phi_e = _np.array([phi_e[l] * _np.cos(-l*shift) for l in range(len(e_coeffs))])
+
 		e_coords = {'r':range(len(e_coeffs))}
 		o_coords = {'r':range(len(o_coeffs) - 1)}
 
-		odd_coeffs = _xr.DataArray(o_coeffs[1:], coords=o_coords, dims=_dims)
+		phi_o = _np.ones(_np.shape(o_coeffs))
+		phi_o = _np.array([phi_o[l] * _np.sin(-l*shift) for l in range(len(o_coeffs))])
+
+
+		odd_coeffs = _xr.DataArray(o_coeffs[1:] * phi_o[1:], coords=o_coords, dims=_dims)
+
+		even_coeffs = _xr.DataArray(e_coeffs * phi_e, coords=e_coords, dims=_dims)
 
 	elif len(da_dft_phi.dims) == 2:
 
 		e_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data + da_dft_phi.isel(r=slice(0, nL+1)).data[:, ::-1]) / fac
 		e_coeffs[:, 0] = e_coeffs[:, 0] / 2
 
+		phi_e = _np.ones(_np.shape(e_coeffs))
+		phi_e = _np.array([phi_e[:, l] * _np.cos(-l*shift) for l in range(len(e_coeffs[0, :]))])
+
 		o_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data - da_dft_phi.isel(r=slice(0, nL+1)).data[:, ::-1]) / (-1j * fac)
 
 		e_coords = {_dims[0]: da_phi[_dims[0]].data, 'r':range(len(e_coeffs[0, :]))}
 		o_coords = {_dims[0]: da_phi[_dims[0]].data, 'r':range(len(o_coeffs[0, :]) - 1)}
 
-		odd_coeffs = _xr.DataArray(o_coeffs[:, 1:], coords=o_coords, dims=_dims)
+		phi_o = _np.ones(_np.shape(o_coeffs))
+		phi_o = _np.array([phi_o[:, l] * _np.sin(-l*shift) for l in range(len(o_coeffs[0, :]))])
 
+		odd_coeffs = _xr.DataArray(o_coeffs[:, 1:] * _np.transpose(phi_o[1:, :]), coords=o_coords, dims=_dims)
 
-	even_coeffs = _xr.DataArray(e_coeffs, coords=e_coords, dims=_dims)
+		even_coeffs = _xr.DataArray(e_coeffs * _np.transpose(phi_e), coords=e_coords, dims=_dims)
 
 	return even_coeffs, odd_coeffs
 
