@@ -11,21 +11,33 @@ import xrft as _xrft
 
 
 
-def coeff_project(_phi, _y, dim='y', shift=0):
+def coeff_project(_phi, _y, dim='y', phi_old=_np.pi, phi_new=0):
 	"""Takes a numpy-array and returns the even and odd Fourier coefficients that together,
 		recreate the original function as a Fourier series.
 
 	Input:
 		_phi: 1D np.array, complex. phi=phi(y)
-		_y: np.array.
-		shift: fase shift of the velocity field - negative that of the tracer. 
+		_y: np.array. 
+		phi_old = default pi. Refers to the original location (centering) of the flow. 
+		phi_new: default 0. fase shift of the velocity field with respect to original location 
+				(any positive values imply a negative shift for tracer, which is how we actually
+				represent the shift in velocity).
 
 	output:
 		even_coeffs = Even coefficients.
 		odd_coeffs = Odd coefficients
+		phi_new
+		ishift
+		phi_old
 	"""
-	
-	frac = (_y[-1] - _y[0]) / (2 * _np.pi)  # unity if y in [0, 2\pi].
+
+	frac = round(_y[-1] / (2 * _np.pi), 1)  # unity if y in [0, 2\pi].
+
+	phi_old = phi_old + phi_new
+	if phi_old > 2*_np.pi:
+		phi_old = phi_old - 2*_np.pi
+	elif phi_old < 0:
+		phi_old = phi_old + 2*_np.pi
 
 	fac = _np.pi * frac   # divides the Fourier coefficients (xrft scales them).
 
@@ -46,14 +58,14 @@ def coeff_project(_phi, _y, dim='y', shift=0):
 		o_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data - da_dft_phi.isel(r=slice(0, nL+1)).data[::-1]) / (-1j * fac)
 
 		phi_cos = _np.ones(_np.shape(e_coeffs))
-		phi_cos = _np.array([phi_cos[l] * _np.cos(-l*shift) for l in range(len(e_coeffs))])
+		phi_cos = _np.array([phi_cos[l] * _np.cos(-l*phi_new) for l in range(len(e_coeffs))])
 
 
 		e_coords = {'r':range(len(e_coeffs))}
 		o_coords = {'r':range(len(o_coeffs) - 1)}
 
 		phi_sin = _np.ones(_np.shape(o_coeffs))
-		phi_sin = _np.array([phi_sin[l] * _np.sin(-l*shift) for l in range(len(o_coeffs))])
+		phi_sin = _np.array([phi_sin[l] * _np.sin(-l*phi_new) for l in range(len(o_coeffs))])
 
 		da_odd = o_coeffs * phi_cos + e_coeffs * phi_sin
 
@@ -69,7 +81,7 @@ def coeff_project(_phi, _y, dim='y', shift=0):
 		e_coeffs[:, 0] = e_coeffs[:, 0] / 2
 
 		phi_cos = _np.ones(_np.shape(e_coeffs))
-		phi_cos = _np.array([phi_cos[:, l] * _np.cos(-l*shift) for l in range(len(e_coeffs[0, :]))])
+		phi_cos = _np.array([phi_cos[:, l] * _np.cos(-l*phi_new) for l in range(len(e_coeffs[0, :]))])
 
 		o_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data - da_dft_phi.isel(r=slice(0, nL+1)).data[:, ::-1]) / (-1j * fac)
 
@@ -77,7 +89,7 @@ def coeff_project(_phi, _y, dim='y', shift=0):
 		o_coords = {_dims[0]: da_phi[_dims[0]].data, 'r':range(len(o_coeffs[0, :]) - 1)}
 
 		phi_sin = _np.ones(_np.shape(o_coeffs))
-		phi_sin = _np.array([phi_sin[:, l] * _np.sin(-l*shift) for l in range(len(o_coeffs[0, :]))])
+		phi_sin = _np.array([phi_sin[:, l] * _np.sin(-l*phi_new) for l in range(len(o_coeffs[0, :]))])
 
 		da_odd = o_coeffs * _np.transpose(phi_cos) + e_coeffs * _np.transpose(phi_sin)
 		da_even = e_coeffs * _np.transpose(phi_cos) - o_coeffs * _np.transpose(phi_sin)
@@ -85,7 +97,7 @@ def coeff_project(_phi, _y, dim='y', shift=0):
 		odd_coeffs = _xr.DataArray(da_odd[:, 1:], coords=o_coords, dims=_dims)
 		even_coeffs = _xr.DataArray(da_even, coords=e_coords, dims=_dims)
 
-	return even_coeffs, odd_coeffs
+	return even_coeffs, odd_coeffs, phi_new, phi_old
 
 
 def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _X, _Y, _time, _tf=0):
@@ -194,7 +206,7 @@ def evolve_ds_modal_time(_DAS, _indt, _order, _vals, _K0, _ALPHA0, _Pe, _gauss_a
 			tf =_time[_indt[i - 1][1] - 1]
 		ds, phi = evolve_ds_modal_gaussian(_DAS[_order[i]], _K0, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _X, _Y, _time[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(ds)
-		ncoeffs, odd_coeffs  = coeff_project(phi, _Y[:, 0])
+		ncoeffs, odd_coeffs, phi_new, phi_old  = coeff_project(phi, _Y[:, 0])
 	
 	for i in range(len(DS)):
 		if i ==0:
@@ -218,7 +230,7 @@ def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gaus
 			tf =_time[_indt[i - 1][1] - 1]
 		ds, Phi2n = evolve_ds(_DAS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _time[_indt[i][0]:_indt[i][1]],  tf)
 		DS.append(ds)
-		ncoeffs, odd_coeffs  = coeff_project(Phi2n, _y)
+		ncoeffs, odd_coeffs, phi_new, phi_old  = coeff_project(Phi2n, _y)
     
 	for i in range(len(DS)):
 		if i ==0:
@@ -231,6 +243,8 @@ def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gaus
 def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _even_alps, e_facs, _odd_alps, o_facs, _x, _y, _time, _shift=0):
 	"""evolves a localized initial condition defined by its 2d Fourier coefficients."""
 	DS = []
+	PHI_NEW = []
+	PHI_OLD = []
 	ecoeffs = copy.deepcopy(_even_alps)
 	ocoeffs = copy.deepcopy(_odd_alps)
 	if _shift == 0:
@@ -238,20 +252,25 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 	else:
 		assert len(_shift) == len(_vals)
 	for i in range(len(_indt)):
+		phi_new = _shift[_order[i]]
 		if i == 0:
 			tf = 0
+			phi_old = _np.pi
 		else:
 			tf =_time[_indt[i - 1][1] - 1]
 		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _time[_indt[i][0]:_indt[i][1]], tf)
+		ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _y, phi_old=phi_old, phi_new=phi_new)
+		# if ishift > 0:
+		# 	ds = ds.roll(y=ishift, roll_coords=False)
 		DS.append(ds)
-		ecoeffs, ocoeffs  = coeff_project(Phi2n, _y, shift=_shift[_order[i]])
-    
-	for i in range(len(DS)):
+		PHI_NEW.append(phi_new)
+		PHI_OLD.append(phi_old)
+
 		if i == 0:
 			ds_f = DS[i]
 		else:
 			ds_f = ds_f.combine_first(DS[i])
-	return ds_f
+	return ds_f, PHI_NEW, PHI_OLD
 
 
 def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _alps, _facs, _x, _y, _time,  _tf=0):
@@ -284,7 +303,7 @@ def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _
 			tf =_time[_indt[i - 1][1] - 1]
 		ds, Phi2n = evolve_ds_rot(_DAS[_order[i]], _da_dft, _Ln, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _time[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(ds)
-		ncoeffs, odd_coeffs  = coeff_project(Phi2n, _y, dim='x')
+		ncoeffs, odd_coeffs, phi_new, ishift, phi_old  = coeff_project(Phi2n, _y, dim='x')
     
 	for i in range(len(DS)):
 		if i ==0:
