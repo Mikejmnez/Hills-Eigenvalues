@@ -459,6 +459,7 @@ def phase_generator(nft):
 					phase[:l[i]] = 0
 				else:
 					phase[l[i-1]:l[i]] = _rd
+			phase[l[i]:] = _np.random.random_sample() * _np.sign(_np.cos(2*_np.pi*_rd)) 
 		else:
 			_rd = _np.random.random_sample() # positive rand number <1
 			_rd = _rd * _np.sign(_np.cos(2*_np.pi*_rd))  # assign a rand sign
