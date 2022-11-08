@@ -437,6 +437,39 @@ def get_order(_nft, _indt, _vals):
 
 
 
+def phase_generator(nft):
+	"""generates a phase shift that coincides with the change in sign of a (discretized) signal.
+	By default, the initial phase is zero. Note, there must be a zero crossing, or phase is constant.
+	Input:
+		nft - numpy.array. Real, float elements. Must be output from re_sample. 
+	"""
+	phase = 0 * nft
+	if _np.isin(nft, 0).any():
+		ll = _np.where(nft == 0)[0]
+		# check for repeated zeros
+		d = ll[1:]-ll[:-1]  
+		ld = _np.where(d>1)[0]
+		if len(ld) > 2:
+			l = []
+			for i in range(len(ld)):
+				_rd = _np.random.random_sample() # positive rand number <1
+				_rd = _rd * _np.sign(_np.cos(2*_np.pi*_rd))  # assign a rand sign
+				l.append(ll[ld[i]])
+				if i ==0:
+					phase[:l[i]] = 0
+				else:
+					phase[l[i-1]:l[i]] = _rd
+		else:
+			_rd = _np.random.random_sample() # positive rand number <1
+			_rd = _rd * _np.sign(_np.cos(2*_np.pi*_rd))  # assign a rand sign
+			phase[ld[0]:] = _rd 
+
+	else:
+		phase[:] = _np.random.random_sample()
+
+	return phase
+
+
 
 
 
