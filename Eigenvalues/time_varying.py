@@ -27,7 +27,6 @@ def coeff_project(_phi, _y, dim='y', phi_old=_np.pi, phi_new=0):
 		even_coeffs = Even coefficients.
 		odd_coeffs = Odd coefficients
 		phi_new
-		ishift
 		phi_old
 	"""
 
@@ -256,20 +255,27 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 		if i == 0:
 			tf = 0
 			phi_old = _np.pi
+			ndAs = _xr.dot(e_facs * ecoeffs, _DAS[_order[i]]['A_2r'])
+			ndBs = _xr.dot(o_facs * ocoeffs, _DBS[_order[i]]['B_2r'])
+			PHI2n_e = _xr.dot(ndAs, _DAS[_order[i]]['phi_2n'], dims='n')
+			PHI2n_o = _xr.dot(ndBs, _DBS[_order[i]]['phi_2n'], dims='n')
+			Phi2n = PHI2n_e + PHI2n_o
 		else:
 			tf =_time[_indt[i - 1][1] - 1]
-		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _time[_indt[i][0]:_indt[i][1]], tf)
 		ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _y, phi_old=phi_old, phi_new=phi_new)
-		# if ishift > 0:
-		# 	ds = ds.roll(y=ishift, roll_coords=False)
-		DS.append(ds)
+		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _time[_indt[i][0]:_indt[i][1]], tf)
+		DS.append(copy.deepcopy(ds))
 		PHI_NEW.append(phi_new)
 		PHI_OLD.append(phi_old)
-
+	for i in range(len(DS)):
 		if i == 0:
 			ds_f = DS[i]
 		else:
-			ds_f = ds_f.combine_first(DS[i])
+			jump = abs(PHI_OLD[i] - PHI_OLD[0])
+			dsign = int(_np.sign(PHI_OLD[i] - PHI_OLD[0]))
+			diff = abs(2*_y - jump)
+			ii = dsign * _np.where(diff == _np.min(diff))[0][0]
+			ds_f = ds_f.combine_first(DS[i].roll(y=ii, roll_coords=False))
 	return ds_f, PHI_NEW, PHI_OLD
 
 
