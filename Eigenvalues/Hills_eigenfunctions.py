@@ -3037,7 +3037,7 @@ def reflect_dataset(ds, k=True, Pe=False, symmetry='even'):
 
         nds = As_dsc.combine_first(ds)  # combine along k values.
     elif Pe:
-        nds = _xr.ones_like(ds)
+        nds = _xr.ones_like(ds.drop_vars('phi_2n'))
         nds[_eigs].data = ds.conjugate()[_eigs][:]
         nds[_eigv].data = ds.conjugate()[_eigv][:]
 
