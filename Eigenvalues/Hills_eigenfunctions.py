@@ -213,7 +213,7 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
         lll = _np.where(K >= 0)[0]
         K = K[lll]
         q = q[lll]
-        R = _np.round(_np.sqrt(50 * (q.imag) * abs(coeffs[0]) / 4))
+        R = _np.round(_np.sqrt(35 * (q.imag) * abs(coeffs[0]) / 4))
         Rmax = int(_np.max(R))
         if Rmax < 75:  # case where q is very small and Rmax is less than (arbitrary) minimum
             Rmax = 75  # always set the minimum size of matrix
@@ -228,15 +228,17 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
             Nr = int(R[k])  # must be integer
         else:
             Nr = N  # matrix size constant for all q
-        ak, Ak = eig_pairs(matrix_system(q[k], Nr + 5, coeffs, Kj, symmetry), symmetry)
-        for n in range(Nr - _r0):
-            if opt is True and (Nr + 5) < Rmax:
-                As_ds[_eigv].isel(k=k, n=n, r=slice(Nr + 5 - _r0)).data[:] = Anorm(Ak[:, n], symmetry)
-            else:
-                As_ds[_eigv].isel(k=k, n=n, r=slice(Nr - _r0)).data[:] = Anorm(Ak[:-5, n], symmetry)
-        As_ds[_eigs].isel(k=k, n=slice(Nr - _r0)).data[:] = ak[:-5]
+        if q[k].imag > 0:
+            ak, Ak = eig_pairs(matrix_system(q[k], Nr + 5, coeffs, Kj, symmetry), symmetry)
+            for n in range(Nr - _r0):
+                if opt is True and (Nr + 5) < Rmax:
+                    As_ds[_eigv].isel(k=k, n=n, r=slice(Nr + 5 - _r0)).data[:] = Anorm(Ak[:, n], symmetry)
+                else:
+                    As_ds[_eigv].isel(k=k, n=n, r=slice(Nr - _r0)).data[:] = Anorm(Ak[:-5, n], symmetry)
+            As_ds[_eigs].isel(k=k, n=slice(Nr - _r0)).data[:] = ak[:-5]
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
+        # As_ds = reflect_dataset(As_ds, k=True, Pe=False, symmetry=symmetry)
         As_dsc = _xr.ones_like(As_ds)
         As_dsc['nk'] =  -As_dsc['k'].data[::-1]
         As_dsc = As_dsc.drop_dims('k').rename({'nk':'k'})
@@ -3007,3 +3009,37 @@ def ragged_sum(_datasets, _gauss_alps, alpha0, Pe, tk):
     PHI = phi_2n.combine_first(PHI2n)
 
     return PHI
+
+
+def reflect_dataset(ds, k=True, Pe=False, symmetry='even'):
+    """ Reflects a dataset along the q-axis. This reflection can be due to a change in sign of the 
+    velocity field (or change in Pe), or a change in sign of wavenumber k>=0. This function skips
+    the eigenvalue calculation. 
+    Input:
+        ds: dataset.
+        k: bool. `True` by default. Means the dataset must be complemented for values with k<0. This
+            means the dataset must be complemented and updated before returning.
+        Pe: bool. `False` by default. When `True`, the complete dataset must be reflected for all values
+            of `k`. The returned dataset
+    """
+    if symmetry is 'even':
+        _eigs = 'a_2n'
+        _eigv = 'A_2r'
+    else:
+        _eigs = 'b_2n'
+        _eigv = 'B_2r'
+    if k:
+        As_dsc = _xr.ones_like(ds)
+        As_dsc['nk'] =  -As_dsc['k'].data[::-1]
+        As_dsc = As_dsc.drop_dims('k').rename({'nk':'k'})
+        As_dsc[_eigs].data = ds.conjugate()[_eigs][:, ::-1]
+        As_dsc[_eigv].data = ds.conjugate()[_eigv][:, ::-1, :]
+
+        nds = As_dsc.combine_first(ds)  # combine along k values.
+    elif Pe:
+        nds = _xr.ones_like(ds)
+        nds[_eigs].data = ds.conjugate()[_eigs][:]
+        nds[_eigv].data = ds.conjugate()[_eigv][:]
+
+    return nds
+
