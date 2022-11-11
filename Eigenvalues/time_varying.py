@@ -30,7 +30,7 @@ def coeff_project(_phi, _y, dim='y', phi_old=_np.pi, phi_new=0):
 		phi_old
 	"""
 
-	frac = round(_y[-1] / (2 * _np.pi), 1)  # unity if y in [0, 2\pi].
+	frac = round((_y[-1] - _y[0]) / (2 * _np.pi), 1)  # unity if y in [0, 2\pi].
 
 	phi_old = phi_old + phi_new
 	if phi_old > 2*_np.pi:
