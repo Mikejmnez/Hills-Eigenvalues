@@ -247,8 +247,9 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 	ecoeffs = copy.deepcopy(_even_alps)
 	ocoeffs = copy.deepcopy(_odd_alps)
 	if _shift == 0:
-		_shift = [0 for i in range(len(_indt))]
+		_shift = [0 for i in range(len(_time))]
 	for i in range(len(_indt)):
+		print(i)
 		phi_new = _shift[_indt[i][0]]  # only sample first - they are all the same
 		if i == 0:
 			tf = 0
