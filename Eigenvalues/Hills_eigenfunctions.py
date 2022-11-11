@@ -228,6 +228,8 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
             Nr = int(R[k])  # must be integer
         else:
             Nr = N  # matrix size constant for all q
+        if q[k].imag == 0:
+            ak, Ak = eig_pairs(matrix_system(q[k], 10, coeffs, Kj, symmetry), symmetry)
         if q[k].imag > 0:
             ak, Ak = eig_pairs(matrix_system(q[k], Nr + 5, coeffs, Kj, symmetry), symmetry)
             for n in range(Nr - _r0):
@@ -238,15 +240,7 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
             As_ds[_eigs].isel(k=k, n=slice(Nr - _r0)).data[:] = ak[:-5]
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
-        # As_ds = reflect_dataset(As_ds, k=True, Pe=False, symmetry=symmetry)
-        As_dsc = _xr.ones_like(As_ds)
-        As_dsc['nk'] =  -As_dsc['k'].data[::-1]
-        As_dsc = As_dsc.drop_dims('k').rename({'nk':'k'})
-        As_dsc[_eigs] = _xr.ones_like(As_ds[_eigs])
-        As_dsc[_eigv] = _xr.ones_like(As_ds[_eigv])
-        As_dsc[_eigs].data = As_ds.conjugate()[_eigs][:, ::-1]
-        As_dsc[_eigv].data = As_ds.conjugate()[_eigv][:, ::-1, :]
-
+        As_ds = reflect_dataset(As_ds, k=True, Pe=False, symmetry=symmetry)
         As_ds = As_dsc.combine_first(As_ds)  # combine along k values.
 
 
@@ -2895,7 +2889,7 @@ def reorder_sqr5(Avals, Q):
     return Adict1
 
 
-def phi_array(N, K, symmetry='even',y = 0, coeffs=True, eigs=True, phis=False):
+def phi_array(N, K, symmetry='even', y = 0, coeffs=True, eigs=True, phis=False):
     """creates an xarray with eigenvalues and eigenfunctions associated with the limit q=0.
     We use these values as the complement to the truncated matrix calculation to optimize code.
     
