@@ -293,6 +293,25 @@ def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _alps, _facs, _x, _y, _time,
     return ds, _PHI2n
 
 
+def evolve_ds_off_rot(_dAs, _dBs, _da_xrft, _L, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _x, _y, _t, _tf=0):
+    """Constructs the solution to the IVP"""
+    ## Initialize the array
+    coords = {"time": _t, "y": _y, "x": 2 * _x}
+    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
+    ds = _xr.Dataset({'Theta': Temp})
+    _ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
+    _ndBs = _xr.dot(_bfacs * _b_alps, _dBs['B_2r'], dims='r')
+    for i in range(len(_t)):
+    	arg_e = 0.25*_dAs['a_2n'] + (1j)*_alpha0*(2*_np.pi*_L)*_Pe + (2*_np.pi*_L)**2
+    	arg_o = 0.25*_dBs['b_2n'] + (1j)*_alpha0*(2*_np.pi*_L)*_Pe + (2*_np.pi*_L)**2
+    	_PHI2n_e = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg_e*(_t[i] - _tf)), dims='n')
+    	_PHI2n_o = _xr.dot(_ndBs, _dBs['phi_2n'] * _np.exp(- arg_o*(_t[i] - _tf)), dims='n')
+    	_PHI2n = _PHI2n_e + _PHI2n_o
+    	T0 = _xrft.ifft(_da_xrft * _PHI2n, dim='l', true_phase=True, true_amplitude=True).real
+    	nT0 = T0.rename({'freq_l':'y'})
+    	ds['Theta'].data[i, :, :] = nT0.data
+
+    return ds, _PHI2n
 
 def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _gauss_alps, _facs, _x, _y, _time):
 	"""
