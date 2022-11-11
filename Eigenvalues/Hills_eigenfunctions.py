@@ -175,7 +175,7 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=True):
+def A_coefficients(K, Pe, N, _betas_m, Kj, symmetry='even', opt=False, reflect=True):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -199,7 +199,8 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
         xarray.Dataset: 'a_{2n}(q)' (dims: n, k) and 'A^{2n}_{2r}(q)' with dims
             (n, k, r).
     """
-    coeffs = _np.array(coeffs)
+    coeffs = _np.array(_betas_m, dtype=_np.float64)
+    q = _np.empty((K.size), _np.complex128)
     q = (1j) * (2 * 2 * _np.pi * K * Pe)  # canonical parameter - note the scaling consistent with xrft
     if symmetry=='even':
         _eigv = 'A_2r'
@@ -240,7 +241,6 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
         As_dsc = reflect_dataset(As_ds, k=True, Pe=False, symmetry=symmetry)
         As_ds = As_dsc.combine_first(As_ds)  # combine along k values.
-
 
     return As_ds
 
@@ -2964,6 +2964,7 @@ def complement_dot(_gauss_alps, _ds_As):
         _coeffs_alps = _ndAs
     return _coeffs_alps
 
+
 def ragged_sum(_datasets, _gauss_alps, alpha0, Pe, tk):
     """Computed the double sum (in p and n) necessary for calculating the (averaged) analytical solution. 
     Returns a dataarray with only one dimension: k spanning both positive and negative values.
@@ -3004,7 +3005,6 @@ def ragged_sum(_datasets, _gauss_alps, alpha0, Pe, tk):
 
     return PHI
 
-
 def reflect_dataset(ds, k=True, Pe=False, symmetry='even'):
     """ Reflects a dataset along the q-axis. This reflection can be due to a change in sign of the 
     velocity field (or change in Pe), or a change in sign of wavenumber k>=0. This function skips
@@ -3041,7 +3041,7 @@ def reflect_dataset(ds, k=True, Pe=False, symmetry='even'):
 
 
 
-def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True):
+def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rotate=False):
     """Creates a list of datasets in which each element contains the spectra of the governing operator.
     """
     _betas_m = _np.array(_betas_m)
@@ -3058,22 +3058,22 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True):
 
     for val in _vals[ll:]:
         ds_As = A_coefficients(_Kn, val * _Pe, _N, _betas_m, _Km, symmetry='even', opt=True, reflect=True)
-        ds_As = phi_even(_Kn, val * _Pe, _y, _N, _betas_m, _Km, dAs = ds_As)
+        ds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, _betas_m, _Km, dAs = ds_As)
         mDAS.append(copy.deepcopy(ds_As))
         if both:
             ds_Bs = A_coefficients(_Kn, val * _Pe, _N, _betas_m, _Km, symmetry='odd', opt=True, reflect=True)
-            ds_Bs = phi_odd(_Kn, val * _Pe, _y, _N, _betas_m, _Km, dBs = ds_Bs)
+            ds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, _betas_m, _Km, dBs = ds_Bs)
             mDBS.append(copy.deepcopy(ds_Bs))
 
         mALPHA0.append(val * _alpha0) 
         mval.append(val)
-        if i > 0:
+        if val > 0:
             nds_As = reflect_dataset(ds_As, k=False, Pe=True, symmetry = 'even')
-            nds_As = phi_even(Kn, val * _Pe, _y, _N, - _betas_m, _Km, dAs = nds_As)
+            nds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, - _betas_m, _Km, dAs = nds_As)
             nDAS.append(copy.deepcopy(nds_As))
             if both:
                 nds_Bs = reflect_dataset(ds_Bs, k=False, Pe=True, symmetry = 'odd')
-                nds_Bs = phi_odd(Kn, val * _Pe, _y, _N, - _betas_m, _Km, dBs = nds_Bs)
+                nds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, - _betas_m, _Km, dBs = nds_Bs)
                 nDBS.append(copy.deepcopy(nds_Bs))
                 nds_Bs = 0
             nALPHA0.append(-val * _alpha0)
@@ -3085,8 +3085,28 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True):
     DAS = nDAS[::-1] + mDAS
     if both:
         DBS = nDBS[::-1] + mDBS
+    else:
+        DBS = []
     ALPHA0 = nALPHA0[::-1] + mALPHA0
     vals = nval[::-1] + mval
+
+    if rotate:
+        if 'k' in nDAS[-1].dims:
+            old_dim = 'k'
+            old_axis = 'y'
+            new_dim = 'l'
+            new_axis = 'x'
+        else:
+            old_dim = 'l'
+            old_axis = 'x'
+            new_dim = 'k'
+            new_axis = 'y'
+        args = {old_dim: new_dim, old_axis: new_axis}
+        for i in range(len(vals)):
+            DAS[i] = DAS[i].rename_dims(**args).rename_vars(**args)
+            if both:
+                DBS[i] = DBS[i].rename_dims(**args).rename_vars(**args)
+
     return DAS, DBS, ALPHA0, vals
 
 
