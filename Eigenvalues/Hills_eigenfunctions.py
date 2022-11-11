@@ -228,9 +228,7 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
             Nr = int(R[k])  # must be integer
         else:
             Nr = N  # matrix size constant for all q
-        if q[k].imag == 0:
-            ak, Ak = eig_pairs(matrix_system(q[k], 10, coeffs, Kj, symmetry), symmetry)
-        if q[k].imag > 0:
+        if abs(q[k].imag) > 0:
             ak, Ak = eig_pairs(matrix_system(q[k], Nr + 5, coeffs, Kj, symmetry), symmetry)
             for n in range(Nr - _r0):
                 if opt is True and (Nr + 5) < Rmax:
@@ -240,7 +238,7 @@ def A_coefficients(K, Pe, N, coeffs, Kj, symmetry='even', opt=False, reflect=Tru
             As_ds[_eigs].isel(k=k, n=slice(Nr - _r0)).data[:] = ak[:-5]
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
-        As_ds = reflect_dataset(As_ds, k=True, Pe=False, symmetry=symmetry)
+        As_dsc = reflect_dataset(As_ds, k=True, Pe=False, symmetry=symmetry)
         As_ds = As_dsc.combine_first(As_ds)  # combine along k values.
 
 
@@ -2936,6 +2934,8 @@ def phi_array(N, K, symmetry='even', y = 0, coeffs=True, eigs=True, phis=False):
     if phis:
         data_vars = {**data_vars, **{'phi_2n': phi_2n}}
     eig_fns =  _xr.Dataset(data_vars)
+    if symmetry == 'even':
+        eig_fns['A_2r'].isel(n=0, r=0).data[:] = (1/_np.sqrt(2)) * _np.ones(_np.shape(K))
     return eig_fns
 
 
