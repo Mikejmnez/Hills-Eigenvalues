@@ -3041,9 +3041,10 @@ def reflect_dataset(ds, k=True, Pe=False, symmetry='even'):
 
 
 
-def ds_spectralist(_Kn, _vals, _Pe, _N, _betas_m, _Km, _y, both=True):
+def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True):
     """Creates a list of datasets in which each element contains the spectra of the governing operator.
     """
+    _betas_m = _np.array(_betas_m)
     mDAS = []
     nDAS = []
     mDBS = []
@@ -3055,29 +3056,29 @@ def ds_spectralist(_Kn, _vals, _Pe, _N, _betas_m, _Km, _y, both=True):
     mval = []
     ll = _np.where(_np.array(_vals)==0)[0][0]
 
-    for i in _vals[ll:]:
-        ds_As = A_coefficients(_Kn, abs(i*_Pe), _N, _np.sign(i)*_np.array(_betas_m), _Km, symmetry='even', opt=True, reflect=True)
-        ds_As = phi_even(_Kn, abs(i*_Pe), _y, _N, _np.sign(i)*_np.array(_betas_m), _Km, dAs = ds_As)
+    for val in _vals[ll:]:
+        ds_As = A_coefficients(_Kn, val * _Pe, _N, _betas_m, _Km, symmetry='even', opt=True, reflect=True)
+        ds_As = phi_even(_Kn, val * _Pe, _y, _N, _betas_m, _Km, dAs = ds_As)
         mDAS.append(copy.deepcopy(ds_As))
         if both:
-            ds_Bs = A_coefficients(_Kn, abs(i*_Pe), _N, _np.sign(i)*_np.array(_betas_m), _Km, symmetry='odd', opt=True, reflect=True)
-            ds_Bs = phi_odd(_Kn, abs(i*_Pe), _y, _N, _np.sign(i)*_np.array(_betas_m), _Km, dBs = ds_Bs)
+            ds_Bs = A_coefficients(_Kn, val * _Pe, _N, _betas_m, _Km, symmetry='odd', opt=True, reflect=True)
+            ds_Bs = phi_odd(_Kn, val * _Pe, _y, _N, _betas_m, _Km, dBs = ds_Bs)
             mDBS.append(copy.deepcopy(ds_Bs))
 
-        mALPHA0.append(i*alpha0_gauss2) 
-        mval.append(i)
+        mALPHA0.append(val * _alpha0) 
+        mval.append(val)
         if i > 0:
             nds_As = reflect_dataset(ds_As, k=False, Pe=True, symmetry = 'even')
-            nds_As = phi_even(Kn, abs(i*Pe), y, _N, -_np.sign(i)*_np.array(_betas_m), _Km, dAs = nds_As)
+            nds_As = phi_even(Kn, val * _Pe, _y, _N, - _betas_m, _Km, dAs = nds_As)
             nDAS.append(copy.deepcopy(nds_As))
             if both:
                 nds_Bs = reflect_dataset(ds_Bs, k=False, Pe=True, symmetry = 'odd')
-                nds_Bs = phi_odd(Kn, abs(i*Pe), y, _N, -_np.sign(i)*_np.array(_betas_m), _Km, dBs = nds_Bs)
+                nds_Bs = phi_odd(Kn, val * _Pe, _y, _N, - _betas_m, _Km, dBs = nds_Bs)
                 nDBS.append(copy.deepcopy(nds_Bs))
                 nds_Bs = 0
-            nALPHA0.append(-i*alpha0_gauss2)
+            nALPHA0.append(-val * _alpha0)
             nds_As = 0
-            nval.append(-i)
+            nval.append(-val)
         ds_As = 0
         ds_Bs = 0
 
