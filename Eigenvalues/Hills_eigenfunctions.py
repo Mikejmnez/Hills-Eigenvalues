@@ -3026,6 +3026,8 @@ def reflect_dataset(ds, k=True, Pe=False, symmetry='even'):
         As_dsc = _xr.ones_like(ds)
         As_dsc['nk'] =  -As_dsc['k'].data[::-1]
         As_dsc = As_dsc.drop_dims('k').rename({'nk':'k'})
+        As_dsc[_eigs] = _xr.ones_like(As_ds[_eigs])
+        As_dsc[_eigv] = _xr.ones_like(As_ds[_eigv])
         As_dsc[_eigs].data = ds.conjugate()[_eigs][:, ::-1]
         As_dsc[_eigv].data = ds.conjugate()[_eigv][:, ::-1, :]
 
