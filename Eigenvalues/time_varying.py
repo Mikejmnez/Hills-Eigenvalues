@@ -99,7 +99,7 @@ def coeff_project(_phi, _y, dim='y', phi_old=_np.pi, phi_new=0):
 	return even_coeffs, odd_coeffs, phi_new, phi_old
 
 
-def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _X, _Y, _time, _tf=0):
+def evolve_ds_modal_uniform(_dAs, _K, _alpha0, _Pe, _X, _Y, _time, _tf=0):
     """Constructs the modal solution to the IVP with uniform cross-jet initial condition """
     # something wrong is hapenning?
     coords = {"t": copy.deepcopy(_time),
@@ -117,7 +117,7 @@ def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _X, _Y, _time, _tf=0):
     return ds, PHI2n.isel(x=0).drop_vars({'x', 'r', 'k'})  # return the eigenfunction sum
 
 
-def evolve_ds_modal_gaussian(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _time, _tf=0):
+def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _time, _tf=0):
     """Constructs the modal solution to the IVP that is localized across the jet."""
 
     coords = {"t": copy.deepcopy(_time),
