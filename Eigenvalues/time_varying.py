@@ -118,46 +118,41 @@ def evolve_ds_modal_uniform(_dAs, _K, _alpha0, _Pe, _X, _Y, _time, _tf=0):
 
 
 def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _time, _tf=0):
-    """Constructs the modal solution to the IVP that is localized across the jet."""
+	"""Constructs the modal solution to the IVP that is localized across the jet."""
 
-    coords = {"t": copy.deepcopy(_time),
-              "y": 2 * _Y[:, 0],
-              "x": _X[0, :]}
-    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x'])
-    ds = _xr.Dataset({'Theta': Temp})
-    Nr = len(_dAs.n) # length of truncated array
-    ndAs = complement_dot(_facs * _gauss_alps, _dAs)  # has final size in n (sum in p)
-    for i in range(len(_time)):
-        exp_arg =  (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-        PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i]-_tf)), dims='n')
-        PHI2n = PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
-        T0 = (PHI2n * _np.exp((2*_np.pi* _K * _X) * (1j))).real
-        ds['Theta'].data[i, :, :] = T0.data
-    return ds, PHI2n.isel(x=0).drop_vars({'x'})  # return the eigenfunction sum
+	coords = {"t": _time, "y": 2 * _Y[:, 0], "x": _X[0, :]}
+	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x'])
+	ds = _xr.Dataset({'Theta': Temp})
+	Nr = len(_dAs.n) # length of truncated array
+	ndAs = complement_dot(_facs * _gauss_alps, _dAs)  # has final size in n (sum in p)
+	for i in range(len(_time)):
+		exp_arg =  (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+		PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i]-_tf)), dims='n')
+		PHI2n = PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
+		T0 = (PHI2n * _np.exp((2*_np.pi* _K * _X) * (1j))).real
+		ds['Theta'].data[i, :, :] = T0.data
+	return ds, PHI2n.isel(x=0).drop_vars({'x'})  # return the eigenfunction sum
 
 
 def evolve_ds_modal_off(_dAs, _dBs, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _X, _Y, _t, _tf=0):
-    """Constructs the modal solution to the IVP that is localized across the jet,
-    with arbitrary location in y"""
+	"""Constructs the modal solution to the IVP that is localized across the jet,
+	with arbitrary location in y"""
 
-    coords = {"time": copy.deepcopy(_time),
-              "y": 2 * _Y[:, 0],
-              "x": _X[0, :]}
-    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
-    ds = _xr.Dataset({'Theta': Temp})
-    # Nr = len(_dAs.n) # length of truncated array
-    _ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
-    _ndBs = _xr.dot(_bfacs * _b_alps, _dBs['B_2r'], dims='r')
-    for i in range(len(_time)):    	
-    	arg_e = 0.25*_dAs['a_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-    	arg_o = 0.25*_dBs['b_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-    	_PHI2n_e = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg_e*(_t[i] - _tf)), dims='n')
-    	_PHI2n_o = _xr.dot(_ndBs, _dBs['phi_2n'] * _np.exp(- arg_o*(_t[i] - _tf)), dims='n')
-    	_PHI2n = _PHI2n_e + _PHI2n_o
-        _PHI2n = _PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
-        T0 = (_PHI2n * _np.exp((2*_np.pi* _K * _X) * (1j))).real
-        ds['Theta'].data[i, :, :] = T0.data
-    return ds, PHI2n.isel(x=0).drop_vars({'x'})  # return the eigenfunction sum
+	coords = {"time": copy.deepcopy(_t), "y": 2 * _Y[:, 0], "x": _X[0, :]}
+	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
+	ds = _xr.Dataset({'Theta': Temp})
+	_ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
+	_ndBs = _xr.dot(_bfacs * _b_alps, _dBs['B_2r'], dims='r')
+	for i in range(len(_time)):    	
+		arg_e = 0.25*_dAs['a_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+		arg_o = 0.25*_dBs['b_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+		_PHI2n_e = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg_e*(_t[i] - _tf)), dims='n')
+		_PHI2n_o = _xr.dot(_ndBs, _dBs['phi_2n'] * _np.exp(- arg_o*(_t[i] - _tf)), dims='n')
+		_PHI2n = _PHI2n_e + _PHI2n_o
+		_PHI2n = _PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
+		T0 = (_PHI2n * _np.exp((2*_np.pi* _K * _X) * (1j))).real
+		ds['Theta'].data[i, :, :] = T0.data
+	return ds, PHI2n.isel(x=0).drop_vars({'x'})  # return the eigenfunction sum
 
 
 
@@ -356,6 +351,85 @@ def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _
 
 	return ds_f
 
+
+def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _time, _tf=0, _dim='k'):
+	"""Constructs the modal solution to the IVP that is localized across the jet."""
+	coords = {"t": _time, "y": _Y[:, 0], _dim: _Kn, 'x': _X[0, :]}
+	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x', _dim])
+	DS = []
+	if _dim == 'k':
+		phi_arg = {'x':_X[0, :]}
+	elif _dim == 'l':
+		phi_arg = {'y':_Y[:, 0]}
+	for kk in range(len(_Kn)):
+		_K = _Kn[kk]
+		k_args = {_dim: _K}
+		ds = _xr.Dataset({'Theta': Temp})
+		if _dim in _gauss_alps.dims:
+			ndAs = _xr.dot(_facs * _gauss_alps.sel(**k_args), _dAs['A_2r'].sel(**k_args))
+		else:
+			ndAs = _xr.dot(_facs * _gauss_alps, _dAs['A_2r'].sel(**k_args))
+		exp_arg_e =  0.25*_dAs['a_2n'].sel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+		exp_arg_o =  0.25*_dBs['a_2n'].sel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+		for i in range(len(_time)):
+			PHI2n_e = _xr.dot(ndAs, _dAs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg_e*(_time[i]-_tf)), dims='n')
+			PHI2n_o = _xr.dot(ndBs, _dBs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg_b*(_time[i]-_tf)), dims='n')
+			PHI2n = PHI2n_e + PHI2n_o
+			if _dim == 'k':
+				PHI2n = PHI2n.expand_dims(**phi_arg).transpose('y', 'x')
+				mode =  _np.exp((2*_np.pi* _K * _X) * (1j))
+			else:
+				PHI2n = PHI2n.expand_dims(**phi_arg)
+				mode =  _np.exp((2*_np.pi* _K * _Y) * (1j))
+			T0 = (PHI2n * mode).real
+			ds['Theta'].data[i, :, :, kk] = T0.data
+	ll = int(_np.where(_Kn==0)[0][0]) # single zero
+	dk = _Kn[ll + 1] / 2
+	da = ds['Theta'].sum(dim=_dim) * dk
+	coords = {"time": _time, "y": _Y[:, 0], 'x': _X[0, :]}
+	da_final = _xr.DataArray(da.real, coords=coords, dims=['time', 'y', 'x'])
+	ds_final = _xr.Dataset({'Theta': da_final})
+	return ds_final
+
+
+def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _X, _Y, _time, _tf=0, _dim='k'):
+	"""Constructs the modal solution to the IVP that is localized across the jet."""
+	coords = {"t": _time, "y": _Y[:, 0], _dim: _Kn, 'x': _X[0, :]}
+	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x', _dim])
+	DS = []
+	if _dim == 'k':
+		phi_arg = {'x':_X[0, :]}
+	elif _dim == 'l':
+		phi_arg = {'y':_Y[:, 0]}
+	for kk in range(len(_Kn)):
+		_K = _Kn[kk]
+		k_args = {_dim: _K}
+		ds = _xr.Dataset({'Theta': Temp})
+		if _dim in _a_alps.dims:
+			ndAs = _xr.dot(_afacs * _a_alps.sel(**k_args), _dAs['A_2r'].sel(**k_args))
+			ndBs = _xr.dot(_bfacs * _b_alps.sel(**k_args), _dBs['A_2r'].sel(**k_args))
+		else:
+			ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'].sel(**k_args))
+			ndBs = _xr.dot(_bfacs * _b_alps, _dAs['A_2r'].sel(**k_args))
+
+		exp_arg =  0.25*_dAs['a_2n'].sel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+		for i in range(len(_time)):
+			PHI2n = _xr.dot(ndAs, _dAs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg*(_time[i]-_tf)), dims='n')
+			if _dim == 'k':
+				PHI2n = PHI2n.expand_dims(**phi_arg).transpose('y', 'x')
+				mode =  _np.exp((2*_np.pi* _K * _X) * (1j))
+			else:
+				PHI2n = PHI2n.expand_dims(**phi_arg)
+				mode =  _np.exp((2*_np.pi* _K * _Y) * (1j))
+			T0 = (PHI2n * mode).real
+			ds['Theta'].data[i, :, :, kk] = T0.data
+	ll = int(_np.where(_Kn==0)[0][0]) # single zero
+	dk = _Kn[ll + 1] / 2
+	da = ds['Theta'].sum(dim=_dim) * dk
+	coords = {"time": _time, "y": _Y[:, 0], 'x': _X[0, :]}
+	da_final = _xr.DataArray(da.real, coords=coords, dims=['time', 'y', 'x'])
+	ds_final = _xr.Dataset({'Theta': da_final})
+	return ds_final
 
 
 ## definition of time-varying shear flows (jets)
