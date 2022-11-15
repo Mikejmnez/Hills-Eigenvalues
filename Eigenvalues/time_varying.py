@@ -369,12 +369,9 @@ def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _time,
 			ndAs = _xr.dot(_facs * _gauss_alps.sel(**k_args), _dAs['A_2r'].sel(**k_args))
 		else:
 			ndAs = _xr.dot(_facs * _gauss_alps, _dAs['A_2r'].sel(**k_args))
-		exp_arg_e =  0.25*_dAs['a_2n'].sel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-		exp_arg_o =  0.25*_dBs['a_2n'].sel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+		exp_arg =  0.25*_dAs['a_2n'].sel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
 		for i in range(len(_time)):
-			PHI2n_e = _xr.dot(ndAs, _dAs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg_e*(_time[i]-_tf)), dims='n')
-			PHI2n_o = _xr.dot(ndBs, _dBs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg_b*(_time[i]-_tf)), dims='n')
-			PHI2n = PHI2n_e + PHI2n_o
+			PHI2n = _xr.dot(ndAs, _dAs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg*(_time[i]-_tf)), dims='n')
 			if _dim == 'k':
 				PHI2n = PHI2n.expand_dims(**phi_arg).transpose('y', 'x')
 				mode =  _np.exp((2*_np.pi* _K * _X) * (1j))
@@ -403,18 +400,20 @@ def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps
 		phi_arg = {'y':_Y[:, 0]}
 	for kk in range(len(_Kn)):
 		_K = _Kn[kk]
-		k_args = {_dim: _K}
+		k_args = {_dim: kk}
 		ds = _xr.Dataset({'Theta': Temp})
 		if _dim in _a_alps.dims:
-			ndAs = _xr.dot(_afacs * _a_alps.sel(**k_args), _dAs['A_2r'].sel(**k_args))
-			ndBs = _xr.dot(_bfacs * _b_alps.sel(**k_args), _dBs['A_2r'].sel(**k_args))
+			ndAs = _xr.dot(_afacs * _a_alps.isel(**k_args), _dAs['A_2r'].isel(**k_args))
+			ndBs = _xr.dot(_bfacs * _b_alps.isel(**k_args), _dBs['B_2r'].isel(**k_args))
 		else:
-			ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'].sel(**k_args))
-			ndBs = _xr.dot(_bfacs * _b_alps, _dAs['A_2r'].sel(**k_args))
-
-		exp_arg =  0.25*_dAs['a_2n'].sel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+			ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'].isel(**k_args))
+			ndBs = _xr.dot(_bfacs * _b_alps, _dAs['B_2r'].isel(**k_args))
+		exp_arg_e =  0.25*_dAs['a_2n'].sel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+		exp_arg_o =  0.25*_dBs['b_2n'].sel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
 		for i in range(len(_time)):
-			PHI2n = _xr.dot(ndAs, _dAs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg*(_time[i]-_tf)), dims='n')
+			PHI2n_e = _xr.dot(ndAs, _dAs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg_e*(_time[i]-_tf)), dims='n')
+			PHI2n_o = _xr.dot(ndBs, _dBs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg_o*(_time[i]-_tf)), dims='n')
+			PHI2n = PHI2n_e + PHI2n_o
 			if _dim == 'k':
 				PHI2n = PHI2n.expand_dims(**phi_arg).transpose('y', 'x')
 				mode =  _np.exp((2*_np.pi* _K * _X) * (1j))
