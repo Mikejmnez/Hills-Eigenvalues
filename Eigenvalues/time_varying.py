@@ -129,13 +129,33 @@ def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _time, _
     ndAs = complement_dot(_facs * _gauss_alps, _dAs)  # has final size in n (sum in p)
     for i in range(len(_time)):
         exp_arg =  (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-        # if Nr < len(_facs):  # Is this necessary?
-        #     PHI2n = _xr.dot(ndAs.isel(n=slice(Nr)), _dAs['phi_2n'].isel(n=slice(Nr)) * _np.exp(-(0.25*_dAs['a_2n'].isel(n=slice(Nr)) + exp_arg)*(_time[i]-_tf)), dims='n')
-        #     PHI2n = PHI2n + _xr.dot(ndAs[Nr:], _dAs['phi_2n'][Nr:] * _np.exp(-(0.25*_dAs['a_2n'][Nr:] + exp_arg)*(_time[i]-_tf)), dims='n')
-        # else:
         PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i]-_tf)), dims='n')
         PHI2n = PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
         T0 = (PHI2n * _np.exp((2*_np.pi* _K * _X) * (1j))).real
+        ds['Theta'].data[i, :, :] = T0.data
+    return ds, PHI2n.isel(x=0).drop_vars({'x'})  # return the eigenfunction sum
+
+
+def evolve_ds_modal_off(_dAs, _dBs, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _X, _Y, _t, _tf=0):
+    """Constructs the modal solution to the IVP that is localized across the jet,
+    with arbitrary location in y"""
+
+    coords = {"time": copy.deepcopy(_time),
+              "y": 2 * _Y[:, 0],
+              "x": _X[0, :]}
+    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
+    ds = _xr.Dataset({'Theta': Temp})
+    # Nr = len(_dAs.n) # length of truncated array
+    _ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
+    _ndBs = _xr.dot(_bfacs * _b_alps, _dBs['B_2r'], dims='r')
+    for i in range(len(_time)):    	
+    	arg_e = 0.25*_dAs['a_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+    	arg_o = 0.25*_dBs['b_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+    	_PHI2n_e = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg_e*(_t[i] - _tf)), dims='n')
+    	_PHI2n_o = _xr.dot(_ndBs, _dBs['phi_2n'] * _np.exp(- arg_o*(_t[i] - _tf)), dims='n')
+    	_PHI2n = _PHI2n_e + _PHI2n_o
+        _PHI2n = _PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
+        T0 = (_PHI2n * _np.exp((2*_np.pi* _K * _X) * (1j))).real
         ds['Theta'].data[i, :, :] = T0.data
     return ds, PHI2n.isel(x=0).drop_vars({'x'})  # return the eigenfunction sum
 
