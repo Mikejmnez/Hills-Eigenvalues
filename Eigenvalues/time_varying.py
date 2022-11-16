@@ -431,7 +431,80 @@ def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps
 	return ds_final
 
 
-## definition of time-varying shear flows (jets)
+def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y, _t, _tau):
+	"""Computes the evolution of a passive scalar in the case the velocity field is renewing. Square domain.
+	By construction, the velocity field begins with an along- x orientation.
+	Input:
+		_dAs, _dBs: datasets of non-rotated spectra associated with non-rotated shear flow.
+		_dAs_rot, _dBs_rot: datasets with spectra associated with rotatede shear flows.
+		_alpha0: Mean velocity.
+		_Pe: float. Peclet number.
+		Theta0: Initial condition. data Array.
+		_X, _Y: 2d arrays (each). Together define the grid, assumed to be square domains
+		_t: 1d array. Time with t[0]=0.
+		_tau: float, element of _t. defines the frequency of velocity rotation.
+	Output:
+		ds: xarray.dataset 
+	"""
+	xt = _X[0, :] / 2
+	yt = _Y[:, 0] / 2
+
+	nt = _np.where(_t==tau)[0][0]  # assumes tau is an element.
+	NT = int(round(len(_t)/nt))
+    
+	da_dft = _xrft.fft(Theta0.transpose(), dim='x', true_phase=True, true_amplitude=True)
+	da_dft = da_dft.rename({'freq_x':'k'})
+	Kn = copy.deepcopy(da_dft['k'].values)
+    
+	da_y = _xrft.fft(Theta0, dim='y', true_phase=True, true_amplitude=True)
+	da_y = da_y.rename({'freq_y':'l'})
+	Ln = copy.deepcopy(da_y['l'].values)
+    
+	even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
+	acoords = {'r':range(len(even_coeffs))}
+	bcoords = {'r':range(len(odd_coeffs)-1)}
+	afacs = _np.ones(_np.shape(range(len(even_coeffs))))
+	afacs[0] = 2
+
+	bfacs = _np.ones(_np.shape(range(len(odd_coeffs) - 1)))
+
+	afacs = _xr.DataArray(afacs, coords=acoords, dims='r')
+	bfacs = _xr.DataArray(bfacs, coords=bcoords, dims='r')
+
+#     Initialize evolution
+	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, X, Y, t[:nt])
+    
+	for i in range(1, NT - 1):
+		da_step = d0['Theta'].isel(time=-1)
+		t0 = _t[i*nt]
+		t1 = _t[i*nt: (i+1)*nt+1]
+		if i % 2 != 0:  # if odd number.
+			da_dft = _xrft.fft(da_step, dim='y', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
+			da_dft = da_dft.rename({'freq_y':'l'})
+			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, dim='x')
+			d1 = evolve_ds_serial_off(_dAs_rot,_dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _X, _Y, t1, t0, _dim='l')
+		else:
+			da_dft = _xrft.fft(da_step.transpose(), dim='x', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
+			da_dft = da_dft.rename({'freq_x':'k'})
+			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
+			d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _X, _Y, t1, t0, _dim='k')
+		d0 = d0.combine_first(d1)
+	t0 = _t[(i+1)*nt]
+	t1 = _t[(i+1)*nt:]
+	if i % 2 != 0:  # if odd number.
+		da_dft = _xrft.fft(da_step, dim='y', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
+		da_dft = da_dft.rename({'freq_y':'l'})
+		even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, dim='x')
+		d1 = evolve_ds_serial_off(_dAs_rot,_dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _X, _Y, t1, t0, _dim='l')
+	else:
+		da_dft = _xrft.fft(da_step.transpose(), dim='x', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
+		da_dft = da_dft.rename({'freq_x':'k'})
+		even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
+		d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _X, _Y, t1, t0, _dim='k')
+	d0 = d0.combine_first(d1)
+	return d0
+
+
 
 def time_reverse(_jet, _nt, _y, _t, _samp):
 	"""Takes a jet and adds time periodicity, which reverses its orientation periodically.
