@@ -439,7 +439,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y,
 		_dAs_rot, _dBs_rot: datasets with spectra associated with rotatede shear flows.
 		_alpha0: Mean velocity.
 		_Pe: float. Peclet number.
-		Theta0: Initial condition. data Array.
+		Theta0: Initial condition. xarray.DataArray.
 		_X, _Y: 2d arrays (each). Together define the grid, assumed to be square domains
 		_t: 1d array. Time with t[0]=0.
 		_tau: float, element of _t. defines the frequency of velocity rotation.
@@ -449,7 +449,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y,
 	xt = _X[0, :] / 2
 	yt = _Y[:, 0] / 2
 
-	nt = _np.where(_t==tau)[0][0]  # assumes tau is an element.
+	nt = _np.where(_t==_tau)[0][0]  # assumes tau is an element.
 	NT = int(round(len(_t)/nt))
     
 	da_dft = _xrft.fft(Theta0.transpose(), dim='x', true_phase=True, true_amplitude=True)
@@ -472,7 +472,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y,
 	bfacs = _xr.DataArray(bfacs, coords=bcoords, dims='r')
 
 #     Initialize evolution
-	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, X, Y, t[:nt])
+	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _X, _Y, _t[:nt])
     
 	for i in range(1, NT - 1):
 		da_step = d0['Theta'].isel(time=-1)
