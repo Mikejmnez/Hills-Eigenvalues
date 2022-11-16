@@ -408,11 +408,11 @@ def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps
 		else:
 			ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'].isel(**k_args))
 			ndBs = _xr.dot(_bfacs * _b_alps, _dAs['B_2r'].isel(**k_args))
-		exp_arg_e =  0.25*_dAs['a_2n'].sel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-		exp_arg_o =  0.25*_dBs['b_2n'].sel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+		exp_arg_e =  0.25*_dAs['a_2n'].isel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+		exp_arg_o =  0.25*_dBs['b_2n'].isel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
 		for i in range(len(_time)):
-			PHI2n_e = _xr.dot(ndAs, _dAs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg_e*(_time[i]-_tf)), dims='n')
-			PHI2n_o = _xr.dot(ndBs, _dBs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg_o*(_time[i]-_tf)), dims='n')
+			PHI2n_e = _xr.dot(ndAs, _dAs['phi_2n'].isel(**k_args) * _np.exp(-exp_arg_e*(_time[i]-_tf)), dims='n')
+			PHI2n_o = _xr.dot(ndBs, _dBs['phi_2n'].isel(**k_args) * _np.exp(-exp_arg_o*(_time[i]-_tf)), dims='n')
 			PHI2n = PHI2n_e + PHI2n_o
 			if _dim == 'k':
 				PHI2n = PHI2n.expand_dims(**phi_arg).transpose('y', 'x')
