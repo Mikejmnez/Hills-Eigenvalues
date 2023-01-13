@@ -512,21 +512,22 @@ def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t
               "x": _X[0, :]}
     Temp = _xr.DataArray(np.nan, coords=coords, dims=["t", 'y', 'x'])
     ds = _xr.Dataset({'Theta_p': Temp, 'Theta_h': Temp, 'Theta': Temp})
-    for i in tqdm(range(len(_time))):
-        exp_arg = (1j)*_Ubar*(2* np.pi*_K)*_Pe + (2* np.pi*_K)**2
-        exp2 = _dAs['a_2n'] + 4*(1j)*(2*np.pi*_K)*_Pe * _Ubar + 4*(2* np.pi*_K)**2 + 4*(1j) * _delta
+    for i in range(len(_time)):
+        exp_arg = (1j)*_Ubar*(2* _np.pi*_K)*_Pe + (2* _np.pi*_K)**2
+        exp2 = _dAs['a_2n'] + 4*(1j)*(2*_np.pi*_K)*_Pe * _Ubar + 4*(2* _np.pi*_K)**2 + 4*(1j) * _delta
         ndAs_p =  4*Q0 * _dAs['A_2r'].isel(r=1) / exp2
         ndAs_h =  -ndAs_p
-        PHI2n_h = xr.dot(ndAs_h, _dAs['phi_2n'] * np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*_time[i]), dims='n')
-        PHI2n_p = xr.dot(ndAs_p, _dAs['phi_2n'] * np.exp((1j)* _delta * _time[i]), dims='n')
-        T0 = xrft.ifft(_da_xrft * PHI2n_h, dim='k', true_phase=True, true_amplitude=True).real
+        PHI2n_h = _xr.dot(ndAs_h, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*_time[i]), dims='n')
+        PHI2n_p = _xr.dot(ndAs_p, _dAs['phi_2n'] * _np.exp((1j)* _delta * _time[i]), dims='n')
+        T0 = _xrft.ifft(_da_xrft * PHI2n_h, dim='k', true_phase=True, true_amplitude=True).real
         T0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
-        Tp = xrft.ifft(_da_xrft * PHI2n_p, dim='k', true_phase=True, true_amplitude=True).real
+        Tp = _xrft.ifft(_da_xrft * PHI2n_p, dim='k', true_phase=True, true_amplitude=True).real
         Tp = Tp.rename({'freq_k':'x'}).transpose('y', 'x')
         ds['Theta_h'].data[i, :, :] = T0.data
         ds['Theta_p'].data[i, :, :] = Tp.data
         ds['Theta'].data[i, :, :] = (Tp + T0).data
     return ds
+
 
 
 def time_reverse(_jet, _nt, _y, _t, _samp):
