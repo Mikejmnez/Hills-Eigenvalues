@@ -3,7 +3,6 @@ defines functions that allow time-evolution
 """
 
 import numpy as _np
-import copy
 from Hills_eigenfunctions import complement_dot
 import copy as _copy
 import xarray as _xr
@@ -102,7 +101,7 @@ def coeff_project(_phi, _y, dim='y', phi_old=_np.pi, phi_new=0):
 def evolve_ds_modal_uniform(_dAs, _K, _alpha0, _Pe, _X, _Y, _time, _tf=0):
     """Constructs the modal solution to the IVP with uniform cross-jet initial condition """
     # something wrong is hapenning?
-    coords = {"t": copy.deepcopy(_time),
+    coords = {"t": _copy.deepcopy(_time),
               "y": 2 * _Y[:, 0],
               "x": _X[0, :]}
     Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x'])
@@ -138,7 +137,7 @@ def evolve_ds_modal_off(_dAs, _dBs, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, 
 	"""Constructs the modal solution to the IVP that is localized across the jet,
 	with arbitrary location in y"""
 
-	coords = {"time": copy.deepcopy(_t), "y": 2 * _Y[:, 0], "x": _X[0, :]}
+	coords = {"time": _copy.deepcopy(_t), "y": 2 * _Y[:, 0], "x": _X[0, :]}
 	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
 	ds = _xr.Dataset({'Theta': Temp})
 	_ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
@@ -212,7 +211,7 @@ def evolve_ds_modal_time(_DAS, _indt, _order, _vals, _K0, _ALPHA0, _Pe, _gauss_a
 
 	"""
 	DS = []
-	ncoeffs = copy.deepcopy(_gauss_alps)
+	ncoeffs = _copy.deepcopy(_gauss_alps)
 	for i in range(len(_indt)):
 		if i == 0:
 			tf = 0
@@ -236,7 +235,7 @@ def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gaus
 	evolves a localized initial condition defined by its 2d Fourier coefficients.
 	"""
 	DS = []
-	ncoeffs = copy.deepcopy(_gauss_alps)
+	ncoeffs = _copy.deepcopy(_gauss_alps)
 	for i in range(len(_indt)):
 		if i == 0:
 			tf = 0
@@ -259,8 +258,8 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 	DS = []
 	PHI_NEW = []
 	PHI_OLD = []
-	ecoeffs = copy.deepcopy(_even_alps)
-	ocoeffs = copy.deepcopy(_odd_alps)
+	ecoeffs = _copy.deepcopy(_even_alps)
+	ocoeffs = _copy.deepcopy(_odd_alps)
 	if _shift == 0:
 		_shift = [0 for i in range(len(_time))]
 	for i in range(len(_indt)):
@@ -277,7 +276,7 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 			tf =_time[_indt[i - 1][1] - 1]
 		ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _y, phi_old=phi_old, phi_new=phi_new)
 		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _time[_indt[i][0]:_indt[i][1]], tf)
-		DS.append(copy.deepcopy(ds))
+		DS.append(_copy.deepcopy(ds))
 		PHI_NEW.append(phi_new)
 		PHI_OLD.append(phi_old)
 	for i in range(len(DS)):
@@ -333,7 +332,7 @@ def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _
 	evolves a localized initial condition defined by its 2d Fourier coefficients.
 	"""
 	DS = []
-	ncoeffs = copy.deepcopy(_gauss_alps)
+	ncoeffs = _copy.deepcopy(_gauss_alps)
 	for i in range(len(_indt)):
 		if i == 0:
 			tf = 0
@@ -454,11 +453,11 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y,
     
 	da_dft = _xrft.fft(Theta0.transpose(), dim='x', true_phase=True, true_amplitude=True)
 	da_dft = da_dft.rename({'freq_x':'k'})
-	Kn = copy.deepcopy(da_dft['k'].values)
+	Kn = _copy.deepcopy(da_dft['k'].values)
     
 	da_y = _xrft.fft(Theta0, dim='y', true_phase=True, true_amplitude=True)
 	da_y = da_y.rename({'freq_y':'l'})
-	Ln = copy.deepcopy(da_y['l'].values)
+	Ln = _copy.deepcopy(da_y['l'].values)
     
 	even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
 	acoords = {'r':range(len(even_coeffs))}
@@ -504,6 +503,30 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y,
 	d0 = d0.combine_first(d1)
 	return d0
 
+
+def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _time, _tf=0):
+    """Constructs the modal solution to the IVP with uniform cross-jet initial condition """
+    # something wrong is hapenning?
+    coords = {"t": _copy.deepcopy(_time),
+              "y": 2 * _Y[:, 0],
+              "x": _X[0, :]}
+    Temp = _xr.DataArray(np.nan, coords=coords, dims=["t", 'y', 'x'])
+    ds = _xr.Dataset({'Theta_p': Temp, 'Theta_h': Temp, 'Theta': Temp})
+    for i in tqdm(range(len(_time))):
+        exp_arg = (1j)*_Ubar*(2* np.pi*_K)*_Pe + (2* np.pi*_K)**2
+        exp2 = _dAs['a_2n'] + 4*(1j)*(2*np.pi*_K)*_Pe * _Ubar + 4*(2* np.pi*_K)**2 + 4*(1j) * _delta
+        ndAs_p =  4*Q0 * _dAs['A_2r'].isel(r=1) / exp2
+        ndAs_h =  -ndAs_p
+        PHI2n_h = xr.dot(ndAs_h, _dAs['phi_2n'] * np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*_time[i]), dims='n')
+        PHI2n_p = xr.dot(ndAs_p, _dAs['phi_2n'] * np.exp((1j)* _delta * _time[i]), dims='n')
+        T0 = xrft.ifft(_da_xrft * PHI2n_h, dim='k', true_phase=True, true_amplitude=True).real
+        T0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
+        Tp = xrft.ifft(_da_xrft * PHI2n_p, dim='k', true_phase=True, true_amplitude=True).real
+        Tp = Tp.rename({'freq_k':'x'}).transpose('y', 'x')
+        ds['Theta_h'].data[i, :, :] = T0.data
+        ds['Theta_p'].data[i, :, :] = Tp.data
+        ds['Theta'].data[i, :, :] = (Tp + T0).data
+    return ds
 
 
 def time_reverse(_jet, _nt, _y, _t, _samp):
