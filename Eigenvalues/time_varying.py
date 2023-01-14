@@ -534,7 +534,6 @@ def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t
 			Initial time. Default is zero, but can vary in case shear flow is time-dependent.
 
 	
-
 	Returns:
 
 		_ds: xarray.dataset
@@ -546,11 +545,11 @@ def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t
               "x": _X}
     Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x'])
     ds = _xr.Dataset({'Theta_p': Temp, 'Theta_h': Temp, 'Theta': Temp})
+	exp_arg = (1j)*_Ubar*(2* _np.pi*_K)*_Pe + (2* _np.pi*_K)**2
+	exp2 = _dAs['a_2n'] + 4*(1j)*(2*_np.pi*_K)*_Pe * _Ubar + 4*(2* _np.pi*_K)**2 + 4*(1j) * _delta
+	ndAs_p =  4*_Q0 * _dAs['A_2r'].isel(r=1) / exp2  # this defines a single mode.
+	ndAs_h =  -ndAs_p
     for i in range(len(_time)):
-        exp_arg = (1j)*_Ubar*(2* _np.pi*_K)*_Pe + (2* _np.pi*_K)**2
-        exp2 = _dAs['a_2n'] + 4*(1j)*(2*_np.pi*_K)*_Pe * _Ubar + 4*(2* _np.pi*_K)**2 + 4*(1j) * _delta
-        ndAs_p =  4*_Q0 * _dAs['A_2r'].isel(r=1) / exp2  # this defines a single mode.
-        ndAs_h =  -ndAs_p
         PHI2n_h = _xr.dot(ndAs_h, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*_time[i]), dims='n')
         PHI2n_p = _xr.dot(ndAs_p, _dAs['phi_2n'] * _np.exp((1j)* _delta * _time[i]), dims='n')
         T0 = _xrft.ifft(_da_xrft * PHI2n_h, dim='k', true_phase=True, true_amplitude=True).real
