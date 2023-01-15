@@ -215,7 +215,7 @@ class planarflows:
 			"_gauss_alps": a_alps_y,
 			"_facs": afacs,
 			"_x": x,
-			"_y": y,
+			"_y": 0.5*y,
 			"_time": t,
 		}
 
@@ -248,7 +248,7 @@ class planarflows:
 				"_b_alps": b_alps_y,
 				"_bfacs": bfacs,
 				"_x": x,
-				"_y": y,
+				"_y": 0.5*y,
 				"_t": t,
 			}
 	
