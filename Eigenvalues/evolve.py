@@ -28,13 +28,14 @@ class planarflows:
 		BCs = None,
 		IC = None,
 		kappa = None,
-		t0=None,
-		tf=None,
 		Amp=None,
 		Phase=None,
 		tau=None,
 		Q=None,
 		delta=None,
+		t0=None,
+		tf=None,
+		dt=None,
 		)
 	"""
 	Calculates the (analytical) solution to the advection diffusion equation in the
@@ -53,10 +54,6 @@ class planarflows:
 		kappa: float, list
 			Background diffusivity. When float, only a single tracer is evolved. It 
 			a list of N (different) values, then solve for N tracers.
-		t0: float.
-			Initial time. If `None`, then default is zero.
-		tf: float.
-			Final time. If `None`, then default is 1 diffusive timescale unit.
 		Amp: None, int or 1d-array like.
 			Time dependency of the shear flow's amplitude. Sign can change. If `None`
 			then default is unit value 1.
@@ -76,6 +73,13 @@ class planarflows:
 		delta: None, float or 1d array-like.
 			Frequency of forcing. When `None` there is no forcing (even when Q is 
 			given). If 1d array-like, len(delta) == number of forcing functions.
+		t0: float.
+			Initial time. If `None`, then default is zero.
+		tf: float.
+			Final time. If `None`, then default is 1 diffusive timescale unit.
+		dt: float.
+			time discretization. Must allow sufficient time resolution to resolve
+			time-dependence of shear flow.
 	"""
 
 	y = U.y.data. # extract coordinate - 0 to 2\pi
@@ -94,7 +98,7 @@ class planarflows:
 		# max amplitude of shear flow is retained
 		# but domain is effectively halved. 
 
-		alphas_m, *a = _coeff_project(U, y)  # Fourier coeffs for shear flow
+		even_coeffs, *a = _coeff_project(U, y)  # Fourier coeffs for shear flow
 
 		# effective Peclet number due to domain halving
 		Pe = 2 * Pe 
@@ -102,17 +106,26 @@ class planarflows:
 	else:
 		odd_flow = False
 
+	# truncate velocity Fourier series.
+	# so that len(alphas_m) < len(y).
+	#  this needs to be a function with proper testing
+	maxUsum = max(abs(even_coeffs.real).cumsum().data)
+	lll = _np.where(abs(even_coeffs.real).cumsum().data < maxUsum * 0.99)[0]
+	alphas_m = even_coeffs.real.data[:lll[-1]]
+	Km = range(1, len(alphas_m))
+
+
 	#  initial condition
 	if type(IC) == _xrda_type:  # one ic is given
 		fx = IC['f(x)'] # along-stream component of ic.
-		g = IC['g(y)'] # cross-stream component of ic.
+		gy = IC['g(y)'] # cross-stream component of ic.
 
 		Ck = _xrft.fft(fx, true_phase=True, true_amplitude=True)
 		Ck = Ck.rename({'freq_x':'k'}) # label k the wavenumber 
 
 		Kn = Ck['k'].values # wavenumber vals
 
-		da_y = _xrft.fft(g, true_phase=True, true_amplitude=True)
+		da_y = _xrft.fft(gy, true_phase=True, true_amplitude=True)
 		da_y = da_y.rename({'freq_y':'l'})
 
 		even_coeffs, odd_coeffs, *a = _coeff_project(da_y, y / 2)
@@ -122,6 +135,67 @@ class planarflows:
 
 		a_alps_y = _xr.DataArray(even_coeffs.data, coords=acoords, dims='r')
 		b_alps_y = _xr.DataArray(odd_coeffs.data[1:], coords=bcoords, dims='r')
+
+
+		# check in i.c. is off centered.
+		# if not, only even eigenfunctions are needed
+		if _np.max(abs(odd_coeffs)) > 1e-10:
+			odd_eigs = True
+		else:
+			odd_eigs = False
+
+	if type(Q) == _xrda_type: # only one forcing function
+		Qx = Q['Qx'] # x-separable forcing fn
+		Qy = Q['Qy'] # y-separable forcing fn
+
+		Qx_k = _xrft.fft(Qx, true_phase=True, true_amplitude=True)
+		Qx_k = Qx_k.rename({'freq_x':'k'}) # label k the wavenumber 
+
+		Kn = Qx_k['k'].values # wavenumber vals. These should be the same to i.c.
+
+	if type(tau) == float:
+			rot_eigs = True
+		else:
+			rot_eigs = False		
+
+
+	# Construct eigenfunctions
+	args = {
+		'K': Kn,
+		'Pe': Pe,
+		"N": 40,
+		'_betas_m': betas_m,
+		'Kj': Km,
+		'symmetry': 'even',
+		"opt": True,
+		"reflect": True,
+	}
+
+	ds_As = A_coefficients(**args)
+	ds_As = eigfns.phi_even(Kn, Pe, y / 2, 50, betas_m, Km, dAs = ds_As)
+
+	if odd_eigs:
+		args = {
+		"K": Kn,
+		"Pe": Pe,
+		'N': 40,
+		'_betas_m': betas_m,
+		'Kj': Km,
+		'symmetry': 'odd',
+		"opt": True,
+		"reflect": True,
+		}
+
+		ds_Bs = A_coefficients(**args)
+		ds_Bs = eigfns.phi_odd(Kn, Pe, yt, 40, betas_m, Km, dBs = ds_Bs)
+
+	if type()
+	# now evolve in time
+
+
+
+
+
 
 
 
