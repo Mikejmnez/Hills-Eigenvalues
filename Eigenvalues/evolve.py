@@ -179,7 +179,7 @@ class planarflows:
 
 
 		if type(tau) == float:
-				rot_eigs = True
+			rot_eigs = True
 		else:
 			rot_eigs = False		
 
