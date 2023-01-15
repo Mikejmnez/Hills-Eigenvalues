@@ -14,6 +14,8 @@ import xarray as _xr
 import xrft as _xrft
 
 _xrda_type = _xr.core.dataarray.DataArray
+_xrds_type = _xr.core.dataset.Dataset
+
 
 class planarflows:
 	# """
@@ -40,8 +42,11 @@ class planarflows:
 	def shear_flow(
 		cls,
 		U = None,
+		x=None,
+		y=None,
 		BCs = None,
 		IC = None,
+		Pe = None,
 		kappa = None,
 		Amp=None,
 		Phase=None,
@@ -60,12 +65,18 @@ class planarflows:
 		-----------
 			U: 1d array-like. xarray.dataarray.
 				Defines the shear flow as U(y). Only the cross-stream domain is defined.
+			x: 1d array-like.
+				Defines the domain in the along-stream direction.
+			y: 1d array-like.
+				Defines the domain in the cross-stream direction.
 			BCs: int
 				Cross-stream boundary conditions to be satisfied by analytical solution.
 				Periodic or Neumann.
 			IC: None, or 2d xarray.dataarray.
 				Initial condition. The domain must be consistent with that in U(y). When
 				`None`, 
+			Pe: float.
+				Peclet number.
 			kappa: float, list
 				Background diffusivity. When float, only a single tracer is evolved. It 
 				a list of N (different) values, then solve for N tracers.
@@ -96,8 +107,7 @@ class planarflows:
 				time discretization. Must allow sufficient time resolution to resolve
 				time-dependence of shear flow.
 		"""
-		y = U.y.data # extract coordinate - 0 to 2\pi
-		x = U.x.data
+
 		even_coeffs, odd_coeffs, *a = coeff_project(U, y)
 
 		# evolve in time. Only steady shear flow for now.
@@ -135,19 +145,16 @@ class planarflows:
 
 
 		#  initial condition
-		if type(IC) == _xrda_type:  # one ic is given
-			fx = IC['f(x)'] # along-stream component of ic.
-			gy = IC['g(y)'] # cross-stream component of ic.
+		if type(IC) == _xrds_type:  # one ic is given
+			fx = IC['f(x)'].isel(y=0) # along-stream component of ic.
+			gy = IC['g(y)'].isel(x=0) # cross-stream component of ic.
 
 			Ck = _xrft.fft(fx, true_phase=True, true_amplitude=True)
 			Ck = Ck.rename({'freq_x':'k'}) # label k the wavenumber 
 
 			Kn = Ck['k'].values # wavenumber vals
 
-			da_y = _xrft.fft(gy, true_phase=True, true_amplitude=True)
-			da_y = da_y.rename({'freq_y':'l'})
-
-			even_coeffs, odd_coeffs, *a = coeff_project(da_y, y / 2)
+			even_coeffs, odd_coeffs, *a = coeff_project(gy, y/2)
 
 			acoords = {'r':range(len(even_coeffs.data))}
 			bcoords = {'r':range(len(odd_coeffs.data)-1)}
@@ -173,9 +180,9 @@ class planarflows:
 			Kn = Qx_k['k'].values # wavenumber vals. These should be the same to i.c.
 
 
-		afacs = np.ones(np.shape(range(len(even_coeffs))))
+		afacs = _np.ones(_np.shape(range(len(even_coeffs))))
 		afacs[0] = 2
-		bfacs = np.ones(np.shape(range(len(odd_coeffs)-1)))
+		bfacs = _np.ones(_np.shape(range(len(odd_coeffs)-1)))
 
 
 		if type(tau) == float:
@@ -189,7 +196,7 @@ class planarflows:
 			'K': Kn,
 			'Pe': Pe,
 			"N": 40,
-			'_betas_m': betas_m,
+			'_betas_m': alphas_m[1:],
 			'Kj': Km,
 			'symmetry': 'even',
 			"opt": True,
@@ -197,7 +204,7 @@ class planarflows:
 		}
 
 		ds_As = A_coefficients(**args)
-		ds_As = _eigfns.phi_even(Kn, Pe, y / 2, 50, betas_m, Km, dAs = ds_As)
+		ds_As = _eigfns.phi_even(Kn, Pe, y / 2, 50, alphas_m[1:], Km, dAs = ds_As)
 
 		evolve_args = {
 			"_dAs": ds_As,
@@ -213,11 +220,12 @@ class planarflows:
 		}
 
 		if odd_eigs:
+			print('odd eigenfunctions')
 			args = {
 				"K": Kn,
 				"Pe": Pe,
 				'N': 40,
-				'_betas_m': betas_m,
+				'_betas_m': alphas_m[1:],
 				'Kj': Km,
 				'symmetry': 'odd',
 				"opt": True,
@@ -225,7 +233,7 @@ class planarflows:
 			}
 
 			ds_Bs = A_coefficients(**args)
-			ds_Bs = _eigfns.phi_odd(Kn, Pe, yt, 40, betas_m, Km, dBs = ds_Bs)
+			ds_Bs = _eigfns.phi_odd(Kn, Pe, y/2, 40, alphas_m[1:], Km, dBs = ds_Bs)
 
 
 			evolve_args = {
@@ -241,14 +249,17 @@ class planarflows:
 				"_bfacs": bfacs,
 				"_x": x,
 				"_y": y,
-				"_time": t,
+				"_t": t,
 			}
 	
 			time_evolve = evolve_ds_off
 		else:
 			time_evolve = evolve_ds
 
-		ds = time_evolve(**args)
+		ds, a = time_evolve(**evolve_args)
+
+		# U_f = alphas_m[0]+sum([alphas_m[n] * _np.cos(y*n) for n in Km])
+		# ds['U'] = U_f
 
 		return ds
 
