@@ -5,8 +5,9 @@ Module that evolves an initial condition contains class of stirring velocity fie
 import numpy as _np
 from Hills_eigenfunctions import (
 	complement_dot,
-	A_coefficients)
-from time_varying import _coeff_project
+	_A_coefficients)
+from time_varying import _coeff_project, evolve_ds_off, evolve_ds
+
 from Hills_eigenfunctions import eigenfunctions as _eigfns
 import copy as _copy
 import xarray as _xr
@@ -82,8 +83,12 @@ class planarflows:
 			time-dependence of shear flow.
 	"""
 
-	y = U.y.data. # extract coordinate - 0 to 2\pi
+	y = U.y.data # extract coordinate - 0 to 2\pi
+	x = U.x.data
 	even_coeffs, odd_coeffs, *a = _coeff_project(U, y)
+
+	# evolve in time. Only steady shear flow for now.
+	t = _np.arange(t0, tf + dt, dt)
 
 	# need to assert that U is defined by an even Fourier series. Otherwise, 
 	# need to extend periodically so that it has an even Fourier series.
@@ -105,6 +110,7 @@ class planarflows:
 		odd_flow = True # flag that will restore the dimensional value of Pe
 	else:
 		odd_flow = False
+
 
 	# truncate velocity Fourier series.
 	# so that len(alphas_m) < len(y).
@@ -153,6 +159,13 @@ class planarflows:
 
 		Kn = Qx_k['k'].values # wavenumber vals. These should be the same to i.c.
 
+
+	afacs = np.ones(np.shape(range(len(even_coeffs))))
+	afacs[0] = 2
+	bfacs = np.ones(np.shape(range(len(odd_coeffs)-1)))
+
+
+
 	if type(tau) == float:
 			rot_eigs = True
 		else:
@@ -171,8 +184,22 @@ class planarflows:
 		"reflect": True,
 	}
 
-	ds_As = A_coefficients(**args)
-	ds_As = eigfns.phi_even(Kn, Pe, y / 2, 50, betas_m, Km, dAs = ds_As)
+	ds_As = _A_coefficients(**args)
+	ds_As = _eigfns.phi_even(Kn, Pe, y / 2, 50, betas_m, Km, dAs = ds_As)
+
+
+	evolve_args = {
+		"_dAs": ds_As,
+		"_da_xrft": Ck,
+		"_K": Kn,
+		"_alpha0": alphas_m[0],
+		"_Pe": Pe,
+		"_gauss_alps": a_alps_y,
+		"_facs": afacs,
+		"_x": x,
+		"_y": y,
+		"_time": t,
+	}
 
 	if odd_eigs:
 		args = {
@@ -186,22 +213,34 @@ class planarflows:
 		"reflect": True,
 		}
 
-		ds_Bs = A_coefficients(**args)
-		ds_Bs = eigfns.phi_odd(Kn, Pe, yt, 40, betas_m, Km, dBs = ds_Bs)
-
-	if type()
-	# now evolve in time
+		ds_Bs = _A_coefficients(**args)
+		ds_Bs = _eigfns.phi_odd(Kn, Pe, yt, 40, betas_m, Km, dBs = ds_Bs)
 
 
+		evolve_args = {
+		"_dAs": ds_As,
+		"_dBs": ds_Bs,
+		"_da_xrft": Ck,
+		"_K": Kn,
+		"_alpha0": alphas_m[0],
+		"_Pe": Pe,
+		"_a_alps": a_alps_y,
+		"_afacs": afacs,
+		"_b_alps": b_alps_y,
+		"_bfacs": bfacs,
+		"_x": x,
+		"_y": y,
+		"_time": t,
+	}
+	
+
+		time_evolve = evolve_ds_off
+	else:
+		time_evolve = evolve_ds
 
 
+	ds = time_evolve(**args)
 
-
-
-
-
-
-	pass
-
+	return ds
 
 
