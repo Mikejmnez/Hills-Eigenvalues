@@ -179,7 +179,7 @@ class planarflows:
 			else:
 				odd_eigs = False
 
-			if odd_flow:  # need to 
+			# if odd_flow:  # need to 
 
 
 
