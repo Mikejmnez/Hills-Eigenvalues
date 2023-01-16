@@ -249,7 +249,7 @@ class planarflows:
 				"_bfacs": bfacs,
 				"_x": x,
 				"_y": 0.5*y,
-				"_t": t,
+				"_time": t,
 			}
 	
 			time_evolve = evolve_ds_off

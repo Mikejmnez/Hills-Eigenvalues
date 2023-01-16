@@ -98,35 +98,35 @@ def coeff_project(_phi, _y, dim='y', phi_old=_np.pi, phi_new=0):
 	return even_coeffs, odd_coeffs, phi_new, phi_old
 
 
-def evolve_ds_modal_uniform(_dAs, _K, _alpha0, _Pe, _X, _Y, _time, _tf=0):
+def evolve_ds_modal_uniform(_dAs, _K, _alpha0, _Pe, _X, _Y, _t, _tf=0):
     """Constructs the modal solution to the IVP with uniform cross-jet initial condition """
     # something wrong is hapenning?
-    coords = {"t": _copy.deepcopy(_time),
+    coords = {"time": _copy.deepcopy(_t),
               "y": 2 * _Y[:, 0],
               "x": _X[0, :]}
-    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x'])
+    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
     for i in range(len(_time)):
         exp_arg = (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
         ndAs = 2*_dAs['A_2r'].isel(r=0)
-        PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i]-_tf)), dims='n')
+        PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_t[i]-_tf)), dims='n')
         PHI2n = PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
         T0 = (PHI2n * _np.exp((2*_np.pi* _K * _X) * (1j))).real
         ds['Theta'].data[i, :, :] = T0.data
     return ds, PHI2n.isel(x=0).drop_vars({'x', 'r', 'k'})  # return the eigenfunction sum
 
 
-def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _time, _tf=0):
+def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _t, _tf=0):
 	"""Constructs the modal solution to the IVP that is localized across the jet."""
 
-	coords = {"t": _time, "y": 2 * _Y[:, 0], "x": _X[0, :]}
-	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x'])
+	coords = {"time": _t, "y": 2 * _Y[:, 0], "x": _X[0, :]}
+	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
 	ds = _xr.Dataset({'Theta': Temp})
 	Nr = len(_dAs.n) # length of truncated array
 	ndAs = complement_dot(_facs * _gauss_alps, _dAs)  # has final size in n (sum in p)
 	for i in range(len(_time)):
 		exp_arg =  (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-		PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i]-_tf)), dims='n')
+		PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_t[i]-_tf)), dims='n')
 		PHI2n = PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
 		T0 = (PHI2n * _np.exp((2*_np.pi* _K * _X) * (1j))).real
 		ds['Theta'].data[i, :, :] = T0.data
@@ -155,11 +155,11 @@ def evolve_ds_modal_off(_dAs, _dBs, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, 
 
 
 
-def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _time, _tf=0):
+def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _t, _tf=0):
     """Constructs the solution to the IVP"""
     ## Initialize the array.
-    coords = {"t": _time, "y": 2 * _y, "x": _x}
-    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x'])
+    coords = {"time": _t, "y": 2 * _y, "x": _x}
+    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
     Nr = len(_dAs.n) # length of truncated array
     ndAs = complement_dot(_facs*_gauss_alps, _dAs)  # has final size in n (sum in p)
@@ -169,7 +169,7 @@ def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _tim
         #     PHI2n = _xr.dot(ndAs.isel(n=slice(Nr)), _dAs['phi_2n'].isel(n=slice(Nr)) * _np.exp(-(0.25*_dAs['a_2n'].isel(n=slice(Nr)) + exp_arg)*(_time[i]-_tf)), dims='n')
         #     PHI2n = PHI2n + _xr.dot(ndAs[Nr:], _dAs['phi_2n'][Nr:] * _np.exp(-(0.25*_dAs['a_2n'][Nr:] + exp_arg)*(_time[i]-_tf)), dims='n')
         # else:
-        PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_time[i] - _tf)), dims='n')
+        PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_t[i] - _tf)), dims='n')
         T0 = _xrft.ifft(_da_xrft * PHI2n, dim='k', true_phase=True, true_amplitude=True).real # Signal in direct space
         nT0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
         ds['Theta'].data[i, :, :] = nT0.data
@@ -199,7 +199,7 @@ def evolve_ds_off(_dAs, _dBs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _b_al
 
 
 
-def evolve_ds_modal_time(_DAS, _indt, _order, _vals, _K0, _ALPHA0, _Pe, _gauss_alps, _facs, _X, _Y, _time):
+def evolve_ds_modal_time(_DAS, _indt, _order, _vals, _K0, _ALPHA0, _Pe, _gauss_alps, _facs, _X, _Y, _t):
 	"""
 	Evolve an initial condition defined in Fourier space by its y-F. coefficients, and the along-flow wavenumber k.
 
@@ -216,8 +216,8 @@ def evolve_ds_modal_time(_DAS, _indt, _order, _vals, _K0, _ALPHA0, _Pe, _gauss_a
 		if i == 0:
 			tf = 0
 		else:
-			tf =_time[_indt[i - 1][1] - 1]
-		ds, phi = evolve_ds_modal_gaussian(_DAS[_order[i]], _K0, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _X, _Y, _time[_indt[i][0]:_indt[i][1]], tf)
+			tf =_t[_indt[i - 1][1] - 1]
+		ds, phi = evolve_ds_modal_gaussian(_DAS[_order[i]], _K0, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _X, _Y, _t[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(ds)
 		ncoeffs, odd_coeffs, phi_new, phi_old  = coeff_project(phi, _Y[:, 0])
 	
@@ -230,7 +230,7 @@ def evolve_ds_modal_time(_DAS, _indt, _order, _vals, _K0, _ALPHA0, _Pe, _gauss_a
 	return ds_f
 
 
-def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gauss_alps, _facs, _x, _y, _time):
+def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gauss_alps, _facs, _x, _y, _t):
 	"""
 	evolves a localized initial condition defined by its 2d Fourier coefficients.
 	"""
@@ -240,8 +240,8 @@ def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gaus
 		if i == 0:
 			tf = 0
 		else:
-			tf =_time[_indt[i - 1][1] - 1]
-		ds, Phi2n = evolve_ds(_DAS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _time[_indt[i][0]:_indt[i][1]],  tf)
+			tf =_t[_indt[i - 1][1] - 1]
+		ds, Phi2n = evolve_ds(_DAS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _t[_indt[i][0]:_indt[i][1]],  tf)
 		DS.append(ds)
 		ncoeffs, odd_coeffs, phi_new, phi_old  = coeff_project(Phi2n, _y)
     
@@ -253,7 +253,7 @@ def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gaus
 	return ds_f
 
 
-def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _even_alps, e_facs, _odd_alps, o_facs, _x, _y, _time, _shift=0):
+def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _even_alps, e_facs, _odd_alps, o_facs, _x, _y, _t, _shift=0):
 	"""evolves a localized initial condition defined by its 2d Fourier coefficients."""
 	DS = []
 	PHI_NEW = []
@@ -261,7 +261,7 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 	ecoeffs = _copy.deepcopy(_even_alps)
 	ocoeffs = _copy.deepcopy(_odd_alps)
 	if _shift == 0:
-		_shift = [0 for i in range(len(_time))]
+		_shift = [0 for i in range(len(_t))]
 	for i in range(len(_indt)):
 		phi_new = _shift[_indt[i][0]]  # only sample first - they are all the same
 		if i == 0:
@@ -273,9 +273,9 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 			PHI2n_o = _xr.dot(ndBs, _DBS[_order[i]]['phi_2n'], dims='n')
 			Phi2n = PHI2n_e + PHI2n_o
 		else:
-			tf =_time[_indt[i - 1][1] - 1]
+			tf =_t[_indt[i - 1][1] - 1]
 		ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _y, phi_old=phi_old, phi_new=phi_new)
-		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _time[_indt[i][0]:_indt[i][1]], tf)
+		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(_copy.deepcopy(ds))
 		PHI_NEW.append(phi_new)
 		PHI_OLD.append(phi_old)
@@ -291,16 +291,16 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 	return ds_f, PHI_NEW, PHI_OLD
 
 
-def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _alps, _facs, _x, _y, _time,  _tf=0):
+def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _alps, _facs, _x, _y, _t,  _tf=0):
     """Constructs the solution to the IVP. Shear flow aligned with y"""
     
-    coords = {"time": _time, "y": _y, "x": 2*_x}
+    coords = {"time": _t, "y": _y, "x": 2*_x}
     Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
     _ndAs = _xr.dot(_facs * _alps, _dAs['A_2r'], dims='r')
     for i in range(len(_time)):
         arg = 0.25*_dAs['a_2n'] + (1j)*_alpha0*(2*_np.pi*_L)*_Pe + (2*_np.pi*_L)**2
-        _PHI2n = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg*(_time[i] - _tf)), dims='n')
+        _PHI2n = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg*(_t[i] - _tf)), dims='n')
         T0 = _xrft.ifft(_da_xrft * _PHI2n, dim='l', true_phase=True, true_amplitude=True).real
         nT0 = T0.rename({'freq_l':'y'})
         ds['Theta'].data[i, :, :] = nT0.data
@@ -327,7 +327,7 @@ def evolve_ds_off_rot(_dAs, _dBs, _da_xrft, _L, _alpha0, _Pe, _a_alps, _afacs, _
 
     return ds, _PHI2n
 
-def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _gauss_alps, _facs, _x, _y, _time):
+def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _gauss_alps, _facs, _x, _y, _t):
 	"""
 	evolves a localized initial condition defined by its 2d Fourier coefficients.
 	"""
@@ -337,8 +337,8 @@ def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _
 		if i == 0:
 			tf = 0
 		else:
-			tf =_time[_indt[i - 1][1] - 1]
-		ds, Phi2n = evolve_ds_rot(_DAS[_order[i]], _da_dft, _Ln, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _time[_indt[i][0]:_indt[i][1]], tf)
+			tf =_t[_indt[i - 1][1] - 1]
+		ds, Phi2n = evolve_ds_rot(_DAS[_order[i]], _da_dft, _Ln, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(ds)
 		ncoeffs, odd_coeffs, phi_new, phi_old  = coeff_project(Phi2n, _y, dim='x')
     
@@ -351,9 +351,9 @@ def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _
 	return ds_f
 
 
-def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _time, _tf=0, _dim='k'):
+def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _t, _tf=0, _dim='k'):
 	"""Constructs the modal solution to the IVP that is localized across the jet."""
-	coords = {"t": _time, "y": _Y[:, 0], _dim: _Kn, 'x': _X[0, :]}
+	coords = {"t": _t, "y": _Y[:, 0], _dim: _Kn, 'x': _X[0, :]}
 	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x', _dim])
 	DS = []
 	if _dim == 'k':
@@ -369,8 +369,8 @@ def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _time,
 		else:
 			ndAs = _xr.dot(_facs * _gauss_alps, _dAs['A_2r'].sel(**k_args))
 		exp_arg =  0.25*_dAs['a_2n'].sel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-		for i in range(len(_time)):
-			PHI2n = _xr.dot(ndAs, _dAs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg*(_time[i]-_tf)), dims='n')
+		for i in range(len(_t)):
+			PHI2n = _xr.dot(ndAs, _dAs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg*(_t[i]-_tf)), dims='n')
 			if _dim == 'k':
 				PHI2n = PHI2n.expand_dims(**phi_arg).transpose('y', 'x')
 				mode =  _np.exp((2*_np.pi* _K * _X) * (1j))
@@ -382,15 +382,15 @@ def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _time,
 	ll = int(_np.where(_Kn==0)[0][0]) # single zero
 	dk = _Kn[ll + 1] / 2
 	da = ds['Theta'].sum(dim=_dim) * dk
-	coords = {"time": _time, "y": _Y[:, 0], 'x': _X[0, :]}
+	coords = {"time": _t, "y": _Y[:, 0], 'x': _X[0, :]}
 	da_final = _xr.DataArray(da.real, coords=coords, dims=['time', 'y', 'x'])
 	ds_final = _xr.Dataset({'Theta': da_final})
 	return ds_final
 
 
-def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _X, _Y, _time, _tf=0, _dim='k'):
+def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _X, _Y, _t, _tf=0, _dim='k'):
 	"""Constructs the modal solution to the IVP that is localized across the jet."""
-	coords = {"t": _time, "y": _Y[:, 0], _dim: _Kn, 'x': _X[0, :]}
+	coords = {"t": _t, "y": _Y[:, 0], _dim: _Kn, 'x': _X[0, :]}
 	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x', _dim])
 	DS = []
 	if _dim == 'k':
@@ -409,9 +409,9 @@ def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps
 			ndBs = _xr.dot(_bfacs * _b_alps, _dAs['B_2r'].isel(**k_args))
 		exp_arg_e =  0.25*_dAs['a_2n'].isel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
 		exp_arg_o =  0.25*_dBs['b_2n'].isel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-		for i in range(len(_time)):
-			PHI2n_e = _xr.dot(ndAs, _dAs['phi_2n'].isel(**k_args) * _np.exp(-exp_arg_e*(_time[i]-_tf)), dims='n')
-			PHI2n_o = _xr.dot(ndBs, _dBs['phi_2n'].isel(**k_args) * _np.exp(-exp_arg_o*(_time[i]-_tf)), dims='n')
+		for i in range(len(_t)):
+			PHI2n_e = _xr.dot(ndAs, _dAs['phi_2n'].isel(**k_args) * _np.exp(-exp_arg_e*(_t[i]-_tf)), dims='n')
+			PHI2n_o = _xr.dot(ndBs, _dBs['phi_2n'].isel(**k_args) * _np.exp(-exp_arg_o*(_t[i]-_tf)), dims='n')
 			PHI2n = PHI2n_e + PHI2n_o
 			if _dim == 'k':
 				PHI2n = PHI2n.expand_dims(**phi_arg).transpose('y', 'x')
@@ -424,7 +424,7 @@ def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps
 	ll = int(_np.where(_Kn==0)[0][0]) # single zero
 	dk = _Kn[ll + 1] / 2
 	da = ds['Theta'].sum(dim=_dim) * dk
-	coords = {"time": _time, "y": _Y[:, 0], 'x': _X[0, :]}
+	coords = {"time": _t, "y": _Y[:, 0], 'x': _X[0, :]}
 	da_final = _xr.DataArray(da.real, coords=coords, dims=['time', 'y', 'x'])
 	ds_final = _xr.Dataset({'Theta': da_final})
 	return ds_final
@@ -504,7 +504,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y,
 	return d0
 
 
-def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _time, _tf=0):
+def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t, _tf=0):
 	"""Evolves the solution to the advection diffusion eqn for a steady shear flow in the presence of 
     external forcing Q(x,y). The shear flow is defined solely by a cosine Fourier series and so
     is the forcing. The forcing has the form
@@ -539,16 +539,16 @@ def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t
 		_ds: xarray.dataset
 			Contains Theta the analytical solution. 
 	"""
-	coords = {"t": _time, "y": 2 * _Y, "x": _X}
-	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x'])
+	coords = {"time": _t, "y": 2 * _Y, "x": _X}
+	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
 	ds = _xr.Dataset({'Theta_p': Temp, 'Theta_h': Temp, 'Theta': Temp})
 	exp_arg = (1j)*_Ubar*(2* _np.pi*_K)*_Pe + (2* _np.pi*_K)**2
 	exp2 = _dAs['a_2n'] + 4*(1j)*(2*_np.pi*_K)*_Pe * _Ubar + 4*(2* _np.pi*_K)**2 + 4*(1j) * _delta
 	ndAs_p =  4*_Q0 * _dAs['A_2r'].isel(r=1) / exp2  # this defines a single mode.
 	ndAs_h =  -ndAs_p
-	for i in range(len(_time)):
-		PHI2n_h = _xr.dot(ndAs_h, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*_time[i]), dims='n')
-		PHI2n_p = _xr.dot(ndAs_p, _dAs['phi_2n'] * _np.exp((1j)* _delta * _time[i]), dims='n')
+	for i in range(len(_t)):
+		PHI2n_h = _xr.dot(ndAs_h, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*_t[i]), dims='n')
+		PHI2n_p = _xr.dot(ndAs_p, _dAs['phi_2n'] * _np.exp((1j)* _delta * _t[i]), dims='n')
 		T0 = _xrft.ifft(_da_xrft * PHI2n_h, dim='k', true_phase=True, true_amplitude=True).real
 		T0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
 		Tp = _xrft.ifft(_da_xrft * PHI2n_p, dim='k', true_phase=True, true_amplitude=True).real
