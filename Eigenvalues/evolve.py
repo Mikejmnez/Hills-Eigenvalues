@@ -154,7 +154,7 @@ class planarflows:
 
 			Kn = Ck['k'].values # wavenumber vals
 
-			even_coeffs, odd_coeffs, *a = coeff_project(gy, y/2)
+			even_coeffs, odd_coeffs, *a = coeff_project(gy, y)
 
 			acoords = {'r':range(len(even_coeffs.data))}
 			bcoords = {'r':range(len(odd_coeffs.data)-1)}
