@@ -124,7 +124,7 @@ def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _t, _tf=
 	ds = _xr.Dataset({'Theta': Temp})
 	Nr = len(_dAs.n) # length of truncated array
 	ndAs = complement_dot(_facs * _gauss_alps, _dAs)  # has final size in n (sum in p)
-	for i in range(len(_time)):
+	for i in range(len(_t)):
 		exp_arg =  (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
 		PHI2n = _xr.dot(ndAs, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_t[i]-_tf)), dims='n')
 		PHI2n = PHI2n.sel(k=_K).expand_dims({'x':_X[0, :]}).transpose('y', 'x')
@@ -142,7 +142,7 @@ def evolve_ds_modal_off(_dAs, _dBs, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, 
 	ds = _xr.Dataset({'Theta': Temp})
 	_ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
 	_ndBs = _xr.dot(_bfacs * _b_alps, _dBs['B_2r'], dims='r')
-	for i in range(len(_time)):    	
+	for i in range(len(_t)):    	
 		arg_e = 0.25*_dAs['a_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
 		arg_o = 0.25*_dBs['b_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
 		_PHI2n_e = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg_e*(_t[i] - _tf)), dims='n')
@@ -163,7 +163,7 @@ def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _t, 
     ds = _xr.Dataset({'Theta': Temp})
     Nr = len(_dAs.n) # length of truncated array
     ndAs = complement_dot(_facs*_gauss_alps, _dAs)  # has final size in n (sum in p)
-    for i in range(len(_time)):
+    for i in range(len(_t)):
         exp_arg =  (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
         # if Nr < len(_facs):  # Is this necessary?
         #     PHI2n = _xr.dot(ndAs.isel(n=slice(Nr)), _dAs['phi_2n'].isel(n=slice(Nr)) * _np.exp(-(0.25*_dAs['a_2n'].isel(n=slice(Nr)) + exp_arg)*(_time[i]-_tf)), dims='n')
