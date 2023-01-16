@@ -160,7 +160,7 @@ class planarflows:
 			bcoords = {'r':range(len(odd_coeffs.data)-1)}
 
 			a_alps_y = _xr.DataArray(even_coeffs.data, coords=acoords, dims='r')
-			b_alps_y = _xr.DataArray(odd_coeffs.data[1:], coords=bcoords, dims='r')
+			b_alps_y = _xr.DataArray(odd_coeffs.data[:-1], coords=bcoords, dims='r')
 
 
 			# check in i.c. is off centered.
@@ -216,7 +216,7 @@ class planarflows:
 			"_facs": afacs,
 			"_x": x,
 			"_y": 0.5*y,
-			"_time": t,
+			"_t": t,
 		}
 
 		if odd_eigs:
@@ -249,7 +249,7 @@ class planarflows:
 				"_bfacs": bfacs,
 				"_x": x,
 				"_y": 0.5*y,
-				"_time": t,
+				"_t": t,
 			}
 	
 			time_evolve = evolve_ds_off
@@ -261,6 +261,6 @@ class planarflows:
 		# U_f = alphas_m[0]+sum([alphas_m[n] * _np.cos(y*n) for n in Km])
 		# ds['U'] = U_f
 
-		return ds
+		return ds, a_alps_y, b_alps_y
 
 
