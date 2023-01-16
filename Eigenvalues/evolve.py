@@ -92,8 +92,9 @@ class planarflows:
 			Amp: None, int or 1d-array like.
 				Time dependency of the shear flow's amplitude. Sign can change. If `None`
 				then default is unit value 1.
-			Phase: None, int or 1d-array like.
-				Phase of shear flow. If None, then default is zero.
+			Phase: None, True.
+				Phase of shear flow. If `None`, then default is zero. If `True`, generates
+				random phase shift.
 			tau: `None`, or float.
 				If `None`, the plane parallel shear flow is always unidirectional. Its
 				amplitude and phase can still vary. If `float`, 1/tau defines the
@@ -152,6 +153,15 @@ class planarflows:
 		alphas_m = even_coeffs.real.data[:lll[-1]]
 		Km = range(1, len(alphas_m))
 
+		if amp == _np.ndarray:  # time-varying amplitude
+			
+			nft, vals, ivals = re_sample(amp, nt=2)
+			indt = indt_intervals(ivals)
+			order = get_order(nft, indt, vals)
+
+			time_osc = True
+
+
 
 		#  initial condition
 		if type(IC) == _xrds_type:  # one ic is given
@@ -203,8 +213,14 @@ class planarflows:
 		else:
 			rot_eigs = False		
 
-
+		# ========================
 		# Construct eigenfunctions
+		# ========================
+
+		# Depending on a series of flag or parameters
+
+		if rot_eigs
+
 		args = {
 			'K': Kn,
 			'Pe': Pe,
@@ -274,6 +290,6 @@ class planarflows:
 		# U_f = alphas_m[0]+sum([alphas_m[n] * _np.cos(y*n) for n in Km])
 		# ds['U'] = U_f
 
-		return ds, a_alps_y, b_alps_y
+		return ds
 
 
