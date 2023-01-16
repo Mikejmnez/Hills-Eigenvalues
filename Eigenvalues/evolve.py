@@ -5,9 +5,18 @@ Module that evolves an initial condition contains class of stirring velocity fie
 import numpy as _np
 from Hills_eigenfunctions import (
 	complement_dot,
+	spectra_list,
 	A_coefficients)
-from time_varying import coeff_project, evolve_ds_off, evolve_ds
+from time_varying import (
+	coeff_project,
+	evolve_ds_off,
+	evolve_ds,
+	re_sample,
+	indt_intervals,
+	get_order,
+	phase_generator,
 
+)
 from Hills_eigenfunctions import eigenfunctions as _eigfns
 import copy as _copy
 import xarray as _xr
@@ -169,6 +178,10 @@ class planarflows:
 				odd_eigs = True
 			else:
 				odd_eigs = False
+
+			if odd_flow:  # need to 
+
+
 
 		if type(Q) == _xrda_type: # only one forcing function
 			Qx = Q['Qx'] # x-separable forcing fn
