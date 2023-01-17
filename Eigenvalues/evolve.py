@@ -117,6 +117,15 @@ class planarflows:
 				time discretization. Must allow sufficient time resolution to resolve
 				time-dependence of shear flow.
 		"""
+		# initialize some flags
+		steady_flow = True
+		odd_flow = False
+		time_osc = False
+		phase_shift = False
+		odd_eigs = False  # 
+		rot_eigs = False
+		ic_flag = True
+
 
 		even_coeffs, odd_coeffs, *a = coeff_project(U, y)
 
@@ -141,8 +150,6 @@ class planarflows:
 			# effective Peclet number due to domain halving
 			Pe = 2 * Pe 
 			odd_flow = True # flag that will restore the dimensional value of Pe
-		else:
-			odd_flow = False
 
 
 		# truncate velocity Fourier series.
@@ -153,14 +160,16 @@ class planarflows:
 		alphas_m = even_coeffs.real.data[:lll[-1]]
 		Km = range(1, len(alphas_m))
 
-		if amp == _np.ndarray:  # time-varying amplitude
+		if type(Amp) == _np.ndarray:  # time-varying amplitude
 			
-			nft, vals, ivals = re_sample(amp, nt=2)
+			nft, vals, ivals = re_sample(Amp, nt=2)
 			indt = indt_intervals(ivals)
 			order = get_order(nft, indt, vals)
 
 			time_osc = True
-
+			steady_flow = False
+			if phase_shift:
+				shifts = phase_generator(nft)
 
 
 		#  initial condition
@@ -186,11 +195,9 @@ class planarflows:
 			# if not, only even eigenfunctions are needed
 			if _np.max(abs(odd_coeffs)) > 1e-10:
 				odd_eigs = True
-			else:
-				odd_eigs = False
-
-			# if odd_flow:  # need to 
-
+		else:
+			# No initial condition given
+			ic_flag = False
 
 
 		if type(Q) == _xrda_type: # only one forcing function
@@ -202,6 +209,8 @@ class planarflows:
 
 			Kn = Qx_k['k'].values # wavenumber vals. These should be the same to i.c.
 
+			steady_flow = False
+
 
 		afacs = _np.ones(_np.shape(range(len(even_coeffs))))
 		afacs[0] = 2
@@ -210,8 +219,18 @@ class planarflows:
 
 		if type(tau) == float:
 			rot_eigs = True
-		else:
-			rot_eigs = False		
+			steady_flow = False
+
+
+		# define universal parameters
+
+		args = {
+			'_K': Kn,
+			'_Pe': Pe,
+			"_N": 40,
+			'_betas_m': alphas_m[1:],
+			'_Kj': Km,
+		}
 
 		# ========================
 		# Construct eigenfunctions
@@ -219,73 +238,75 @@ class planarflows:
 
 		# Depending on a series of flag or parameters
 
-		if rot_eigs
+		if steady_flow:
 
-		args = {
-			'K': Kn,
-			'Pe': Pe,
-			"N": 40,
-			'_betas_m': alphas_m[1:],
-			'Kj': Km,
-			'symmetry': 'even',
-			"opt": True,
-			"reflect": True,
-		}
-
-		ds_As = A_coefficients(**args)
-		ds_As = _eigfns.phi_even(Kn, Pe, y / 2, 50, alphas_m[1:], Km, dAs = ds_As)
-
-		evolve_args = {
-			"_dAs": ds_As,
-			"_da_xrft": Ck,
-			"_K": Kn,
-			"_alpha0": alphas_m[0],
-			"_Pe": Pe,
-			"_gauss_alps": a_alps_y,
-			"_facs": afacs,
-			"_x": x,
-			"_y": 0.5*y,
-			"_t": t,
-		}
-
-		if odd_eigs:
-			print('odd eigenfunctions')
-			args = {
-				"K": Kn,
-				"Pe": Pe,
-				'N': 40,
-				'_betas_m': alphas_m[1:],
-				'Kj': Km,
-				'symmetry': 'odd',
-				"opt": True,
-				"reflect": True,
-			}
-
-			ds_Bs = A_coefficients(**args)
-			ds_Bs = _eigfns.phi_odd(Kn, Pe, y/2, 40, alphas_m[1:], Km, dBs = ds_Bs)
+			args = {**args, '_y': y/2}
+			ds_As = _eigfns.phi_even(**{**args, **{"opt": True,"reflect": True}})
 
 
-			evolve_args = {
-				"_dAs": ds_As,
-				"_dBs": ds_Bs,
-				"_da_xrft": Ck,
-				"_K": Kn,
-				"_alpha0": alphas_m[0],
-				"_Pe": Pe,
-				"_a_alps": a_alps_y,
-				"_afacs": afacs,
-				"_b_alps": b_alps_y,
-				"_bfacs": bfacs,
-				"_x": x,
-				"_y": 0.5*y,
-				"_t": t,
-			}
+			if odd_eigs:
+				ds_Bs = _eigfns.phi_odd(**{**args, **{"opt": True,"reflect": True}})
+
+			eargs = {**args, **{"_x": x, "_alpha0": alphas_m[0], "_t": t}}
+
+			if ic_flag:
+				nargs = {
+					"_dAs": ds_As,
+					"_da_xrft": Ck,
+					"_a_alps": a_alps_y,
+					"_afacs": afacs,
+				}
+				eargs = {**eargs, **nargs}
+				if odd_eigs:
+					add_args={
+						"_dBs": ds_Bs,
+						"_b_alps": b_alps_y,
+						"_bfacs": bfacs,
+					}
+					eargs = {**eargs, **add_args}
+
 	
-			time_evolve = evolve_ds_off
-		else:
-			time_evolve = evolve_ds
+					time_evolve = evolve_ds_off
+				else:
+					time_evolve = evolve_ds
 
-		ds, a = time_evolve(**evolve_args)
+		if time_osc:
+
+			nargs = {
+				'vals': vals,
+				'_alpha0': alphas_m[0],
+				'_y': y/2,
+			}
+
+			DAS, DBS, ALPHA0, vals = spectra_list(**{**args, **nargs})
+
+			eargs = {**args, **{"_x": x, '_y': y/2, "_t": t}}
+
+			if ic_flag:
+				nargs = {
+					'_DAS': DAS, 
+					'_DBS': DBS, 
+					'_indt': indt, 
+					'_order': order, 
+					'_vals': vals,  
+					'_ALPHA0': ALPHA0, 
+					'_da_dft': Ck,
+					'_even_alps': a_alps_y,
+					'e_facs': afacs, 
+					'_odd_alps': b_alps_y, 
+					'o_facs': bfacs
+				}
+				eargs = {**eargs, **nargs}
+			if phase_shift:
+				eargs = {**eargs, '_shift': shifts}
+
+			time_evolve = evolve_off_ds_time
+
+		for key in ['_N', '_betas_m', '_Kj']:
+			if key in eargs.keys():
+				eargs.pop(key)
+
+		ds, *a = time_evolve(**eargs)
 
 		# U_f = alphas_m[0]+sum([alphas_m[n] * _np.cos(y*n) for n in Km])
 		# ds['U'] = U_f
