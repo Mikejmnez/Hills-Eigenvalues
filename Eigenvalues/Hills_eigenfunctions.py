@@ -11,7 +11,7 @@ import xarray as _xr
 
 class eigenfunctions:
 
-    def __init__(self, q, K, Pe, y, N, coeffs, Kj, symmetry, case, opt):
+    def __init__(self, q, K, Pe, y, N, coeffs, Km, symmetry, case, opt):
         self._q = q
         self._K = K
         self._Pe = Pe
@@ -32,7 +32,7 @@ class eigenfunctions:
         _y,
         _N,
         _betas_m,
-        _Kj,
+        _Km,
         case='None',
         opt=False,
         dAs=None,
@@ -44,7 +44,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dAs is None:
-            dAs = A_coefficients(_K, _Pe, _N, _betas_m, _Kj, 'even', opt, reflect)
+            dAs = A_coefficients(_K, _Pe, _N, _betas_m, _Km, 'even', opt, reflect)
         # initialize a dataarray with right dimensions
         N = len(dAs.n)  # update the size of the array
         cos_coords = {'r':range(N), 'y':_y}
@@ -68,7 +68,7 @@ class eigenfunctions:
         _y,
         _N,
         _betas_m,
-        _Kj,
+        _Km,
         case='None',
         opt=False,
         dBs=None,
@@ -80,7 +80,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dBs is None:
-            dBs = A_coefficients(_K, _Pe, _N, _betas_m, _Kj, 'odd', opt, reflect)
+            dBs = A_coefficients(_K, _Pe, _N, _betas_m, _Km, 'odd', opt, reflect)
         # initialize a dataarray with right dimensions
         _range = dBs.n.data  # update the size of the array
         sin_coords = {'r':_range, 'y':_y}

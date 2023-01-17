@@ -15,7 +15,7 @@ from time_varying import (
 	indt_intervals,
 	get_order,
 	phase_generator,
-
+	evolve_off_ds_time
 )
 from Hills_eigenfunctions import eigenfunctions as _eigfns
 import copy as _copy
@@ -190,6 +190,12 @@ class planarflows:
 			a_alps_y = _xr.DataArray(even_coeffs.data, coords=acoords, dims='r')
 			b_alps_y = _xr.DataArray(odd_coeffs.data[:-1], coords=bcoords, dims='r')
 
+			afacs = _np.ones(_np.shape(range(len(even_coeffs))))
+			afacs[0] = 2
+			bfacs = _np.ones(_np.shape(range(len(odd_coeffs)-1)))
+
+			afacs = _xr.DataArray(afacs, coords=acoords, dims='r')
+			bfacs = _xr.DataArray(bfacs, coords=bcoords, dims='r')
 
 			# check in i.c. is off centered.
 			# if not, only even eigenfunctions are needed
@@ -212,11 +218,6 @@ class planarflows:
 			steady_flow = False
 
 
-		afacs = _np.ones(_np.shape(range(len(even_coeffs))))
-		afacs[0] = 2
-		bfacs = _np.ones(_np.shape(range(len(odd_coeffs)-1)))
-
-
 		if type(tau) == float:
 			rot_eigs = True
 			steady_flow = False
@@ -229,7 +230,7 @@ class planarflows:
 			'_Pe': Pe,
 			"_N": 40,
 			'_betas_m': alphas_m[1:],
-			'_Kj': Km,
+			'_Km': Km,
 		}
 
 		# ========================
@@ -273,7 +274,7 @@ class planarflows:
 		if time_osc:
 
 			nargs = {
-				'vals': vals,
+				'_vals': vals,
 				'_alpha0': alphas_m[0],
 				'_y': y/2,
 			}
@@ -287,13 +288,13 @@ class planarflows:
 					'_DAS': DAS, 
 					'_DBS': DBS, 
 					'_indt': indt, 
-					'_order': order, 
+					'_order': order,
 					'_vals': vals,  
 					'_ALPHA0': ALPHA0, 
 					'_da_dft': Ck,
 					'_even_alps': a_alps_y,
-					'e_facs': afacs, 
-					'_odd_alps': b_alps_y, 
+					'e_facs': afacs,
+					'_odd_alps': b_alps_y,
 					'o_facs': bfacs
 				}
 				eargs = {**eargs, **nargs}
@@ -302,7 +303,7 @@ class planarflows:
 
 			time_evolve = evolve_off_ds_time
 
-		for key in ['_N', '_betas_m', '_Kj']:
+		for key in ['_N', '_betas_m', '_Km']:
 			if key in eargs.keys():
 				eargs.pop(key)
 
