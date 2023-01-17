@@ -29,7 +29,7 @@ class eigenfunctions:
         cls,
         _K,
         _Pe,
-        y,
+        _y,
         _N,
         _betas_m,
         _Kj,
@@ -47,11 +47,11 @@ class eigenfunctions:
             dAs = A_coefficients(_K, _Pe, _N, _betas_m, _Kj, 'even', opt, reflect)
         # initialize a dataarray with right dimensions
         N = len(dAs.n)  # update the size of the array
-        cos_coords = {'r':range(N), 'y':y}
+        cos_coords = {'r':range(N), 'y':_y}
         dcos = _xr.DataArray((1j) * _np.nan, coords=cos_coords, dims=['r', 'y'])
 
         for r in range(N):  # populate with the base
-            dcos.sel(r = r)[:] =  _np.cos(2 * r * y)
+            dcos.sel(r = r)[:] =  _np.cos(2 * r * _y)
 
         dphi = _xr.dot(dcos, dAs['A_2r'], dims='r').transpose('n', 'k', 'y')  # dataarray
 
@@ -65,7 +65,7 @@ class eigenfunctions:
         cls,
         _K,
         _Pe,
-        y,
+        _y,
         _N,
         _betas_m,
         _Kj,
@@ -83,11 +83,11 @@ class eigenfunctions:
             dBs = A_coefficients(_K, _Pe, _N, _betas_m, _Kj, 'odd', opt, reflect)
         # initialize a dataarray with right dimensions
         _range = dBs.n.data  # update the size of the array
-        sin_coords = {'r':_range, 'y':y}
+        sin_coords = {'r':_range, 'y':_y}
         dsin = _xr.DataArray((1j) * _np.nan, coords=sin_coords, dims=['r', 'y'])
 
         for r in _range:  # populate with the base
-            dsin.sel(r = r)[:] =  _np.sin(2 * (r + 1) * y)
+            dsin.sel(r = r)[:] =  _np.sin(2 * (r + 1) * _y)
 
         dphi = _xr.dot(dsin, dBs['B_2r'], dims='r').transpose('n', 'k', 'y')  # dataarray
 
