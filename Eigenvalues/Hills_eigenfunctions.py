@@ -27,15 +27,16 @@ class eigenfunctions:
     @classmethod
     def phi_even(
         cls,
-        K,
-        Pe,
+        _K,
+        _Pe,
         y,
-        N,
-        coeffs,
-        Kj,
+        _N,
+        _betas_m,
+        _Kj,
         case='None',
         opt=False,
         dAs=None,
+        reflect=True,
     ):
         """Even eigenfunctions that solve Hill's equation associated with
         the case where Neumann BC and coeffs are associated with a purely
@@ -43,7 +44,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dAs is None:
-            dAs = A_coefficients(K, Pe, N, coeffs, Kj, 'even', opt)
+            dAs = A_coefficients(_K, _Pe, _N, _betas_m, _Kj, 'even', opt, reflect)
         # initialize a dataarray with right dimensions
         N = len(dAs.n)  # update the size of the array
         cos_coords = {'r':range(N), 'y':y}
@@ -62,15 +63,16 @@ class eigenfunctions:
     @classmethod
     def phi_odd(
         cls,
-        K,
-        Pe,
+        _K,
+        _Pe,
         y,
-        N,
-        coeffs,
-        Kj,
+        _N,
+        _betas_m,
+        _Kj,
         case='None',
         opt=False,
         dBs=None,
+        reflect=True,
     ):
         """Even eigenfunctions that solve Hill's equation associated with
         the case where Neumann BC and coeffs are associated with a purely
@@ -78,7 +80,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dBs is None:
-            dBs = A_coefficients(K, Pe, N, coeffs, Kj, 'odd', opt)
+            dBs = A_coefficients(_K, _Pe, _N, _betas_m, _Kj, 'odd', opt, reflect)
         # initialize a dataarray with right dimensions
         _range = dBs.n.data  # update the size of the array
         sin_coords = {'r':_range, 'y':y}
@@ -175,15 +177,16 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(K, Pe, N, _betas_m, Kj, symmetry='even', opt=False, reflect=True):
+def A_coefficients(_K, _Pe, _N, _betas_m, _Kj, symmetry='even', opt=False, reflect=True):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
-    Input:
+    Parameters
+    ----------
         K: 1d-array, all along-jet (x) wavenumbers.
         Pe: Peclet number.
         N: size of (square) Matrix
-        coeffs: 1d-array, containing Fourier coefficients associated with
+        betas_m: 1d-array, containing Fourier coefficients associated with
             periodic coefficient in Hill's equation.
         Kj: range(1, M, d) defining the jet. M is highest harmonic in coeffs. d is either 1 or
             two. if d=1, Fourier sum is : cos(y)+cos(2*y)+... if d=2, the sum
@@ -194,6 +197,7 @@ def A_coefficients(K, Pe, N, _betas_m, Kj, symmetry='even', opt=False, reflect=T
             by truncating the matrix differently at each value of q (while making matrix is diagonally dominant)
             and thus performing eigenvalue calculation on a submatrix, supplementing the rest with theoretical 
             limiting values a_2n -> 4n^2 and A_{2n}^{(2n)} --> 1, zero otherwise.
+        reflect: True
 
     Output:
         xarray.Dataset: 'a_{2n}(q)' (dims: n, k) and 'A^{2n}_{2r}(q)' with dims
