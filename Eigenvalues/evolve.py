@@ -195,18 +195,22 @@ class planarflows:
 		else:
 			alphas_m = 0 * _np.arange(10)
 			Km = range(1, 10)
+			if type(U) != None:
+				alphas_m[0] = U.mean().values
+			else:
+				alphas_m[0] = V.mean().values
 
 		if type(Amp) == _np.ndarray:  # time-varying amplitude
+			# if shear: # only if shear is present
+			time_osc = True
+			steady_flow = False
 			
 			nft, vals, ivals = re_sample(Amp, nt=2)
 			indt = indt_intervals(ivals)
 			order = get_order(nft, indt, vals)
 
-			time_osc = True
-			steady_flow = False
 			if phase_shift:
 				shifts = phase_generator(nft)
-
 
 		#  initial condition
 		if type(IC) == _xrds_type:  # one ic is given
