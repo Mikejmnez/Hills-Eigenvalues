@@ -155,14 +155,14 @@ def evolve_ds_modal_off(_dAs, _dBs, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, 
 
 
 
-def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _t, _tf=0):
+def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _x, _y, _t, _tf=0):
     """Constructs the solution to the IVP"""
     ## Initialize the array.
     coords = {"time": _t, "y": 2 * _y, "x": _x}
     Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
     Nr = len(_dAs.n) # length of truncated array
-    ndAs = complement_dot(_facs*_gauss_alps, _dAs)  # has final size in n (sum in p)
+    ndAs = complement_dot(_afacs*_a_alps, _dAs)  # has final size in n (sum in p)
     for i in range(len(_t)):
         exp_arg =  (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
         # if Nr < len(_facs):  # Is this necessary?
