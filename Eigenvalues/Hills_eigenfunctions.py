@@ -177,7 +177,7 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(_K, _Pe, _N, _betas_m, _Kj, symmetry='even', opt=False, reflect=True):
+def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -204,8 +204,8 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Kj, symmetry='even', opt=False, refle
             (n, k, r).
     """
     coeffs = _np.array(_betas_m, dtype=_np.float64)
-    q = _np.empty((K.size), _np.complex128)
-    q = (1j) * (2 * 2 * _np.pi * K * Pe)  # canonical parameter - note the scaling consistent with xrft
+    q = _np.empty((_K.size), _np.complex128)
+    q = (1j) * (2 * 2 * _np.pi * _K * _Pe)  # canonical parameter - note the scaling consistent with xrft
     if symmetry=='even':
         _eigv = 'A_2r'
         _eigs = 'a_2n'
@@ -215,8 +215,8 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Kj, symmetry='even', opt=False, refle
         _eigs = 'b_2n'
         _r0 = 1
     if opt:  # perform this calculation
-        lll = _np.where(K >= 0)[0]
-        K = K[lll]
+        lll = _np.where(_K >= 0)[0]
+        _K = _K[lll]
         q = q[lll]
         R = _np.round(_np.sqrt(35 * (q.imag) * abs(coeffs[0]) / 4))
         Rmax = int(_np.max(R))
@@ -226,7 +226,7 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Kj, symmetry='even', opt=False, refle
         ll = _np.where(R < Rmax)[0]
         R[ll] = Rmax # set minimum value
     
-    As_ds = phi_array(N, K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
+    As_ds = phi_array(N, _K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
 
     for k in range(len(q)):
         if opt:
@@ -234,7 +234,7 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Kj, symmetry='even', opt=False, refle
         else:
             Nr = N  # matrix size constant for all q
         if abs(q[k].imag) > 0:
-            ak, Ak = eig_pairs(matrix_system(q[k], Nr + 5, coeffs, Kj, symmetry), symmetry)
+            ak, Ak = eig_pairs(matrix_system(q[k], Nr + 5, coeffs, _Km, symmetry), symmetry)
             for n in range(Nr - _r0):
                 if opt is True and (Nr + 5) < Rmax:
                     As_ds[_eigv].isel(k=k, n=n, r=slice(Nr + 5 - _r0)).data[:] = Anorm(Ak[:, n], symmetry)
@@ -3045,7 +3045,7 @@ def reflect_dataset(ds, k=True, Pe=False, symmetry='even'):
 
 
 
-def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rotate=False):
+def spectra_list(_K, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rotate=False):
     """Creates a list of datasets in which each element contains the spectra of the governing operator.
     """
     _betas_m = _np.array(_betas_m)
@@ -3061,23 +3061,23 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
     ll = _np.where(_np.array(_vals)==0)[0][0]
 
     for val in _vals[ll:]:
-        ds_As = A_coefficients(_Kn, val * _Pe, _N, _betas_m, _Km, symmetry='even', opt=True, reflect=True)
-        ds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, _betas_m, _Km, dAs = ds_As)
+        ds_As = A_coefficients(_K, val * _Pe, _N, _betas_m, _Km, symmetry='even', opt=True, reflect=True)
+        ds_As = eigenfunctions.phi_even(_K, val * _Pe, _y, _N, _betas_m, _Km, dAs = ds_As)
         mDAS.append(copy.deepcopy(ds_As))
         if both:
-            ds_Bs = A_coefficients(_Kn, val * _Pe, _N, _betas_m, _Km, symmetry='odd', opt=True, reflect=True)
-            ds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, _betas_m, _Km, dBs = ds_Bs)
+            ds_Bs = A_coefficients(_K, val * _Pe, _N, _betas_m, _Km, symmetry='odd', opt=True, reflect=True)
+            ds_Bs = eigenfunctions.phi_odd(_K, val * _Pe, _y, _N, _betas_m, _Km, dBs = ds_Bs)
             mDBS.append(copy.deepcopy(ds_Bs))
 
         mALPHA0.append(val * _alpha0) 
         mval.append(val)
         if val > 0:
             nds_As = reflect_dataset(ds_As, k=False, Pe=True, symmetry = 'even')
-            nds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, - _betas_m, _Km, dAs = nds_As)
+            nds_As = eigenfunctions.phi_even(_K, val * _Pe, _y, _N, - _betas_m, _Km, dAs = nds_As)
             nDAS.append(copy.deepcopy(nds_As))
             if both:
                 nds_Bs = reflect_dataset(ds_Bs, k=False, Pe=True, symmetry = 'odd')
-                nds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, - _betas_m, _Km, dBs = nds_Bs)
+                nds_Bs = eigenfunctions.phi_odd(_K, val * _Pe, _y, _N, - _betas_m, _Km, dBs = nds_Bs)
                 nDBS.append(copy.deepcopy(nds_Bs))
                 nds_Bs = 0
             nALPHA0.append(-val * _alpha0)
