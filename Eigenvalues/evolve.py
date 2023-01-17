@@ -46,11 +46,11 @@ class planarflows:
 		"dt",
 	)
 
-
 	@classmethod
 	def shear_flow(
 		cls,
 		U = None,
+		V = None,
 		x=None,
 		y=None,
 		BCs = None,
@@ -67,13 +67,18 @@ class planarflows:
 		dt=None,
 		):
 		"""
-		Calculates the (analytical) solution to the advection diffusion equation in the
-		case the advection is, at any give time, done by a plane parallel shear flow.
+		Calculates the (analytical) solution to the advection diffusion equation in
+		the case the advection is, at any give time, done by a plane parallel shear
+		flow. Time dependence can be any prescribe function, but currently only
+		time-periodic function is taken. Only one component of velocity is needed, 
+		and if both are given by default only U is taken.
 
 		Parameters:
 		-----------
 			U: 1d array-like. xarray.dataarray.
-				Defines the shear flow as U(y). Only the cross-stream domain is defined.
+				Defines the pure shear flow as U(y). Only the cross-stream domain is defined.
+			V: 1d array-like. xarray.dataarray.
+				Defines the pure shear flow as V(x). Only the cross-stream domain is defined.
 			x: 1d array-like.
 				Defines the domain in the along-stream direction.
 			y: 1d array-like.
@@ -123,11 +128,38 @@ class planarflows:
 		time_osc = False
 		phase_shift = False
 		odd_eigs = False  # 
-		rot_eigs = False
+		renew_eigs = False
 		ic_flag = True
+		shear = True  # False only when flow is constant
 
+		Utypes = [_np.ndarray, _xrda_type, float, int]
 
-		even_coeffs, odd_coeffs, *a = coeff_project(U, y)
+		if U == None and V == None:
+			print('No shear flow provided')
+			U = _xr.DataArray(0, coords={'y':y}, dims=['y'])
+
+		if U != None:
+			if V != None:
+				print('only the x-component of velocity will be considered')
+				V = None
+			if type(U) in Utypes:
+				if type(U) != _xrda_type:
+					if type(U) in [int, float]:
+						shear = False
+					U = _xr.DataArray(_copy.deepcopy(U), coords={'y':y}, dims=['y'])
+			else:
+				raise TypeError("Only float, numpy or xarray types are supported")
+			# x-velocity componen non-zero
+			even_coeffs, odd_coeffs, *a = coeff_project(U, y)
+		elif U == None:
+			if type(V) in Utypes:
+				if type(V) != _xrda_type:
+					if type(V) in [int, float]:
+						shear = False
+					V = _xr.DataArray(_copy.deepcopy(V), coords={'x':x}, dims=['x'])
+			else:
+				raise TypeError("Only float, numpy or xarray types are supported")
+
 
 		# evolve in time. Only steady shear flow for now.
 		t = _np.arange(t0, tf + dt, dt)
@@ -155,10 +187,14 @@ class planarflows:
 		# truncate velocity Fourier series.
 		# so that len(alphas_m) < len(y).
 		#  this needs to be a function with proper testing
-		maxUsum = max(abs(even_coeffs.real).cumsum().data)
-		lll = _np.where(abs(even_coeffs.real).cumsum().data < maxUsum * 0.99)[0]
-		alphas_m = even_coeffs.real.data[:lll[-1]]
-		Km = range(1, len(alphas_m))
+		if shear:
+			maxUsum = max(abs(even_coeffs.real).cumsum().data)
+			lll = _np.where(abs(even_coeffs.real).cumsum().data < maxUsum * 0.99)[0]
+			alphas_m = even_coeffs.real.data[:lll[-1]]
+			Km = range(1, len(alphas_m))
+		else:
+			alphas_m = 0 * _np.arange(10)
+			Km = range(1, 10)
 
 		if type(Amp) == _np.ndarray:  # time-varying amplitude
 			
@@ -218,8 +254,8 @@ class planarflows:
 			steady_flow = False
 
 
-		if type(tau) == float:
-			rot_eigs = True
+		if type(tau) == float:  # if renewing flows
+			renew_eigs = True
 			steady_flow = False
 
 
