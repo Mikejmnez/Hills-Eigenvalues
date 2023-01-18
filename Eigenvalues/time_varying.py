@@ -102,7 +102,7 @@ def evolve_ds_modal_uniform(_dAs, _K, _alpha0, _Pe, _X, _Y, _t, _tf=0):
     """Constructs the modal solution to the IVP with uniform cross-jet initial condition """
     # something wrong is hapenning?
     coords = {"time": _copy.deepcopy(_t),
-              "y": 2 * _Y[:, 0],
+              "y": _Y[:, 0],
               "x": _X[0, :]}
     Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
@@ -119,7 +119,7 @@ def evolve_ds_modal_uniform(_dAs, _K, _alpha0, _Pe, _X, _Y, _t, _tf=0):
 def evolve_ds_modal(_dAs, _K, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _t, _tf=0):
 	"""Constructs the modal solution to the IVP that is localized across the jet."""
 
-	coords = {"time": _t, "y": 2 * _Y[:, 0], "x": _X[0, :]}
+	coords = {"time": _t, "y": _Y[:, 0], "x": _X[0, :]}
 	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
 	ds = _xr.Dataset({'Theta': Temp})
 	Nr = len(_dAs.n) # length of truncated array
@@ -137,7 +137,7 @@ def evolve_ds_modal_off(_dAs, _dBs, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, 
 	"""Constructs the modal solution to the IVP that is localized across the jet,
 	with arbitrary location in y"""
 
-	coords = {"time": _copy.deepcopy(_t), "y": 2 * _Y[:, 0], "x": _X[0, :]}
+	coords = {"time": _copy.deepcopy(_t), "y": _Y[:, 0], "x": _X[0, :]}
 	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
 	ds = _xr.Dataset({'Theta': Temp})
 	_ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
@@ -158,7 +158,7 @@ def evolve_ds_modal_off(_dAs, _dBs, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, 
 def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _x, _y, _t, _tf=0):
     """Constructs the solution to the IVP"""
     ## Initialize the array.
-    coords = {"time": _t, "y": 2 * _y, "x": _x}
+    coords = {"time": _t, "y": _y, "x": _x}
     Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
     Nr = len(_dAs.n) # length of truncated array
@@ -180,7 +180,7 @@ def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _x, _y, _t, _tf
 def evolve_ds_off(_dAs, _dBs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _x, _y, _t, _tf=0):
     """Constructs the solution to the IVP"""
     ## Initialize the array
-    coords = {"time": _t, "y": 2 * _y, "x": _x}
+    coords = {"time": _t, "y": _y, "x": _x}
     Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
     _ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
@@ -294,7 +294,7 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _K, _ALPHA0, _Pe, _da_d
 def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _a_alps, _afacs, _x, _y, _t,  _tf=0):
     """Constructs the solution to the IVP. Shear flow aligned with y"""
     
-    coords = {"time": _t, "y": _y, "x": 2*_x}
+    coords = {"time": _t, "y": _y, "x": _x}
     Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
     _ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
@@ -310,7 +310,7 @@ def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _a_alps, _afacs, _x, _y, _t,
 def evolve_ds_off_rot(_dAs, _dBs, _da_xrft, _L, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _x, _y, _t, _tf=0):
     """Constructs the solution to the IVP"""
     ## Initialize the array
-    coords = {"time": _t, "y": _y, "x": 2 * _x}
+    coords = {"time": _t, "y": _y, "x": _x}
     Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
     _ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
