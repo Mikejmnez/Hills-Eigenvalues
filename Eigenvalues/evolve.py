@@ -134,38 +134,39 @@ class planarflows:
 
 		Utypes = [_np.ndarray, _xrda_type, float, int]
 
-		if U == None and V == None:
-			print('No shear flow provided')
-			U = _xr.DataArray(0, coords={'y':y}, dims=['y'])
-
-		if U != None:
-			if V != None:
+		if type(U) in Utypes:
+			if type(V) in Utypes:
 				print('only the x-component of velocity will be considered')
 				V = None
-			if type(U) in Utypes:
-				if type(U) != _xrda_type:
-					if type(U) in [int, float]:
-						shear = False
-					U = _xr.DataArray(_copy.deepcopy(U), coords={'y':y}, dims=['y'])
+			if type(U) != _xrda_type:
+				if type(U) in [int, float]:
+					shear = False
+				U = _xr.DataArray(_copy.deepcopy(U), coords={'y':y}, dims=['y'])
+			even_coeffs, odd_coeffs, *a = coeff_project(U, y)
+		if type(V) in Utypes:
+			if type(V) != _xrda_type:
+				if type(V) in [int, float]:
+					shear = False
+				V = _xr.DataArray(_copy.deepcopy(V), coords={'x':x}, dims=['x'])
+			even_coeffs, odd_coeffs, *a = coeff_project(V, x)
+		if type(U) not in Utypes and type(V) not in Utypes:
+			if U == None and V == None:
+				U = _xr.DataArray(0, coords={'y':y}, dims=['y'])
+				even_coeffs, odd_coeffs, *a = coeff_project(U, y)
+				shear = False
 			else:
 				raise TypeError("Only float, numpy or xarray types are supported")
 			# x-velocity componen non-zero
-			even_coeffs, odd_coeffs, *a = coeff_project(U, y)
-		elif U == None:
-			if type(V) in Utypes:
-				if type(V) != _xrda_type:
-					if type(V) in [int, float]:
-						shear = False
-					V = _xr.DataArray(_copy.deepcopy(V), coords={'x':x}, dims=['x'])
-			else:
-				raise TypeError("Only float, numpy or xarray types are supported")
 
 
 		# evolve in time. Only steady shear flow for now.
 		t = _np.arange(t0, tf + dt, dt)
 
-		# need to assert that U is defined by an even Fourier series. Otherwise, 
-		# need to extend periodically so that it has an even Fourier series.
+		# ===========================
+		# TODO:
+		# Need to assert that U is defined by an even Fourier series. Otherwise, 
+		# extend periodically so that it has an even Fourier series.
+		# Finish this, and extend to V vector. 
 
 		if _np.max(abs(odd_coeffs)) > 1e-7:  # I can make this smaller
 			Uold = _copy.deepcopy(U)
@@ -180,7 +181,12 @@ class planarflows:
 			even_coeffs, *a = coeff_project(U, y)  # Fourier coeffs for shear flow
 
 			# effective Peclet number due to domain halving
-			Pe = 2 * Pe 
+			Pe = 2 * Pe   # def a mutiplicative factor? 
+			# =======================
+			# TODO:
+			# redefine the domain in cross-stream direction to twice its length,
+			# but retain spatial resolution.
+			# =======================
 			odd_flow = True # flag that will restore the dimensional value of Pe
 
 
