@@ -297,8 +297,8 @@ def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _a_alps, _afacs, _x, _y, _t,
     coords = {"time": _t, "y": _y, "x": 2*_x}
     Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
-    _ndAs = _xr.dot(_facs * _alps, _dAs['A_2r'], dims='r')
-    for i in range(len(_time)):
+    _ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
+    for i in range(len(_t)):
         arg = 0.25*_dAs['a_2n'] + (1j)*_alpha0*(2*_np.pi*_L)*_Pe + (2*_np.pi*_L)**2
         _PHI2n = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg*(_t[i] - _tf)), dims='n')
         T0 = _xrft.ifft(_da_xrft * _PHI2n, dim='l', true_phase=True, true_amplitude=True).real
