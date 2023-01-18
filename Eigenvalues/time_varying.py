@@ -274,7 +274,7 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _K, _ALPHA0, _Pe, _da_d
 			Phi2n = PHI2n_e + PHI2n_o
 		else:
 			tf =_t[_indt[i - 1][1] - 1]
-		ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _y, phi_old=phi_old, phi_new=phi_new)
+		ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _y/2, phi_old=phi_old, phi_new=phi_new)  # will have to modify here
 		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _K, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(_copy.deepcopy(ds))
 		PHI_NEW.append(phi_new)
@@ -285,7 +285,7 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _K, _ALPHA0, _Pe, _da_d
 		else:
 			jump = abs(PHI_OLD[i] - PHI_OLD[0])
 			dsign = int(_np.sign(PHI_OLD[i] - PHI_OLD[0]))
-			diff = abs(2*_y - jump)
+			diff = abs(_y - jump)
 			ii = dsign * _np.where(diff == _np.min(diff))[0][0]
 			ds_f = ds_f.combine_first(DS[i].roll(y=ii, roll_coords=False))
 	return ds_f, PHI_NEW, PHI_OLD
@@ -351,15 +351,15 @@ def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _
 	return ds_f
 
 
-def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _t, _tf=0, _dim='k'):
+def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _t, _tf=0, _dim='k'):
 	"""Constructs the modal solution to the IVP that is localized across the jet."""
-	coords = {"t": _t, "y": _Y[:, 0], _dim: _Kn, 'x': _X[0, :]}
+	coords = {"t": _t, "y": _y, _dim: _Kn, 'x': _x}
 	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x', _dim])
 	DS = []
 	if _dim == 'k':
-		phi_arg = {'x':_X[0, :]}
+		phi_arg = {'x':_x}
 	elif _dim == 'l':
-		phi_arg = {'y':_Y[:, 0]}
+		phi_arg = {'y':_y}
 	for kk in range(len(_Kn)):
 		_K = _Kn[kk]
 		k_args = {_dim: _K}
@@ -388,15 +388,16 @@ def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _X, _Y, _t, _t
 	return ds_final
 
 
-def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _X, _Y, _t, _tf=0, _dim='k'):
+def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _x, _y, _t, _tf=0, _dim='k'):
 	"""Constructs the modal solution to the IVP that is localized across the jet."""
-	coords = {"t": _t, "y": _Y[:, 0], _dim: _Kn, 'x': _X[0, :]}
+	coords = {"t": _t, "y": _y, _dim: _Kn, 'x': _x}
+	_X, _Y = _np.meshgrid(_x, _y)
 	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x', _dim])
 	DS = []
 	if _dim == 'k':
-		phi_arg = {'x':_X[0, :]}
+		phi_arg = {'x':_x}
 	elif _dim == 'l':
-		phi_arg = {'y':_Y[:, 0]}
+		phi_arg = {'y':_y}
 	for kk in range(len(_Kn)):
 		_K = _Kn[kk]
 		k_args = {_dim: kk}
@@ -424,13 +425,13 @@ def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps
 	ll = int(_np.where(_Kn==0)[0][0]) # single zero
 	dk = _Kn[ll + 1] / 2
 	da = ds['Theta'].sum(dim=_dim) * dk
-	coords = {"time": _t, "y": _Y[:, 0], 'x': _X[0, :]}
+	coords = {"time": _t, "y": _y, 'x': _x}
 	da_final = _xr.DataArray(da.real, coords=coords, dims=['time', 'y', 'x'])
 	ds_final = _xr.Dataset({'Theta': da_final})
 	return ds_final
 
 
-def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y, _t, _tau):
+def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _x, _y, _t, _tau):
 	"""Computes the evolution of a passive scalar in the case the velocity field is renewing. Square domain.
 	By construction, the velocity field begins with an along- x orientation.
 	Input:
@@ -445,8 +446,8 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y,
 	Output:
 		ds: xarray.dataset 
 	"""
-	xt = _X[0, :] / 2
-	yt = _Y[:, 0] / 2
+	xt = _x / 2
+	yt = _y / 2
 
 	nt = _np.where(_t==_tau)[0][0]  # assumes tau is an element.
 	NT = int(round(len(_t)/nt))
@@ -460,6 +461,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y,
 	Ln = _copy.deepcopy(da_y['l'].values)
     
 	even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
+
 	acoords = {'r':range(len(even_coeffs))}
 	bcoords = {'r':range(len(odd_coeffs)-1)}
 	afacs = _np.ones(_np.shape(range(len(even_coeffs))))
@@ -471,7 +473,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y,
 	bfacs = _xr.DataArray(bfacs, coords=bcoords, dims='r')
 
 #     Initialize evolution
-	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _X, _Y, _t[:nt])
+	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, _t[:nt])
     
 	for i in range(1, NT - 1):
 		da_step = d0['Theta'].isel(time=-1)
@@ -481,12 +483,12 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y,
 			da_dft = _xrft.fft(da_step, dim='y', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
 			da_dft = da_dft.rename({'freq_y':'l'})
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, dim='x')
-			d1 = evolve_ds_serial_off(_dAs_rot,_dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _X, _Y, t1, t0, _dim='l')
+			d1 = evolve_ds_serial_off(_dAs_rot,_dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='l')
 		else:
 			da_dft = _xrft.fft(da_step.transpose(), dim='x', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
 			da_dft = da_dft.rename({'freq_x':'k'})
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
-			d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _X, _Y, t1, t0, _dim='k')
+			d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='k')
 		d0 = d0.combine_first(d1)
 	t0 = _t[(i+1)*nt]
 	t1 = _t[(i+1)*nt:]
@@ -494,12 +496,12 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _X, _Y,
 		da_dft = _xrft.fft(da_step, dim='y', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
 		da_dft = da_dft.rename({'freq_y':'l'})
 		even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, dim='x')
-		d1 = evolve_ds_serial_off(_dAs_rot,_dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _X, _Y, t1, t0, _dim='l')
+		d1 = evolve_ds_serial_off(_dAs_rot,_dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='l')
 	else:
 		da_dft = _xrft.fft(da_step.transpose(), dim='x', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
 		da_dft = da_dft.rename({'freq_x':'k'})
 		even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
-		d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _X, _Y, t1, t0, _dim='k')
+		d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='k')
 	d0 = d0.combine_first(d1)
 	return d0
 
