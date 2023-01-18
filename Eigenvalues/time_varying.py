@@ -503,7 +503,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _x, _y,
 		even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
 		d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='k')
 	d0 = d0.combine_first(d1)
-	return d0
+	return d0,
 
 
 def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t, _tf=0):
