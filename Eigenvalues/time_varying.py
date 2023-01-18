@@ -291,7 +291,7 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _K, _ALPHA0, _Pe, _da_d
 	return ds_f, PHI_NEW, PHI_OLD
 
 
-def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _alps, _facs, _x, _y, _t,  _tf=0):
+def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _a_alps, _afacs, _x, _y, _t,  _tf=0):
     """Constructs the solution to the IVP. Shear flow aligned with y"""
     
     coords = {"time": _t, "y": _y, "x": 2*_x}
