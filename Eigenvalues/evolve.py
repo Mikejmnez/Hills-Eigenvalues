@@ -13,6 +13,7 @@ from time_varying import (
 	evolve_ds_rot,
 	evolve_ds_off_rot,
 	evolve_ds,
+	renewing_evolve,
 	re_sample,
 	indt_intervals,
 	get_order,
@@ -198,8 +199,10 @@ class planarflows:
 		#  this needs to be a function with proper testing
 		if shear:
 			maxUsum = max(abs(even_coeffs.real).cumsum().data)
-			lll = _np.where(abs(even_coeffs.real).cumsum().data < maxUsum * 0.99)[0]
-			alphas_m = even_coeffs.real.data[:lll[-1]]
+			lll = _np.where(abs(even_coeffs.real).cumsum().data < maxUsum * 0.999)[0][-1]
+			if lll < 40:
+				lll = 40 # set min range of Fourier coeffs
+			alphas_m = even_coeffs.real.data[:lll]
 			Km = range(1, len(alphas_m))
 		else:
 			alphas_m = 0 * _np.arange(10)
@@ -378,6 +381,38 @@ class planarflows:
 		if renew_eigs:
 			# renewing shear flow, for now there is no phase shift in here
 			# TODO: add phase shift
+			ds_As = _eigfns.phi_even({**args, **{'_y': y / 2, "opt": True,"reflect": True}})
+			ds_Bs = eigfns.phi_odd({**args, **{'_y': y / 2, "opt": True,"reflect": True}})
+
+			args.pop('_K')
+			args = {**args, '_L': Kn}
+
+			ds_As_rot = _eigfns.phi_even({**args, **{'_y':x / 2, "opt": True,"reflect": True}})
+			ds_As_rot = ds_As_rot.rename_dims({'k':'l', 'y':'x'}).rename_vars({'k':'l', 'y':'x'})
+
+			ds_Bs_rot = eigfns.phi_odd({**args, **{'_y':x / 2, "opt": True,"reflect": True}})
+			ds_Bs_rot = ds_Bs_rot.rename_dims({'k':'l', 'y':'x'}).rename_vars({'k':'l', 'y':'x'})
+
+			_alpha0, _Pe, Theta0, _x, _y, _t, _tau
+
+			eargs = {
+				'_dAs': ds_As,
+				'_dBs': ds_Bs,
+				'_dAs_rot': ds_As_rot,
+				'_dBs_rot': ds_Bs_rot,
+				'_alpha0': alphas_m[0],
+				'Theta0': fx * gy,
+				'tau': _tau,
+				"_x": x,
+				'_y': y,
+				"_t": t
+			}
+
+			eargs = {**eargs, **args} 
+
+
+			time_evolve = renewing_evolve
+
 
 
 		for key in ['_N', '_betas_m', '_Km']:
@@ -387,8 +422,12 @@ class planarflows:
 
 		ds, *a = time_evolve(**eargs)
 
-		# U_f = alphas_m[0]+sum([alphas_m[n] * _np.cos(y*n) for n in Km])
-		# ds['U'] = U_f
+
+		X, Y = _np.meshgrid(x, y)
+		U_f = alphas_m[0]+sum([alphas_m[n] * _np.cos(Y*n) for n in Km])
+		coords = {'x':x, 'y': y}
+		da = _xr.DataArray(U_f, coords=coords, dims=['y', 'x'])
+		ds['U'] = da
 
 		return ds
 
