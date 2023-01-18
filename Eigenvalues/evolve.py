@@ -147,6 +147,13 @@ class planarflows:
 					shear = False
 				U = _xr.DataArray(_copy.deepcopy(U), coords={'y':y}, dims=['y'])
 			even_coeffs, odd_coeffs, *a = coeff_project(U, y)
+			if type(tau) == float:
+				# rotating shear flow. only flows with even F. series
+				Urot = _xr.DataArray(_copy.deepcopy(U).data, coords={'x':x}, dims=['x'])
+				xeven_coeffs, *a = coeff_project(Urot, x, dim='x')
+				xalphas_m = xeven_coeffs.real.data[:40]
+				xKm = range(1, len(xalphas_m))
+
 		if type(V) in Utypes:
 			if type(V) != _xrda_type:
 				if type(V) in [int, float]:
@@ -155,7 +162,6 @@ class planarflows:
 			even_coeffs, odd_coeffs, *a = coeff_project(V, x, dim='x')
 		if type(U) not in Utypes and type(V) not in Utypes:
 			if U == None and V == None:
-				print('here?')
 				U = _xr.DataArray(0, coords={'y':y}, dims=['y'])
 				even_coeffs, odd_coeffs, *a = coeff_project(U, y)
 				shear = False
@@ -240,6 +246,13 @@ class planarflows:
 				_axis, _dim = y, 'y'  # pair of cross-stream coord and label
 				_uaxis, _udim = x, 'x'  # pair of along-stream coord and label
 
+				if type(tau) == float:  # if renewing flows
+					renew_eigs = True
+					steady_flow = False
+
+					phiy = _xrft.fft(gy, true_phase=True, true_amplitude=True)
+					phiy = phiy.rename({'freq_y':'l'}) # label l the wavenumber 
+					Ln = phiy['l'].values # wavenumber vals
 			else:
 				Ck = _xrft.fft(gy, true_phase=True, true_amplitude=True)
 				Ck = Ck.rename({'freq_y':'l'}) # label k the wavenumber 
@@ -280,13 +293,7 @@ class planarflows:
 			Qx_k = Qx_k.rename({'freq_x':'k'}) # label k the wavenumber 
 
 			Kn = Qx_k['k'].values # wavenumber vals. These should be the same to i.c.
-
-			steady_flow = False
-
-
-		if type(tau) == float:  # if renewing flows
-			renew_eigs = True
-			steady_flow = False
+			# steady_flow = False
 
 
 		# define universal parameters
@@ -308,8 +315,8 @@ class planarflows:
 
 		if steady_flow:
 
-			U_f = alphas_m[0]+sum([alphas_m[n] * _np.cos(Y*n) for n in Km])
-			da = _xr.DataArray(U_f, coords=coords, dims=['time', 'y', 'x'])
+			U_f = alphas_m[0] + sum([alphas_m[n] * _np.cos(Y*n) for n in Km])
+			da = _xr.DataArray(U_f, coords=Ucoords, dims=['time', 'y', 'x'])
 
 
 			if odd_eigs:
@@ -389,18 +396,20 @@ class planarflows:
 			# renewing shear flow, for now there is no phase shift in here
 			# TODO: add phase shift
 			ds_As = _eigfns.phi_even(**{**args, **{'_y': y / 2, "opt": True,"reflect": True}})
-			ds_Bs = eigfns.phi_odd(**{**args, **{'_y': y / 2, "opt": True,"reflect": True}})
+			ds_Bs = _eigfns.phi_odd(**{**args, **{'_y': y / 2, "opt": True,"reflect": True}})
 
 			args.pop('_K')
-			args = {**args, '_L': Kn}
+			args.pop('_betas_m')
+			args.pop('_Km')
+			args = {**args, '_K': Ln, '_betas_m': xalphas_m[1:], '_Km':xKm}
 
 			ds_As_rot = _eigfns.phi_even(**{**args, **{'_y':x / 2, "opt": True,"reflect": True}})
 			ds_As_rot = ds_As_rot.rename_dims({'k':'l', 'y':'x'}).rename_vars({'k':'l', 'y':'x'})
 
-			ds_Bs_rot = eigfns.phi_odd(**{**args, **{'_y':x / 2, "opt": True,"reflect": True}})
+			ds_Bs_rot = _eigfns.phi_odd(**{**args, **{'_y':x / 2, "opt": True,"reflect": True}})
 			ds_Bs_rot = ds_Bs_rot.rename_dims({'k':'l', 'y':'x'}).rename_vars({'k':'l', 'y':'x'})
 
-			_alpha0, _Pe, Theta0, _x, _y, _t, _tau
+			args.pop('_K')
 
 			eargs = {
 				'_dAs': ds_As,
@@ -408,8 +417,8 @@ class planarflows:
 				'_dAs_rot': ds_As_rot,
 				'_dBs_rot': ds_Bs_rot,
 				'_alpha0': alphas_m[0],
-				'Theta0': fx * gy,
-				'tau': _tau,
+				'_Theta0': IC['Theta0'],
+				'_tau': tau,
 				"_x": x,
 				'_y': y,
 				"_t": t
