@@ -135,6 +135,7 @@ class planarflows:
 		ic_flag = True
 		shear = True  # False only when flow is constant
 
+
 		Utypes = [_np.ndarray, _xrda_type, float, int]
 
 		if type(U) in Utypes:
@@ -165,6 +166,8 @@ class planarflows:
 
 		# evolve in time. Only steady shear flow for now.
 		t = _np.arange(t0, tf + dt, dt)
+		X, Y = _np.meshgrid(x, y)
+		Ucoords = {'x':x, 'y': y, 'time': t}
 
 		# ===========================
 		# TODO:
@@ -305,6 +308,10 @@ class planarflows:
 
 		if steady_flow:
 
+			U_f = alphas_m[0]+sum([alphas_m[n] * _np.cos(Y*n) for n in Km])
+			da = _xr.DataArray(U_f, coords=coords, dims=['time', 'y', 'x'])
+
+
 			if odd_eigs:
 				ds_Bs = _eigfns.phi_odd(**{**args, **{'_y': _axis / 2, "opt": True,"reflect": True}})
 				if _udim == 'y':
@@ -381,16 +388,16 @@ class planarflows:
 		if renew_eigs:
 			# renewing shear flow, for now there is no phase shift in here
 			# TODO: add phase shift
-			ds_As = _eigfns.phi_even({**args, **{'_y': y / 2, "opt": True,"reflect": True}})
-			ds_Bs = eigfns.phi_odd({**args, **{'_y': y / 2, "opt": True,"reflect": True}})
+			ds_As = _eigfns.phi_even(**{**args, **{'_y': y / 2, "opt": True,"reflect": True}})
+			ds_Bs = eigfns.phi_odd(**{**args, **{'_y': y / 2, "opt": True,"reflect": True}})
 
 			args.pop('_K')
 			args = {**args, '_L': Kn}
 
-			ds_As_rot = _eigfns.phi_even({**args, **{'_y':x / 2, "opt": True,"reflect": True}})
+			ds_As_rot = _eigfns.phi_even(**{**args, **{'_y':x / 2, "opt": True,"reflect": True}})
 			ds_As_rot = ds_As_rot.rename_dims({'k':'l', 'y':'x'}).rename_vars({'k':'l', 'y':'x'})
 
-			ds_Bs_rot = eigfns.phi_odd({**args, **{'_y':x / 2, "opt": True,"reflect": True}})
+			ds_Bs_rot = eigfns.phi_odd(**{**args, **{'_y':x / 2, "opt": True,"reflect": True}})
 			ds_Bs_rot = ds_Bs_rot.rename_dims({'k':'l', 'y':'x'}).rename_vars({'k':'l', 'y':'x'})
 
 			_alpha0, _Pe, Theta0, _x, _y, _t, _tau
@@ -421,13 +428,6 @@ class planarflows:
 
 
 		ds, *a = time_evolve(**eargs)
-
-
-		X, Y = _np.meshgrid(x, y)
-		U_f = alphas_m[0]+sum([alphas_m[n] * _np.cos(Y*n) for n in Km])
-		coords = {'x':x, 'y': y}
-		da = _xr.DataArray(U_f, coords=coords, dims=['y', 'x'])
-		ds['U'] = da
 
 		return ds
 
