@@ -431,7 +431,7 @@ def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps
 	return ds_final
 
 
-def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _x, _y, _t, _tau):
+def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _x, _y, _t, _tau):
 	"""Computes the evolution of a passive scalar in the case the velocity field is renewing. Square domain.
 	By construction, the velocity field begins with an along- x orientation.
 	Input:
@@ -439,7 +439,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _x, _y,
 		_dAs_rot, _dBs_rot: datasets with spectra associated with rotatede shear flows.
 		_alpha0: Mean velocity.
 		_Pe: float. Peclet number.
-		Theta0: Initial condition. xarray.DataArray.
+		_Theta0: Initial condition. xarray.DataArray.
 		_X, _Y: 2d arrays (each). Together define the grid, assumed to be square domains
 		_t: 1d array. Time with t[0]=0.
 		_tau: float, element of _t. defines the frequency of velocity rotation.
@@ -452,11 +452,11 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, Theta0, _x, _y,
 	nt = _np.where(_t==_tau)[0][0]  # assumes tau is an element.
 	NT = int(round(len(_t)/nt))
     
-	da_dft = _xrft.fft(Theta0.transpose(), dim='x', true_phase=True, true_amplitude=True)
+	da_dft = _xrft.fft(_Theta0.transpose(), dim='x', true_phase=True, true_amplitude=True)
 	da_dft = da_dft.rename({'freq_x':'k'})
 	Kn = _copy.deepcopy(da_dft['k'].values)
     
-	da_y = _xrft.fft(Theta0, dim='y', true_phase=True, true_amplitude=True)
+	da_y = _xrft.fft(_Theta0, dim='y', true_phase=True, true_amplitude=True)
 	da_y = da_y.rename({'freq_y':'l'})
 	Ln = _copy.deepcopy(da_y['l'].values)
     
