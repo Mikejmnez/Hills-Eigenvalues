@@ -340,7 +340,7 @@ def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _
 			tf =_t[_indt[i - 1][1] - 1]
 		ds, Phi2n = evolve_ds_rot(_DAS[_order[i]], _da_dft, _Ln, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(ds)
-		ncoeffs, odd_coeffs, phi_new, phi_old  = coeff_project(Phi2n, _y, dim='x')
+		ncoeffs, odd_coeffs, phi_new, phi_old  = coeff_project(Phi2n, _y / 2, dim='x')
     
 	for i in range(len(DS)):
 		if i ==0:
