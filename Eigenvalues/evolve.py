@@ -10,6 +10,8 @@ from Hills_eigenfunctions import (
 from time_varying import (
 	coeff_project,
 	evolve_ds_off,
+	evolve_ds_rot,
+	evolve_ds_off_rot,
 	evolve_ds,
 	re_sample,
 	indt_intervals,
@@ -148,9 +150,10 @@ class planarflows:
 				if type(V) in [int, float]:
 					shear = False
 				V = _xr.DataArray(_copy.deepcopy(V), coords={'x':x}, dims=['x'])
-			even_coeffs, odd_coeffs, *a = coeff_project(V, x)
+			even_coeffs, odd_coeffs, *a = coeff_project(V, x, dim='x')
 		if type(U) not in Utypes and type(V) not in Utypes:
 			if U == None and V == None:
+				print('here?')
 				U = _xr.DataArray(0, coords={'y':y}, dims=['y'])
 				even_coeffs, odd_coeffs, *a = coeff_project(U, y)
 				shear = False
@@ -201,7 +204,7 @@ class planarflows:
 		else:
 			alphas_m = 0 * _np.arange(10)
 			Km = range(1, 10)
-			if type(U) != None:
+			if type(U) == _xrda_type:
 				alphas_m[0] = U.mean().values
 			else:
 				alphas_m[0] = V.mean().values
@@ -223,18 +226,29 @@ class planarflows:
 			fx = IC['f(x)'].isel(y=0) # along-stream component of ic.
 			gy = IC['g(y)'].isel(x=0) # cross-stream component of ic.
 
-			Ck = _xrft.fft(fx, true_phase=True, true_amplitude=True)
-			Ck = Ck.rename({'freq_x':'k'}) # label k the wavenumber 
+			if type(U) in Utypes:
+				Ck = _xrft.fft(fx, true_phase=True, true_amplitude=True)
+				Ck = Ck.rename({'freq_x':'k'}) # label k the wavenumber 
+				Kn = Ck['k'].values # wavenumber vals
+				phi = gy  # cross-stream component of i.c.
+				_axis, _dim = y, 'y'  # pair of cross-stream coord and label
+				_uaxis, _udim = x, 'x'  # pair of along-stream coord and label
 
-			Kn = Ck['k'].values # wavenumber vals
+			else:
+				Ck = _xrft.fft(gy, true_phase=True, true_amplitude=True)
+				Ck = Ck.rename({'freq_y':'l'}) # label k the wavenumber 
+				Kn = Ck['l'].values # wavenumber vals
+				phi = fx  # cross-stream component of i.c.
+				_axis, _dim = x, 'x'  # pair of cross-stream coord and label 
+				_uaxis, _udim = y, 'y'  # pair of along-stream coord and label
 
-			even_coeffs, odd_coeffs, *a = coeff_project(gy, y)
+			even_coeffs, odd_coeffs, *a = coeff_project(phi, _axis, dim=_dim)
 
 			acoords = {'r':range(len(even_coeffs.data))}
 			bcoords = {'r':range(len(odd_coeffs.data)-1)}
 
-			a_alps_y = _xr.DataArray(even_coeffs.data, coords=acoords, dims='r')
-			b_alps_y = _xr.DataArray(odd_coeffs.data[:-1], coords=bcoords, dims='r')
+			a_alps = _xr.DataArray(even_coeffs.data, coords=acoords, dims='r')
+			b_alps = _xr.DataArray(odd_coeffs.data[:-1], coords=bcoords, dims='r')
 
 			afacs = _np.ones(_np.shape(range(len(even_coeffs))))
 			afacs[0] = 2
@@ -279,6 +293,7 @@ class planarflows:
 			'_Km': Km,
 		}
 
+
 		# ========================
 		# Construct eigenfunctions
 		# ========================
@@ -287,47 +302,58 @@ class planarflows:
 
 		if steady_flow:
 
-			args = {**args, '_y': y/2}
-			ds_As = _eigfns.phi_even(**{**args, **{"opt": True,"reflect": True}})
-
-
 			if odd_eigs:
-				ds_Bs = _eigfns.phi_odd(**{**args, **{"opt": True,"reflect": True}})
+				ds_Bs = _eigfns.phi_odd(**{**args, **{'_y': _axis / 2, "opt": True,"reflect": True}})
+				if _udim == 'y':
+					ds_Bs = ds_Bs.rename_dims({'k':'l', 'y':'x'}).rename_vars({'k':'l', 'y':'x'})
 
-			eargs = {**args, **{"_x": x, "_alpha0": alphas_m[0], "_t": t}}
+			ds_As = _eigfns.phi_even(**{**args, **{'_y': _axis / 2, "opt": True,"reflect": True}})
+
+			if _udim == 'y':
+				ds_As = ds_As.rename_dims({'k':'l', 'y':'x'}).rename_vars({'k':'l', 'y':'x'})
+
+				args.pop('_K')
+				args = {**args, '_L': Kn}
+
+			eargs = {**args, **{'_y': _axis, "_x": _uaxis, "_alpha0": alphas_m[0], "_t": t}}
 
 			if ic_flag:
 				nargs = {
 					"_dAs": ds_As,
 					"_da_xrft": Ck,
-					"_a_alps": a_alps_y,
+					"_a_alps": a_alps,
 					"_afacs": afacs,
 				}
 				eargs = {**eargs, **nargs}
 				if odd_eigs:
 					add_args={
 						"_dBs": ds_Bs,
-						"_b_alps": b_alps_y,
+						"_b_alps": b_alps,
 						"_bfacs": bfacs,
 					}
 					eargs = {**eargs, **add_args}
 
-	
-					time_evolve = evolve_ds_off
+					if _udim == 'x':
+						time_evolve = evolve_ds_off
+					elif _udim == 'y':
+						time_evolve = evolve_ds_off_rot
 				else:
-					time_evolve = evolve_ds
+					if _udim == 'x':
+						time_evolve = evolve_ds
+					elif _udim == 'y':
+						time_evolve = evolve_ds_rot
 
 		if time_osc:
 
-			nargs = {
+			iargs = {
 				'_vals': vals,
 				'_alpha0': alphas_m[0],
-				'_y': y/2,
+				'_y': y / 2,
 			}
 
-			DAS, DBS, ALPHA0, vals = spectra_list(**{**args, **nargs})
+			DAS, DBS, ALPHA0, vals = spectra_list(**{**args, **iargs})
 
-			eargs = {**args, **{"_x": x, '_y': y/2, "_t": t}}
+			eargs = {**args, **{"_x": x, '_y': y, "_t": t}}  # _axis has to be factored by 2
 
 			if ic_flag:
 				nargs = {
@@ -338,9 +364,9 @@ class planarflows:
 					'_vals': vals,  
 					'_ALPHA0': ALPHA0, 
 					'_da_dft': Ck,
-					'_even_alps': a_alps_y,
+					'_even_alps': a_alps,
 					'e_facs': afacs,
-					'_odd_alps': b_alps_y,
+					'_odd_alps': b_alps,
 					'o_facs': bfacs
 				}
 				eargs = {**eargs, **nargs}
@@ -349,9 +375,15 @@ class planarflows:
 
 			time_evolve = evolve_off_ds_time
 
+		if renew_eigs:
+			# renewing shear flow, for now there is no phase shift in here
+			# TODO: add phase shift
+
+
 		for key in ['_N', '_betas_m', '_Km']:
 			if key in eargs.keys():
 				eargs.pop(key)
+
 
 		ds, *a = time_evolve(**eargs)
 
