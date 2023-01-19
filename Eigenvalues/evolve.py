@@ -251,6 +251,10 @@ class planarflows:
 				_uaxis, _udim = x, 'x'  # pair of along-stream coord and label
 
 				if type(tau) == float:  # if renewing flows
+					# asdsert that the ratio tau/dt is an integer
+					_ni = round(tau/dt)
+					tau = _ni * dt
+
 					renew_eigs = True
 					steady_flow = False
 
@@ -492,10 +496,26 @@ class planarflows:
 			U_da = _xr.DataArray(coords=Ucoords, dims=['time', 'y', 'x'])
 			V_da = _xr.DataArray(coords=Ucoords, dims=['time', 'y', 'x'])
 
+			U_f = alphas_m[0] + sum([alphas_m[n] * _np.cos(Y*n) for n in Km])
+			V_f = xalphas_m[0] + sum([xalphas_m[n] * _np.cos(X*n) for n in xKm])
+
+			nt = _np.where(t == tau)[0][0]  # assumes tau is an element.
+			NT = int(round(len(t) / nt))  # split into chunks
+			for i in range(NT-1):
+				if i % 2 == 0: # even - begin with x-oriented shear flow
+					U_da.data[i*nt: (i+1)*nt+1:, :, :] = U_f
+					V_da.data[i*nt: (i+1)*nt+1:, :, :] = 0
+				else:
+					U_da.data[i*nt: (i+1)*nt+1:, :, :] = 0
+					V_da.data[i*nt: (i+1)*nt+1:, :, :] = V_f
 
 
 		ds['U'] = U_da
 		ds['V'] = V_da
+
+		for key in eargs.keys():
+			
+			del key
 
 		return ds
 
