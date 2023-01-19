@@ -27,7 +27,7 @@ class eigenfunctions:
     @classmethod
     def phi_even(
         cls,
-        _K,
+        _Kn,
         _Pe,
         _y,
         _N,
@@ -44,7 +44,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dAs is None:
-            dAs = A_coefficients(_K, _Pe, _N, _betas_m, _Km, 'even', opt, reflect)
+            dAs = A_coefficients(_Kn, _Pe, _N, _betas_m, _Km, 'even', opt, reflect)
         # initialize a dataarray with right dimensions
         N = len(dAs.n)  # update the size of the array
         cos_coords = {'r':range(N), 'y':_y}
@@ -63,7 +63,7 @@ class eigenfunctions:
     @classmethod
     def phi_odd(
         cls,
-        _K,
+        _Kn,
         _Pe,
         _y,
         _N,
@@ -80,7 +80,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dBs is None:
-            dBs = A_coefficients(_K, _Pe, _N, _betas_m, _Km, 'odd', opt, reflect)
+            dBs = A_coefficients(_Kn, _Pe, _N, _betas_m, _Km, 'odd', opt, reflect)
         # initialize a dataarray with right dimensions
         _range = dBs.n.data  # update the size of the array
         sin_coords = {'r':_range, 'y':_y}
