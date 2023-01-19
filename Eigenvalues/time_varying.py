@@ -327,18 +327,18 @@ def evolve_ds_off_rot(_dAs, _dBs, _da_xrft, _L, _alpha0, _Pe, _a_alps, _afacs, _
 
     return ds, _PHI2n
 
-def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _gauss_alps, _facs, _x, _y, _t):
+def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _a_alps, _afacs, _x, _y, _t):
 	"""
 	evolves a localized initial condition defined by its 2d Fourier coefficients.
 	"""
 	DS = []
-	ncoeffs = _copy.deepcopy(_gauss_alps)
+	ncoeffs = _copy.deepcopy(_a_alps)
 	for i in range(len(_indt)):
 		if i == 0:
 			tf = 0
 		else:
 			tf =_t[_indt[i - 1][1] - 1]
-		ds, Phi2n = evolve_ds_rot(_DAS[_order[i]], _da_dft, _Ln, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
+		ds, Phi2n = evolve_ds_rot(_DAS[_order[i]], _da_dft, _Ln, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _afacs, _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(ds)
 		ncoeffs, odd_coeffs, phi_new, phi_old  = coeff_project(Phi2n, _y / 2, dim='x')
     
