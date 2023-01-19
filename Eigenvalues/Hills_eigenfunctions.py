@@ -3045,7 +3045,7 @@ def reflect_dataset(ds, k=True, Pe=False, symmetry='even'):
 
 
 
-def spectra_list(_K, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rotate=False):
+def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rotate=False):
     """Creates a list of datasets in which each element contains the spectra of the governing operator.
     """
     _betas_m = _np.array(_betas_m)
