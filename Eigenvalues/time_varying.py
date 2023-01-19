@@ -155,7 +155,7 @@ def evolve_ds_modal_off(_dAs, _dBs, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, 
 
 
 
-def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _x, _y, _t, _tf=0):
+def evolve_ds(_dAs, _da_xrft, _Kn, _alpha0, _Pe, _a_alps, _afacs, _x, _y, _t, _tf=0):
     """Constructs the solution to the IVP"""
     ## Initialize the array.
     coords = {"time": _t, "y": _y, "x": _x}
@@ -164,7 +164,7 @@ def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _x, _y, _t, _tf
     Nr = len(_dAs.n) # length of truncated array
     ndAs = complement_dot(_afacs*_a_alps, _dAs)  # has final size in n (sum in p)
     for i in range(len(_t)):
-        exp_arg =  (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+        exp_arg =  (1j)*_alpha0*(2*_np.pi*_Kn)*_Pe + (2*_np.pi*_Kn)**2
         # if Nr < len(_facs):  # Is this necessary?
         #     PHI2n = _xr.dot(ndAs.isel(n=slice(Nr)), _dAs['phi_2n'].isel(n=slice(Nr)) * _np.exp(-(0.25*_dAs['a_2n'].isel(n=slice(Nr)) + exp_arg)*(_time[i]-_tf)), dims='n')
         #     PHI2n = PHI2n + _xr.dot(ndAs[Nr:], _dAs['phi_2n'][Nr:] * _np.exp(-(0.25*_dAs['a_2n'][Nr:] + exp_arg)*(_time[i]-_tf)), dims='n')
@@ -186,8 +186,8 @@ def evolve_ds_off(_dAs, _dBs, _da_xrft, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_a
     _ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
     _ndBs = _xr.dot(_bfacs * _b_alps, _dBs['B_2r'], dims='r')
     for i in range(len(_t)):
-    	arg_e = 0.25*_dAs['a_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
-    	arg_o = 0.25*_dBs['b_2n'] + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
+    	arg_e = 0.25*_dAs['a_2n'] + (1j)*_alpha0*(2*_np.pi*_Kn)*_Pe + (2*_np.pi*_Kn)**2
+    	arg_o = 0.25*_dBs['b_2n'] + (1j)*_alpha0*(2*_np.pi*_Kn)*_Pe + (2*_np.pi*_Kn)**2
     	_PHI2n_e = _xr.dot(_ndAs, _dAs['phi_2n'] * _np.exp(- arg_e*(_t[i] - _tf)), dims='n')
     	_PHI2n_o = _xr.dot(_ndBs, _dBs['phi_2n'] * _np.exp(- arg_o*(_t[i] - _tf)), dims='n')
     	_PHI2n = _PHI2n_e + _PHI2n_o
@@ -268,14 +268,14 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 			tf = 0
 			phi_old = _np.pi
 			ndAs = _xr.dot(_afacs * ecoeffs, _DAS[_order[i]]['A_2r'])
-			ndBs = _xr.dot(o_bfacs * ocoeffs, _DBS[_order[i]]['B_2r'])
+			ndBs = _xr.dot(_bfacs * ocoeffs, _DBS[_order[i]]['B_2r'])
 			PHI2n_e = _xr.dot(ndAs, _DAS[_order[i]]['phi_2n'], dims='n')
 			PHI2n_o = _xr.dot(ndBs, _DBS[_order[i]]['phi_2n'], dims='n')
 			Phi2n = PHI2n_e + PHI2n_o
 		else:
 			tf =_t[_indt[i - 1][1] - 1]
 		ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _y/2, phi_old=phi_old, phi_new=phi_new)  # will have to modify here
-		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _K, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, _afacs, ocoeffs, _bfacs,  _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
+		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, _afacs, ocoeffs, _bfacs,  _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(_copy.deepcopy(ds))
 		PHI_NEW.append(phi_new)
 		PHI_OLD.append(phi_old)
@@ -348,7 +348,7 @@ def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _
 		else:
 			ds_f = ds_f.combine_first(DS[i])
 
-	return ds_f
+	return ds_f, phi_new, phi_old
 
 
 def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _t, _tf=0, _dim='k'):
