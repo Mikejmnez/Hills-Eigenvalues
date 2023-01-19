@@ -158,7 +158,7 @@ class planarflows:
 				else:
 				    raise TypeError ('tau for renewing flow must define a real number')
 
-		if type(V) in Utypes and type(V) not in Utypes:
+		if type(V) in Utypes and type(U) not in Utypes:
 			if type(V) != _xrda_type:
 				if type(V) in [int, float]:
 					shear = False
@@ -491,7 +491,7 @@ class planarflows:
 			# initialize vel (empty!)
 			U_da = _xr.DataArray(coords=Ucoords, dims=['time', 'y', 'x'])
 			V_da = _xr.DataArray(coords=Ucoords, dims=['time', 'y', 'x'])
-			
+
 
 
 		ds['U'] = U_da
