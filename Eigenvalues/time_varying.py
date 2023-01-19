@@ -177,7 +177,7 @@ def evolve_ds(_dAs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _x, _y, _t, _tf
 
 
 
-def evolve_ds_off(_dAs, _dBs, _da_xrft, _K, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _x, _y, _t, _tf=0):
+def evolve_ds_off(_dAs, _dBs, _da_xrft, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps, _bfacs, _x, _y, _t, _tf=0):
     """Constructs the solution to the IVP"""
     ## Initialize the array
     coords = {"time": _t, "y": _y, "x": _x}
@@ -230,12 +230,12 @@ def evolve_ds_modal_time(_DAS, _indt, _order, _vals, _K0, _ALPHA0, _Pe, _gauss_a
 	return ds_f
 
 
-def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gauss_alps, _facs, _x, _y, _t):
+def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _a_alps, _facs, _x, _y, _t):
 	"""
 	evolves a localized initial condition defined by its 2d Fourier coefficients.
 	"""
 	DS = []
-	ncoeffs = _copy.deepcopy(_gauss_alps)
+	ncoeffs = _copy.deepcopy(_a_alps)
 	for i in range(len(_indt)):
 		if i == 0:
 			tf = 0
@@ -253,13 +253,13 @@ def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _gaus
 	return ds_f
 
 
-def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _K, _ALPHA0, _Pe, _da_dft, _even_alps, e_facs, _odd_alps, o_facs, _x, _y, _t, _shift=0):
+def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _a_alps, _afacs, _b_alps, _bfacs, _x, _y, _t, _shift=0):
 	"""evolves a localized initial condition defined by its 2d Fourier coefficients."""
 	DS = []
 	PHI_NEW = []
 	PHI_OLD = []
-	ecoeffs = _copy.deepcopy(_even_alps)
-	ocoeffs = _copy.deepcopy(_odd_alps)
+	ecoeffs = _copy.deepcopy(_a_alps)
+	ocoeffs = _copy.deepcopy(_b_alps)
 	if _shift == 0:
 		_shift = [0 for i in range(len(_t))]
 	for i in range(len(_indt)):
@@ -267,15 +267,15 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _K, _ALPHA0, _Pe, _da_d
 		if i == 0:
 			tf = 0
 			phi_old = _np.pi
-			ndAs = _xr.dot(e_facs * ecoeffs, _DAS[_order[i]]['A_2r'])
-			ndBs = _xr.dot(o_facs * ocoeffs, _DBS[_order[i]]['B_2r'])
+			ndAs = _xr.dot(_afacs * ecoeffs, _DAS[_order[i]]['A_2r'])
+			ndBs = _xr.dot(o_bfacs * ocoeffs, _DBS[_order[i]]['B_2r'])
 			PHI2n_e = _xr.dot(ndAs, _DAS[_order[i]]['phi_2n'], dims='n')
 			PHI2n_o = _xr.dot(ndBs, _DBS[_order[i]]['phi_2n'], dims='n')
 			Phi2n = PHI2n_e + PHI2n_o
 		else:
 			tf =_t[_indt[i - 1][1] - 1]
 		ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _y/2, phi_old=phi_old, phi_new=phi_new)  # will have to modify here
-		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _K, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, e_facs, ocoeffs, o_facs,  _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
+		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _K, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, _afacs, ocoeffs, _bfacs,  _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(_copy.deepcopy(ds))
 		PHI_NEW.append(phi_new)
 		PHI_OLD.append(phi_old)
