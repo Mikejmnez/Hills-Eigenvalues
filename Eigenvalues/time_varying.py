@@ -327,6 +327,7 @@ def evolve_ds_off_rot(_dAs, _dBs, _da_xrft, _L, _alpha0, _Pe, _a_alps, _afacs, _
 
     return ds, _PHI2n
 
+
 def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _a_alps, _afacs, _x, _y, _t):
 	"""
 	evolves a localized initial condition defined by its 2d Fourier coefficients.
@@ -340,7 +341,7 @@ def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _
 			tf =_t[_indt[i - 1][1] - 1]
 		ds, Phi2n = evolve_ds_rot(_DAS[_order[i]], _da_dft, _Ln, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _afacs, _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
 		DS.append(ds)
-		ncoeffs, odd_coeffs, phi_new, phi_old  = coeff_project(Phi2n, _y / 2, dim='x')
+		ncoeffs, odd_coeffs, phi_new, phi_old  = coeff_project(Phi2n, _x / 2, dim='x')
     
 	for i in range(len(DS)):
 		if i ==0:
@@ -349,6 +350,44 @@ def evolve_ds_rot_time(_DAS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _
 			ds_f = ds_f.combine_first(DS[i])
 
 	return ds_f, phi_new, phi_old
+
+
+def evolve_off_ds_rot_time(_DAS, _DBS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, _da_dft, _a_alps, _afacs, _b_alps, _bfacs, _x, _y, _t, _shift=0):
+	"""evolves a localized initial condition defined by its 2d Fourier coefficients."""
+	DS = []
+	PHI_NEW = []
+	PHI_OLD = []
+	ecoeffs = _copy.deepcopy(_a_alps)
+	ocoeffs = _copy.deepcopy(_b_alps)
+	if _shift == 0:
+		_shift = [0 for i in range(len(_t))]
+	for i in range(len(_indt)):
+		phi_new = _shift[_indt[i][0]]  # only sample first - they are all the same
+		if i == 0:
+			tf = 0
+			phi_old = _np.pi
+			ndAs = _xr.dot(_afacs * ecoeffs, _DAS[_order[i]]['A_2r'])
+			ndBs = _xr.dot(_bfacs * ocoeffs, _DBS[_order[i]]['B_2r'])
+			PHI2n_e = _xr.dot(ndAs, _DAS[_order[i]]['phi_2n'], dims='n')
+			PHI2n_o = _xr.dot(ndBs, _DBS[_order[i]]['phi_2n'], dims='n')
+			Phi2n = PHI2n_e + PHI2n_o
+		else:
+			tf =_t[_indt[i - 1][1] - 1]
+		ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _x/2, phi_old=phi_old, phi_new=phi_new, dim='x')  # will have to modify here
+		ds, Phi2n = evolve_ds_off_rot(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Ln, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, _afacs, ocoeffs, _bfacs,  _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
+		DS.append(_copy.deepcopy(ds))
+		PHI_NEW.append(phi_new)
+		PHI_OLD.append(phi_old)
+	for i in range(len(DS)):
+		if i == 0:
+			ds_f = DS[i]
+		else:
+			jump = abs(PHI_OLD[i] - PHI_OLD[0])
+			dsign = int(_np.sign(PHI_OLD[i] - PHI_OLD[0]))
+			diff = abs(_y - jump)
+			ii = dsign * _np.where(diff == _np.min(diff))[0][0]
+			ds_f = ds_f.combine_first(DS[i].roll(y=ii, roll_coords=False))
+	return ds_f, PHI_NEW, PHI_OLD
 
 
 def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _t, _tf=0, _dim='k'):
