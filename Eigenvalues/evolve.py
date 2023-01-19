@@ -316,7 +316,8 @@ class planarflows:
 		if steady_flow:
 
 			U_f = alphas_m[0] + sum([alphas_m[n] * _np.cos(Y*n) for n in Km])
-			da = _xr.DataArray(U_f, coords=Ucoords, dims=['time', 'y', 'x'])
+			Ucoords.pop('time')
+			da = _xr.DataArray(U_f, coords=Ucoords, dims=['y', 'x'])
 
 
 			if odd_eigs:
