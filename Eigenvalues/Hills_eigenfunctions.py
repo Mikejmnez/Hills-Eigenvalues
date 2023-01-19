@@ -3061,23 +3061,23 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
     ll = _np.where(_np.array(_vals)==0)[0][0]
 
     for val in _vals[ll:]:
-        ds_As = A_coefficients(_K, val * _Pe, _N, _betas_m, _Km, symmetry='even', opt=True, reflect=True)
-        ds_As = eigenfunctions.phi_even(_K, val * _Pe, _y, _N, _betas_m, _Km, dAs = ds_As)
+        ds_As = A_coefficients(_Kn, val * _Pe, _N, _betas_m, _Km, symmetry='even', opt=True, reflect=True)
+        ds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, _betas_m, _Km, dAs = ds_As)
         mDAS.append(copy.deepcopy(ds_As))
         if both:
-            ds_Bs = A_coefficients(_K, val * _Pe, _N, _betas_m, _Km, symmetry='odd', opt=True, reflect=True)
-            ds_Bs = eigenfunctions.phi_odd(_K, val * _Pe, _y, _N, _betas_m, _Km, dBs = ds_Bs)
+            ds_Bs = A_coefficients(_Kn, val * _Pe, _N, _betas_m, _Km, symmetry='odd', opt=True, reflect=True)
+            ds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, _betas_m, _Km, dBs = ds_Bs)
             mDBS.append(copy.deepcopy(ds_Bs))
 
         mALPHA0.append(val * _alpha0) 
         mval.append(val)
         if val > 0:
             nds_As = reflect_dataset(ds_As, k=False, Pe=True, symmetry = 'even')
-            nds_As = eigenfunctions.phi_even(_K, val * _Pe, _y, _N, - _betas_m, _Km, dAs = nds_As)
+            nds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, - _betas_m, _Km, dAs = nds_As)
             nDAS.append(copy.deepcopy(nds_As))
             if both:
                 nds_Bs = reflect_dataset(ds_Bs, k=False, Pe=True, symmetry = 'odd')
-                nds_Bs = eigenfunctions.phi_odd(_K, val * _Pe, _y, _N, - _betas_m, _Km, dBs = nds_Bs)
+                nds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, - _betas_m, _Km, dBs = nds_Bs)
                 nDBS.append(copy.deepcopy(nds_Bs))
                 nds_Bs = 0
             nALPHA0.append(-val * _alpha0)
