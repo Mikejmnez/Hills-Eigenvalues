@@ -468,7 +468,7 @@ class planarflows:
 
 
 		elif time_osc:
-			# initialize vel (empty)
+			# initialize vel (empty!)
 			# TODO: add shift - should be somewhat straighforward
 			if _udim == 'x':
 				xval = None
@@ -487,6 +487,11 @@ class planarflows:
 					U_da.data[i, :, :] = nft[i] * U_f
 				elif _udim=='y':
 					V_da.data[i, :, :] = nft[i] * U_f
+		elif renew_eigs:
+			# initialize vel (empty!)
+			U_da = _xr.DataArray(coords=Ucoords, dims=['time', 'y', 'x'])
+			V_da = _xr.DataArray(coords=Ucoords, dims=['time', 'y', 'x'])
+			
 
 
 		ds['U'] = U_da
