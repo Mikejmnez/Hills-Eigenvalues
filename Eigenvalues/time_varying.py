@@ -514,7 +514,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _x, _y
 #     Initialize evolution
 	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, _t[:nt+1])
     
-	for i in range(1, NT - 1):
+	for i in range(1, NT-1):
 		da_step = d0['Theta'].isel(time=-1)
 		t0 = _t[i*nt]
 		t1 = _t[i*nt: (i+1)*nt+1]
@@ -531,6 +531,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _x, _y
 		d0 = d0.combine_first(d1)
 	t0 = _t[(i+1)*nt]
 	t1 = _t[(i+1)*nt:]
+	da_step = d0['Theta'].isel(time=-1)
 	if i % 2 != 0:  # if odd number.
 		da_dft = _xrft.fft(da_step, dim='y', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
 		da_dft = da_dft.rename({'freq_y':'l'})
