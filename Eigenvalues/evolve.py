@@ -20,6 +20,7 @@ from time_varying import (
 	phase_generator,
 	evolve_off_ds_time,
 	evolve_ds_rot_time,
+	evolve_off_ds_rot_time,
 )
 from Hills_eigenfunctions import eigenfunctions as _eigfns
 import copy as _copy
@@ -137,7 +138,7 @@ class planarflows:
 		shear = True  # False only when flow is constant
 
 
-		Utypes = [_np.ndarray, _xrda_type, float, int]
+		Utypes = [_np.ndarray, _xrda_type, float, int, _np.float64]
 
 		if type(U) in Utypes:
 			if type(U) != _xrda_type:
@@ -148,7 +149,7 @@ class planarflows:
 			if type(V) in Utypes:
 				renew_eigs = True
 				steady_flow = False
-				if type(tau) in [float, int]:
+				if type(tau) in [float, int, _np.float64]:
 				# rotating shear flow. only flows with even F. series
 					Urot = _xr.DataArray(_copy.deepcopy(V), coords={'x':x}, dims=['x'])
 					xeven_coeffs, *a = coeff_project(Urot, x, dim='x')
@@ -250,7 +251,7 @@ class planarflows:
 				_axis, _dim = y, 'y'  # pair of cross-stream coord and label
 				_uaxis, _udim = x, 'x'  # pair of along-stream coord and label
 
-				if type(tau) == float:  # if renewing flows
+				if type(tau) in [float, int, _np.float64]:  # if renewing flows
 					# asdsert that the ratio tau/dt is an integer
 					_ni = round(tau/dt)
 					tau = _ni * dt
@@ -364,7 +365,7 @@ class planarflows:
 					elif _udim == 'y':
 						time_evolve = evolve_ds_rot
 
-		if time_osc:
+		if time_osc is True and renew_eigs is False:
 
 			iargs = {
 				'_vals': vals,
@@ -375,7 +376,7 @@ class planarflows:
 			if _udim == 'y':
 				# rotate shear flow.
 				iargs.pop('_y')
-				iargs = {**iargs, **{'rotate': True, '_y': x/2}}
+				iargs = {**iargs, **{'rotate': True, '_y': x/2, 'write': True}}
 			
 			DAS, DBS, ALPHA0, vals = spectra_list(**{**args, **iargs})
 
@@ -403,50 +404,56 @@ class planarflows:
 				time_evolve = evolve_off_ds_time
 			elif _udim == 'y':
 				time_evolve = evolve_ds_rot_time
-				eargs.pop('_DBS')
-				eargs.pop('_b_alps')
-				eargs.pop('_bfacs')
+				# time_evolve = evolve_off_ds_rot_time
+				# eargs.pop('_DBS')
+				# eargs.pop('_b_alps')
+				# eargs.pop('_bfacs')
 				eargs.pop('_Kn')
 				eargs = {**eargs, '_Ln': Kn}
 
 
 
 		if renew_eigs:
+			# if time_osc is False and shifts is False:
 			# renewing shear flow, for now there is no phase shift in here
 			# TODO: add phase shift
-			ds_As = _eigfns.phi_even(**{**args, **{'_y': y / 2, "opt": True,"reflect": True}})
-			ds_Bs = _eigfns.phi_odd(**{**args, **{'_y': y / 2, "opt": True,"reflect": True}})
+			if time_osc is False:
+				ds_As = _eigfns.phi_even(**{**args, **{'_y': y / 2, "opt": True,"reflect": True}})
+				ds_Bs = _eigfns.phi_odd(**{**args, **{'_y': y / 2, "opt": True,"reflect": True}})
 
-			args.pop('_Kn')
-			args.pop('_betas_m')
-			args.pop('_Km')
-			args = {**args, '_Kn': Ln, '_betas_m': xalphas_m[1:], '_Km':xKm}
+				args.pop('_Kn')
+				args.pop('_betas_m')
+				args.pop('_Km')
+				args = {**args, '_Kn': Ln, '_betas_m': xalphas_m[1:], '_Km':xKm}
 
-			ds_As_rot = _eigfns.phi_even(**{**args, **{'_y':x / 2, "opt": True,"reflect": True}})
-			ds_As_rot = ds_As_rot.rename_dims({'k':'l', 'y':'x'}).rename_vars({'k':'l', 'y':'x'})
+				ds_As_rot = _eigfns.phi_even(**{**args, **{'_y':x / 2, "opt": True,"reflect": True}})
+				ds_As_rot = ds_As_rot.rename_dims({'k':'l', 'y':'x'}).rename_vars({'k':'l', 'y':'x'})
 
-			ds_Bs_rot = _eigfns.phi_odd(**{**args, **{'_y':x / 2, "opt": True,"reflect": True}})
-			ds_Bs_rot = ds_Bs_rot.rename_dims({'k':'l', 'y':'x'}).rename_vars({'k':'l', 'y':'x'})
+				ds_Bs_rot = _eigfns.phi_odd(**{**args, **{'_y':x / 2, "opt": True,"reflect": True}})
+				ds_Bs_rot = ds_Bs_rot.rename_dims({'k':'l', 'y':'x'}).rename_vars({'k':'l', 'y':'x'})
 
-			args.pop('_Kn')
+				args.pop('_Kn')
 
-			eargs = {
-				'_dAs': ds_As,
-				'_dBs': ds_Bs,
-				'_dAs_rot': ds_As_rot,
-				'_dBs_rot': ds_Bs_rot,
-				'_alpha0': alphas_m[0],
-				'_Theta0': IC['Theta0'],
-				'_tau': tau,
-				"_x": x,
-				'_y': y,
-				"_t": t
-			}
+				eargs = {
+					'_dAs': ds_As,
+					'_dBs': ds_Bs,
+					'_dAs_rot': ds_As_rot,
+					'_dBs_rot': ds_Bs_rot,
+					'_alpha0': alphas_m[0],
+					'_Theta0': IC['Theta0'],
+					'_tau': tau,
+					"_x": x,
+					'_y': y,
+					"_t": t
+				}
 
-			eargs = {**eargs, **args}
+				eargs = {**eargs, **args}
 
+				time_evolve = renewing_evolve
 
-			time_evolve = renewing_evolve
+			else:
+
+				time_evolve = renewing_evolve
 
 
 
@@ -514,7 +521,7 @@ class planarflows:
 		ds['V'] = V_da
 
 		for key in eargs.keys():
-			
+
 			del key
 
 		return ds
