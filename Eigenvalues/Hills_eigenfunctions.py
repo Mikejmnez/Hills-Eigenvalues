@@ -3045,7 +3045,7 @@ def reflect_dataset(ds, k=True, Pe=False, symmetry='even'):
 
 
 
-def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rotate=False):
+def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rotate=False, write=False, path=None):
     """Creates a list of datasets in which each element contains the spectra of the governing operator.
     """
     _betas_m = _np.array(_betas_m)
@@ -3059,6 +3059,9 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
     nval = []
     mval = []
     ll = _np.where(_np.array(_vals)==0)[0][0]
+    if path is None:
+        path = ''
+
 
     for val in _vals[ll:]:
         ds_As = A_coefficients(_Kn, val * _Pe, _N, _betas_m, _Km, symmetry='even', opt=True, reflect=True)
@@ -3108,8 +3111,12 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
         args = {old_dim: new_dim, old_axis: new_axis}
         for i in range(len(vals)):
             DAS[i] = DAS[i].rename_dims(**args).rename_vars(**args)
+            if write:
+                DS[i].to_zarr(path+'_ds_As_Pe'+str(vals[i]*Pe), mode='w')
             if both:
                 DBS[i] = DBS[i].rename_dims(**args).rename_vars(**args)
+                if write:
+                    DBS[i].to_zarr(path+'_ds_Bs_Pe'+str(vals[i]*Pe), mode='w')
 
     return DAS, DBS, ALPHA0, vals
 
