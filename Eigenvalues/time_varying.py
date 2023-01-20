@@ -512,7 +512,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _x, _y
 	bfacs = _xr.DataArray(bfacs, coords=bcoords, dims='r')
 
 #     Initialize evolution
-	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, _t[:nt])
+	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, _t[:nt+1])
     
 	for i in range(1, NT - 1):
 		da_step = d0['Theta'].isel(time=-1)
