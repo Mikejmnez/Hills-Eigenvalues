@@ -3045,9 +3045,9 @@ def reflect_dataset(ds, k=True, Pe=False, symmetry='even'):
 
 
 
-def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rotate=False, write=False, path=None):
+def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rotate=False, write=False, load=False, path=None):
     """Creates a list of datasets in which each element contains the spectra of the governing operator.
-    """
+    """            
     _betas_m = _np.array(_betas_m)
     mDAS = []
     nDAS = []
@@ -3058,65 +3058,77 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
     nALPHA0 = []
     nval = []
     mval = []
-    ll = _np.where(_np.array(_vals)==0)[0][0]
+
     if path is None:
         path = ''
 
-
-    for val in _vals[ll:]:
-        ds_As = A_coefficients(_Kn, val * _Pe, _N, _betas_m, _Km, symmetry='even', opt=True, reflect=True)
-        ds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, _betas_m, _Km, dAs = ds_As)
-        mDAS.append(copy.deepcopy(ds_As))
-        if both:
-            ds_Bs = A_coefficients(_Kn, val * _Pe, _N, _betas_m, _Km, symmetry='odd', opt=True, reflect=True)
-            ds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, _betas_m, _Km, dBs = ds_Bs)
-            mDBS.append(copy.deepcopy(ds_Bs))
-
-        mALPHA0.append(val * _alpha0) 
-        mval.append(val)
-        if val > 0:
-            nds_As = reflect_dataset(ds_As, k=False, Pe=True, symmetry = 'even')
-            nds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, - _betas_m, _Km, dAs = nds_As)
-            nDAS.append(copy.deepcopy(nds_As))
-            if both:
-                nds_Bs = reflect_dataset(ds_Bs, k=False, Pe=True, symmetry = 'odd')
-                nds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, - _betas_m, _Km, dBs = nds_Bs)
-                nDBS.append(copy.deepcopy(nds_Bs))
-                nds_Bs = 0
-            nALPHA0.append(-val * _alpha0)
-            nds_As = 0
-            nval.append(-val)
-        ds_As = 0
-        ds_Bs = 0
-
-    DAS = nDAS[::-1] + mDAS
-    if both:
-        DBS = nDBS[::-1] + mDBS
-    else:
+    if load:  # Spectra already calculated. load zarr files
+        DAS = []
         DBS = []
-    ALPHA0 = nALPHA0[::-1] + mALPHA0
-    vals = nval[::-1] + mval
-
-    if rotate:
-        if 'k' in nDAS[-1].dims:
-            old_dim = 'k'
-            old_axis = 'y'
-            new_dim = 'l'
-            new_axis = 'x'
-        else:
-            old_dim = 'l'
-            old_axis = 'x'
-            new_dim = 'k'
-            new_axis = 'y'
-        args = {old_dim: new_dim, old_axis: new_axis}
-        for i in range(len(vals)):
-            DAS[i] = DAS[i].rename_dims(**args).rename_vars(**args)
-            if write:
-                DS[i].to_zarr(path+'_ds_As_Pe'+str(vals[i]*Pe), mode='w')
+        ALPHA0 = []
+        for i in range(vals):
+            ALPHA0.append(vals * _alpha0)
+            DAS.append(_xr.open_zarr(path+'_ds_As_Pe'+str(vals[i]*Pe)))
             if both:
-                DBS[i] = DBS[i].rename_dims(**args).rename_vars(**args)
+                DBS.append(_xr.open_zarr(path+'_ds_Bs_Pe'+str(vals[i]*Pe)))
+
+    else: # need to calculate for the first time.
+
+        ll = _np.where(_np.array(_vals)==0)[0][0]
+        for val in _vals[ll:]:
+            ds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, _betas_m, _Km, opt=True, reflect=True)
+            mDAS.append(copy.deepcopy(ds_As))
+            if both:
+                ds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, _betas_m, _Km, opt=True, reflect=True)
+                mDBS.append(copy.deepcopy(ds_Bs))
+
+            mALPHA0.append(val * _alpha0) 
+            mval.append(val)
+            if val > 0:
+                nds_As = reflect_dataset(ds_As, k=False, Pe=True, symmetry = 'even')
+                nds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, - _betas_m, _Km, dAs = nds_As)
+                nDAS.append(copy.deepcopy(nds_As))
+                if both:
+                    nds_Bs = reflect_dataset(ds_Bs, k=False, Pe=True, symmetry = 'odd')
+                    nds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, - _betas_m, _Km, dBs = nds_Bs)
+                    nDBS.append(copy.deepcopy(nds_Bs))
+                    nds_Bs = 0
+                nALPHA0.append(-val * _alpha0)
+                nds_As = 0
+                nval.append(-val)
+            ds_As = 0
+            ds_Bs = 0
+
+        DAS = nDAS[::-1] + mDAS
+        if both:
+            DBS = nDBS[::-1] + mDBS
+        else:
+            DBS = []
+        ALPHA0 = nALPHA0[::-1] + mALPHA0
+        vals = nval[::-1] + mval
+
+        if rotate:
+            if 'k' in nDAS[-1].dims:
+                old_dim = 'k'
+                old_axis = 'y'
+                new_dim = 'l'
+                new_axis = 'x'
+            else:
+                old_dim = 'l'
+                old_axis = 'x'
+                new_dim = 'k'
+                new_axis = 'y'
+            args = {old_dim: new_dim, old_axis: new_axis}
+            for i in range(len(vals)):
+                DAS[i] = DAS[i].rename_dims(**args).rename_vars(**args)
                 if write:
-                    DBS[i].to_zarr(path+'_ds_Bs_Pe'+str(vals[i]*Pe), mode='w')
+                    DS[i].to_zarr(path+'_ds_As_Pe'+str(vals[i]*Pe), mode='w')
+                    DS[i] = _xr.open_zarr(path+'_ds_As_Pe'+str(vals[i]*Pe))
+                if both:
+                    DBS[i] = DBS[i].rename_dims(**args).rename_vars(**args)
+                    if write:
+                        DBS[i].to_zarr(path+'_ds_Bs_Pe'+str(vals[i]*Pe), mode='w')
+                        DBS[i] = _xr.open_zarr(path+'_ds_Bs_Pe'+str(vals[i]*Pe))
 
     return DAS, DBS, ALPHA0, vals
 
