@@ -3122,8 +3122,8 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
             for i in range(len(vals)):
                 DAS[i] = DAS[i].rename_dims(**args).rename_vars(**args)
                 if write:
-                    DS[i].to_zarr(path+'_ds_As_Pe'+str(vals[i]*Pe), mode='w')
-                    DS[i] = _xr.open_zarr(path+'_ds_As_Pe'+str(vals[i]*Pe))
+                    DAS[i].to_zarr(path+'_ds_As_Pe'+str(vals[i]*Pe), mode='w')
+                    DAS[i] = _xr.open_zarr(path+'_ds_As_Pe'+str(vals[i]*Pe))
                 if both:
                     DBS[i] = DBS[i].rename_dims(**args).rename_vars(**args)
                     if write:
