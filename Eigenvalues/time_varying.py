@@ -412,10 +412,10 @@ def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _t, _t
 			PHI2n = _xr.dot(ndAs, _dAs['phi_2n'].sel(**k_args) * _np.exp(-exp_arg*(_t[i]-_tf)), dims='n')
 			if _dim == 'k':
 				PHI2n = PHI2n.expand_dims(**phi_arg).transpose('y', 'x')
-				mode =  _np.exp((2*_np.pi* _K * _X) * (1j))
+				mode =  _np.exp((2*_np.pi* _K * _x) * (1j))
 			else:
 				PHI2n = PHI2n.expand_dims(**phi_arg)
-				mode =  _np.exp((2*_np.pi* _K * _Y) * (1j))
+				mode =  _np.exp((2*_np.pi* _K * _y) * (1j))
 			T0 = (PHI2n * mode).real
 			ds['Theta'].data[i, :, :, kk] = T0.data
 	ll = int(_np.where(_Kn==0)[0][0]) # single zero
@@ -470,7 +470,7 @@ def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps
 	return ds_final
 
 
-def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _x, _y, _t, _tau):
+def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals, _order, _indt, _x, _y, _t):
 	"""Computes the evolution of a passive scalar in the case the velocity field is renewing. Square domain.
 	By construction, the velocity field begins with an along- x orientation.
 	Input:
@@ -488,8 +488,8 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _x, _y
 	xt = _x / 2
 	yt = _y / 2
 
-	nt = _np.where(_t==_tau)[0][0]  # assumes tau is an element.
-	NT = int(round(len(_t)/nt))
+	IND, ORDER, Time = split_signal(_vals, _order, _indt, _t)
+	NT = len(ORDER)
     
 	da_dft = _xrft.fft(_Theta0.transpose(), dim='x', true_phase=True, true_amplitude=True)
 	da_dft = da_dft.rename({'freq_x':'k'})
@@ -512,12 +512,12 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _x, _y
 	bfacs = _xr.DataArray(bfacs, coords=bcoords, dims='r')
 
 #     Initialize evolution
-	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, _t[:nt+1])
+	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, Time[0])
     
 	for i in range(1, NT):
 		da_step = d0['Theta'].isel(time=-1)
-		t0 = _t[i*nt]
-		t1 = _t[i*nt: (i+1)*nt+1]
+		t0 = Time[i-1][-1]
+		t1 = Time[i]
 		if i % 2 != 0:  # if odd number.
 			da_dft = _xrft.fft(da_step, dim='y', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
 			da_dft = da_dft.rename({'freq_y':'l'})
@@ -760,7 +760,7 @@ def split_signal(_vals, _order, _indt, _t):
 	
 	Returns:
 
-		_T, _IND, _ORDER
+		_IND, _ORDER, _T
 	"""
 
 	_n0 = _np.where(_np.array(_vals) == 0)[0][0]
