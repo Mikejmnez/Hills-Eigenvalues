@@ -522,7 +522,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _x, _y
 			da_dft = _xrft.fft(da_step, dim='y', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
 			da_dft = da_dft.rename({'freq_y':'l'})
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, dim='x')
-			d1 = evolve_ds_serial_off(_dAs_rot,_dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='l')
+			d1 = evolve_ds_serial_off(_dAs_rot, _dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='l')
 		else:
 			da_dft = _xrft.fft(da_step.transpose(), dim='x', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
 			da_dft = da_dft.rename({'freq_x':'k'})
@@ -738,6 +738,45 @@ def phase_generator(nft):
 
 	return phase
 
+
+def split_signal(_vals, _order, _indt, _t):
+	"""
+	Takes a (discretized) time-varying amplitude of the shear flow, identifies
+	the sign reversals and returns a collection of lists to evaluate eigenfunctions
+	in a manner that is ordered according to the renewing flow problem.
+
+	Parameters:
+		_vals: list.
+			Discretized velocity values, monotonically increasing. At a minimum
+			must unclude [-1, 0, 1]. 
+		_order: list.
+			Ordered list of indexes of variable `_vals` for each time step. For example, 
+			if _vals=[-1, 0, 1], order=[2, 1, 0, 1, 2]. Implies Vel starts at 1,
+			decreases to -1 and ends at 1.
+		_indt: list
+			Map between time-variable (with len = nt) and _order.
+		_t: 1d np.array.
+			Discretized time.
+	
+	Returns:
+
+		_T, _IND, _ORDER
+	"""
+
+	_n0 = _np.where(_np.array(_vals) == 0)[0][0]
+	lll = np.where(np.array(_order) == _n0)[0][1::2] # skips the first zero.
+	_T = [_t[:_indt[lll[0]][0]+1]]
+	_IND = [_indt[:lll[0]+1]]
+	_ORDER = [_order[:lll[0]+1]]
+	for i in range(1, len(lll)):
+		_T.append(_t[_indt[lll[i-1]][0] + 1: _indt[lll[i]][0]+1])
+		_IND.append(_indt[lll[i-1]+1:lll[i]+1])
+		_ORDER.append(_order[lll[i-1]+1:lll[i]+1])
+	_T.append(_t[_indt[lll[i]][0]+1:])
+	_IND.append(_indt[lll[i]+1:])
+	_ORDER.append(_order[lll[i]+1:])
+
+	return _T, _IND, _ORDER
 
 
 
