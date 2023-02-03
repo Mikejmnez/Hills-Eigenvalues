@@ -764,7 +764,7 @@ def split_signal(_vals, _order, _indt, _t):
 	"""
 
 	_n0 = _np.where(_np.array(_vals) == 0)[0][0]
-	lll = np.where(np.array(_order) == _n0)[0][1::2] # skips the first zero.
+	lll = _np.where(_np.array(_order) == _n0)[0][1::2] # skips the first zero.
 	_T = [_t[:_indt[lll[0]][0]+1]]
 	_IND = [_indt[:lll[0]+1]]
 	_ORDER = [_order[:lll[0]+1]]
