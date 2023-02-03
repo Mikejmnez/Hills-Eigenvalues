@@ -776,7 +776,7 @@ def split_signal(_vals, _order, _indt, _t):
 	_IND.append(_indt[lll[i]+1:])
 	_ORDER.append(_order[lll[i]+1:])
 
-	return _T, _IND, _ORDER
+	return _IND, _ORDER, _T
 
 
 
