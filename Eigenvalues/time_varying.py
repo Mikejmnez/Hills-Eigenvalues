@@ -532,6 +532,67 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 	return d0,
 
 
+def evolve_ds_serial_off_time(_DAS, _DBS, _DAS_rot, _DBS_rot, _Pe, _vals, _ALPHA0, Theta0, _order, _indt, _x, _y, _t):
+
+	xt = _x / 2
+	yt = _y / 2
+
+	IND, ORDER, Time = split_signal(_vals, _order, _indt, _t)
+	NT = len(ORDER)
+    
+	da_dft = _xrft.fft(_Theta0.transpose(), dim='x', true_phase=True, true_amplitude=True)
+	da_dft = da_dft.rename({'freq_x':'k'})
+	Kn = _copy.deepcopy(da_dft['k'].values)
+    
+	da_y = _xrft.fft(_Theta0, dim='y', true_phase=True, true_amplitude=True)
+	da_y = da_y.rename({'freq_y':'l'})
+	Ln = _copy.deepcopy(da_y['l'].values)
+    
+	even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
+
+	acoords = {'r':range(len(even_coeffs))}
+	bcoords = {'r':range(len(odd_coeffs)-1)}
+	afacs = _np.ones(_np.shape(range(len(even_coeffs))))
+	afacs[0] = 2
+
+	bfacs = _np.ones(_np.shape(range(len(odd_coeffs) - 1)))
+
+	afacs = _xr.DataArray(afacs, coords=acoords, dims='r')
+	bfacs = _xr.DataArray(bfacs, coords=bcoords, dims='r')
+
+	# initialize 
+	t1 =  Time[0]
+	dsA = _DAS[ORDER[0][0]]
+	dsB = _DBS[ORDER[0][0]]
+	alpha0 = ALPHA0[ORDER[0][0]]
+	nPe = (vals[ORDER[0][0]]) * _Pe
+	d0 = evolve_ds_serial_off(dsA, dsB, Kn, alpha0, nPe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1)
+	dstep = d0['Theta'].isel(time=-1)
+	da_dft = _xrft.fft(dstep.transpose(), dim='x', true_phase=True, true_amplitude=True)
+	da_dft = da_dft.rename({'freq_x':'k'})
+	even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
+
+	for jj in range(1, len(IND[0])): # iterates over elements
+
+		dsA = _DAS[ORDER[0][jj]]
+		dsB = _DBS[ORDER[0][jj]]
+		alpha0 = ALPHA0[ORDER[0][jj]]
+		nPe = (vals[ORDER[0][jj]]) * _Pe
+		t0 = Time[i-1][-1]
+		t1 = Time[i]
+		# evolve
+		d1 = evolve_ds_serial_off(dsA, dsB, Kn, alpha0, nPe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0)
+		dstep = d1['Theta'].isel(time=-1)
+		da_dft = _xrft.fft(dstep.transpose(), dim='x', true_phase=True, true_amplitude=True)
+		da_dft = da_dft.rename({'freq_x':'k'})
+		even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
+		d0 = d0.combine_first(d1)
+
+	return d0
+
+	# pass
+
+
 def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t, _tf=0):
 	"""Evolves the solution to the advection diffusion eqn for a steady shear flow in the presence of 
     external forcing Q(x,y). The shear flow is defined solely by a cosine Fourier series and so
@@ -739,7 +800,7 @@ def phase_generator(nft):
 	return phase
 
 
-def split_signal(_vals, _order, _indt, _t):
+def split_signal(_vals, _order, _indt, _t, n=2):
 	"""
 	Takes a (discretized) time-varying amplitude of the shear flow, identifies
 	the sign reversals and returns a collection of lists to evaluate eigenfunctions
@@ -757,6 +818,10 @@ def split_signal(_vals, _order, _indt, _t):
 			Map between time-variable (with len = nt) and _order.
 		_t: 1d np.array.
 			Discretized time.
+		n: int
+			n= 1 or n=2 (default is 2). On a time-periodic (amp) signal, n=1 implies
+			the shear flow rotates as soon as the amplitude goes to zero. n=2 allows
+			the shear flow to reverse direction before rotating. 
 	
 	Returns:
 
@@ -764,12 +829,12 @@ def split_signal(_vals, _order, _indt, _t):
 	"""
 
 	_n0 = _np.where(_np.array(_vals) == 0)[0][0]
-	lll = _np.where(_np.array(_order) == _n0)[0][1::2] # skips the first zero.
-	_T = [_t[:_indt[lll[0]][0]+1]]
+	lll = _np.where(_np.array(_order) == _n0)[0][1::n] # skips the first zero.
 	_IND = [_indt[:lll[0]+1]]
+	_T = [_t[:_indt[:lll[0]+1][-1][-1]]]
 	_ORDER = [_order[:lll[0]+1]]
 	for i in range(1, len(lll)):
-		_T.append(_t[_indt[lll[i-1]][0] + 1: _indt[lll[i]][0]+1])
+		_T.append(_t[_indt[:lll[i-1]+1][-1][-1]: _indt[:lll[i]+1][-1][-1]])
 		_IND.append(_indt[lll[i-1]+1:lll[i]+1])
 		_ORDER.append(_order[lll[i-1]+1:lll[i]+1])
 	_T.append(_t[_indt[lll[i]][0]+1:])
