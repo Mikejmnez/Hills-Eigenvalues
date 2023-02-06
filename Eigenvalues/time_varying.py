@@ -583,7 +583,7 @@ def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _o
 		# evolve
 		d1 = evolve_ds_serial_off(dsA, dsB, Kn, alpha0, nPe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0)
 		dstep = d1['Theta'].isel(time=-1)
-		if jj < len(IND[ii]):
+		if jj < len(IND[ii])-1:
 			da_dft = _xrft.fft(dstep.transpose(), dim='x', true_phase=True, true_amplitude=True)
 			da_dft = da_dft.rename({'freq_x':'k'})
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
@@ -612,13 +612,15 @@ def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _o
 			_rename = {'freq_y':_wa}
 			_coor = xt
 			_tp = False
-		print(ii)
 
 		for jj in range(len(IND[ii])): # iterates over elements
-			if ii == 2:
-				print(jj)
 			if jj==0:
 				t0 = _t[IND[ii-1][-1][-1]-1]  # last from previous iter
+				if _tp:
+					dstep = dstep.transpose()
+				da_dft = _xrft.fft(dstep, dim=_dim, true_phase=True, true_amplitude=True)
+				da_dft = da_dft.rename(_rename)
+				even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, _coor, dim=_dimf)
 			else:
 				t0 = _t[IND[ii][jj-1][-1]-1]
 			t1 = _t[IND[ii][jj][0]:IND[ii][jj][-1]]
@@ -626,15 +628,10 @@ def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _o
 			nPe = abs(_vals[ORDER[ii][jj]]) * _Pe
 			dsA = _DA[ORDER[ii][jj]]
 			dsB = _DB[ORDER[ii][jj]]
-			if _tp:
-				dstep = dstep.transpose()
-			da_dft = _xrft.fft(dstep, dim=_dim, true_phase=True, true_amplitude=True)
-			da_dft = da_dft.rename(_rename)
-			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, _coor, dim=_dimf)
 			# evolve
 			d1 = evolve_ds_serial_off(dsA, dsB, _wvn, alpha0, nPe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim = _wa)
 			dstep = d1['Theta'].isel(time=-1)
-			if jj < len(IND[ii]):
+			if jj < len(IND[ii]) - 1:
 				if _tp:
 					dstep = dstep.transpose()
 				da_dft = _xrft.fft(dstep, dim=_dim, true_phase=True, true_amplitude=True)
