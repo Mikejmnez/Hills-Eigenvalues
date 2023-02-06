@@ -532,7 +532,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 	return d0,
 
 
-def evolve_ds_serial_off_time(_DAS, _DBS, _DAS_rot, _DBS_rot, _Pe, _vals, _ALPHA0, Theta0, _order, _indt, _x, _y, _t):
+def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _order, _indt, _Theta0,  _x, _y, _t):
 
 	xt = _x / 2
 	yt = _y / 2
@@ -561,36 +561,89 @@ def evolve_ds_serial_off_time(_DAS, _DBS, _DAS_rot, _DBS_rot, _Pe, _vals, _ALPHA
 	bfacs = _xr.DataArray(bfacs, coords=bcoords, dims='r')
 
 	# initialize 
-	t1 =  Time[0]
-	dsA = _DAS[ORDER[0][0]]
-	dsB = _DBS[ORDER[0][0]]
-	alpha0 = ALPHA0[ORDER[0][0]]
-	nPe = (vals[ORDER[0][0]]) * _Pe
+	ii = 0
+	t1 = _t[IND[ii][0][0]:IND[ii][0][-1]]
+	dsA = _DAS[ORDER[ii][0]]
+	dsB = _DBS[ORDER[ii][0]]
+	alpha0 = _ALPHA0[ORDER[ii][0]]
+	nPe = abs(_vals[ORDER[ii][0]]) * _Pe
 	d0 = evolve_ds_serial_off(dsA, dsB, Kn, alpha0, nPe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1)
 	dstep = d0['Theta'].isel(time=-1)
 	da_dft = _xrft.fft(dstep.transpose(), dim='x', true_phase=True, true_amplitude=True)
 	da_dft = da_dft.rename({'freq_x':'k'})
 	even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
 
-	for jj in range(1, len(IND[0])): # iterates over elements
-
-		dsA = _DAS[ORDER[0][jj]]
-		dsB = _DBS[ORDER[0][jj]]
-		alpha0 = ALPHA0[ORDER[0][jj]]
-		nPe = (vals[ORDER[0][jj]]) * _Pe
-		t0 = Time[i-1][-1]
-		t1 = Time[i]
+	for jj in range(1, len(IND[ii])): # iterates over elements
+		dsA = _DAS[ORDER[ii][jj]]
+		dsB = _DBS[ORDER[ii][jj]]
+		alpha0 = _ALPHA0[ORDER[ii][jj]]
+		nPe = abs(_vals[ORDER[ii][jj]]) * _Pe
+		t0 = _t[IND[ii][jj-1][-1]-1]
+		t1 = _t[IND[ii][jj][0]:IND[ii][jj][-1]]
 		# evolve
 		d1 = evolve_ds_serial_off(dsA, dsB, Kn, alpha0, nPe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0)
 		dstep = d1['Theta'].isel(time=-1)
-		da_dft = _xrft.fft(dstep.transpose(), dim='x', true_phase=True, true_amplitude=True)
-		da_dft = da_dft.rename({'freq_x':'k'})
-		even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
+		if jj < len(IND[ii]):
+			da_dft = _xrft.fft(dstep.transpose(), dim='x', true_phase=True, true_amplitude=True)
+			da_dft = da_dft.rename({'freq_x':'k'})
+			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
+
 		d0 = d0.combine_first(d1)
 
-	return d0
 
-	# pass
+	for ii in range(1, len(IND)):
+		if ii % 2 == 0:  # if even number.
+			_DA = _DAS
+			_DB = _DBS
+			_wvn = Kn
+			_dim = 'x'
+			_dimf = 'y'
+			_wa = 'k'
+			_rename = {'freq_x':_wa}
+			_coor = yt
+			_tp = True
+		else:  # rotated
+			_DA = _DAS_rot
+			_DB = _DBS_rot
+			_wvn = Ln
+			_dim = 'y'
+			_dimf = 'x'
+			_wa = 'l'
+			_rename = {'freq_y':_wa}
+			_coor = xt
+			_tp = False
+		print(ii)
+
+		for jj in range(len(IND[ii])): # iterates over elements
+			if ii == 2:
+				print(jj)
+			if jj==0:
+				t0 = _t[IND[ii-1][-1][-1]-1]  # last from previous iter
+			else:
+				t0 = _t[IND[ii][jj-1][-1]-1]
+			t1 = _t[IND[ii][jj][0]:IND[ii][jj][-1]]
+			alpha0 = _ALPHA0[ORDER[ii][jj]]
+			nPe = abs(_vals[ORDER[ii][jj]]) * _Pe
+			dsA = _DA[ORDER[ii][jj]]
+			dsB = _DB[ORDER[ii][jj]]
+			if _tp:
+				dstep = dstep.transpose()
+			da_dft = _xrft.fft(dstep, dim=_dim, true_phase=True, true_amplitude=True)
+			da_dft = da_dft.rename(_rename)
+			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, _coor, dim=_dimf)
+			# evolve
+			d1 = evolve_ds_serial_off(dsA, dsB, _wvn, alpha0, nPe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim = _wa)
+			dstep = d1['Theta'].isel(time=-1)
+			if jj < len(IND[ii]):
+				if _tp:
+					dstep = dstep.transpose()
+				da_dft = _xrft.fft(dstep, dim=_dim, true_phase=True, true_amplitude=True)
+				da_dft = da_dft.rename(_rename)
+				even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, _coor, dim = _dimf)
+
+			d0 = d0.combine_first(d1)
+
+	return d0
 
 
 def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t, _tf=0):
