@@ -231,7 +231,7 @@ class planarflows:
 			time_osc = True
 			steady_flow = False
 			
-			nft, vals, ivals = re_sample(Amp, nt=2)
+			nft, vals, ivals = re_sample(Amp, nt=2)  # make this flexible
 			indt = indt_intervals(ivals)
 			order = get_order(nft, indt, vals)
 
@@ -453,6 +453,28 @@ class planarflows:
 
 			else:
 
+				iargs = {
+					'_vals': vals,
+					'_alpha0': alphas_m[0],
+					'_y': y / 2,
+					'write': True,
+				}
+
+				DAS, DBS, ALPHA0, vals = spectra_list(**{**args, **iargs})
+
+				args.pop('_Kn')
+				args.pop('_betas_m')
+				args.pop('_Km')
+				args = {**args, '_Kn': Ln, '_betas_m': xalphas_m[1:], '_Km':xKm}
+
+
+				iargs.pop('_alpha0')
+				iargs.pop('_y')
+				iargs = {**iargs, **{'_y': x/2, 'rotate': True}}
+
+				DAS_rot, DBS_rot, ALPHA0_rot, vals_rot = spectra_list(**{**args, **iargs})
+
+
 				time_evolve = renewing_evolve
 
 
@@ -519,10 +541,6 @@ class planarflows:
 
 		ds['U'] = U_da
 		ds['V'] = V_da
-
-		for key in eargs.keys():
-
-			del key
 
 		return ds
 
