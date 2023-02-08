@@ -3083,7 +3083,7 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
                 ds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, _betas_m, _Km, opt=True, reflect=True)
                 mDBS.append(copy.deepcopy(ds_Bs))
 
-            mALPHA0.append(_alpha0) 
+            mALPHA0.append(_np.sign(val) * _alpha0) 
             mval.append(val)
             if val > 0:
                 nds_As = reflect_dataset(ds_As, k=False, Pe=True, symmetry = 'even')
