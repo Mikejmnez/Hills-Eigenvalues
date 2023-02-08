@@ -241,7 +241,7 @@ def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _a_al
 			tf = 0
 		else:
 			tf =_t[_indt[i - 1][1] - 1]
-		ds, Phi2n = evolve_ds(_DAS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _t[_indt[i][0]:_indt[i][1]],  tf)
+		ds, Phi2n = evolve_ds(_DAS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ncoeffs, _facs, _x, _y, _t[_indt[i][0]:_indt[i][1]],  t0)
 		DS.append(ds)
 		ncoeffs, odd_coeffs, phi_new, phi_old  = coeff_project(Phi2n, _y)
     
@@ -265,7 +265,8 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 	for i in range(len(_indt)):
 		phi_new = _shift[_indt[i][0]]  # only sample first - they are all the same
 		if i == 0:
-			tf = 0
+			t1 = _t[_indt[i][0]:_indt[i][1]]
+			t0 = 0
 			phi_old = _np.pi
 			ndAs = _xr.dot(_afacs * ecoeffs, _DAS[_order[i]]['A_2r'])
 			ndBs = _xr.dot(_bfacs * ocoeffs, _DBS[_order[i]]['B_2r'])
@@ -273,9 +274,10 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 			PHI2n_o = _xr.dot(ndBs, _DBS[_order[i]]['phi_2n'], dims='n')
 			Phi2n = PHI2n_e + PHI2n_o
 		else:
-			tf =_t[_indt[i - 1][1] - 1]
-		ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _y/2, phi_old=phi_old, phi_new=phi_new)  # will have to modify here
-		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, _afacs, ocoeffs, _bfacs,  _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
+			t0 =_t[_indt[i - 1][1]-1]
+			t1 = _t[_indt[i][0]-1:_indt[i][1]]
+			ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _y/2, phi_old=phi_old, phi_new=phi_new)  # will have to modify here
+		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, _afacs, ocoeffs, _bfacs,  _x, _y, t1, t0)
 		DS.append(_copy.deepcopy(ds))
 		PHI_NEW.append(phi_new)
 		PHI_OLD.append(phi_old)
