@@ -376,7 +376,7 @@ class planarflows:
 			if _udim == 'y':
 				# rotate shear flow.
 				iargs.pop('_y')
-				iargs = {**iargs, **{'rotate': True, '_y': x/2, 'write': True}}
+				iargs = {**iargs, **{'rotate': True, '_y': x/2}}
 			
 			DAS, DBS, ALPHA0, vals = spectra_list(**{**args, **iargs})
 
@@ -403,8 +403,8 @@ class planarflows:
 			if _udim == 'x':
 				time_evolve = evolve_off_ds_time
 			elif _udim == 'y':
-				time_evolve = evolve_ds_rot_time
-				# time_evolve = evolve_off_ds_rot_time
+				# time_evolve = evolve_ds_rot_time
+				time_evolve = evolve_off_ds_rot_time
 				# eargs.pop('_DBS')
 				# eargs.pop('_b_alps')
 				# eargs.pop('_bfacs')
