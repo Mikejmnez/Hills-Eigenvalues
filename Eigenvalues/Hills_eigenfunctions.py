@@ -3068,9 +3068,9 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
         ALPHA0 = []
         for i in range(vals):
             ALPHA0.append(vals * _alpha0)
-            DAS.append(_xr.open_zarr(path+'_ds_As_Pe'+str(vals[i]*Pe)))
+            DAS.append(_xr.open_zarr(path+'_ds_As_Pe'+str(vals[i]*_Pe)))
             if both:
-                DBS.append(_xr.open_zarr(path+'_ds_Bs_Pe'+str(vals[i]*Pe)))
+                DBS.append(_xr.open_zarr(path+'_ds_Bs_Pe'+str(vals[i]*_Pe)))
 
     else: # need to calculate for the first time.
 
@@ -3122,13 +3122,13 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
             for i in range(len(vals)):
                 DAS[i] = DAS[i].rename_dims(**args).rename_vars(**args)
                 if write:
-                    DAS[i].to_zarr(path+'_ds_As_Pe'+str(vals[i]*Pe), mode='w')
-                    DAS[i] = _xr.open_zarr(path+'_ds_As_Pe'+str(vals[i]*Pe))
+                    DAS[i].to_zarr(path+'_ds_As_Pe'+str(vals[i]*_Pe), mode='w')
+                    DAS[i] = _xr.open_zarr(path+'_ds_As_Pe'+str(vals[i]*_Pe))
                 if both:
                     DBS[i] = DBS[i].rename_dims(**args).rename_vars(**args)
                     if write:
-                        DBS[i].to_zarr(path+'_ds_Bs_Pe'+str(vals[i]*Pe), mode='w')
-                        DBS[i] = _xr.open_zarr(path+'_ds_Bs_Pe'+str(vals[i]*Pe))
+                        DBS[i].to_zarr(path+'_ds_Bs_Pe'+str(vals[i]*_Pe), mode='w')
+                        DBS[i] = _xr.open_zarr(path+'_ds_Bs_Pe'+str(vals[i]*_Pe))
 
     return DAS, DBS, ALPHA0, vals
 
