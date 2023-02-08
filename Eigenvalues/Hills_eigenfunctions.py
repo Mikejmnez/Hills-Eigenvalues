@@ -3059,13 +3059,14 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
     nval = []
     mval = []
 
+    DAS = []
+    DBS = []
+    ALPHA0 = []
+
     if path is None:
         path = ''
 
     if load:  # Spectra already calculated. load zarr files
-        DAS = []
-        DBS = []
-        ALPHA0 = []
         for i in range(vals):
             ALPHA0.append(vals * _alpha0)
             DAS.append(_xr.open_zarr(path+'_ds_As_Pe'+str(vals[i]*_Pe)))
@@ -3076,13 +3077,13 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
 
         ll = _np.where(_np.array(_vals)==0)[0][0]
         for val in _vals[ll:]:
-            ds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, _betas_m, _Km, opt=True, reflect=True)
-            mDAS.append(copy.deepcopy(ds_As))
+            ds_As = eigenfunctions.phi_even(_Kn, abs(val) * _Pe, _y, _N, _np.sign(val) *_betas_m, _Km, opt=True, reflect=True)
+            DAS.append(copy.deepcopy(ds_As))
             if both:
-                ds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, _betas_m, _Km, opt=True, reflect=True)
-                mDBS.append(copy.deepcopy(ds_Bs))
+                ds_Bs = eigenfunctions.phi_odd(_Kn, abs(val) * _Pe, _y, _N, _np.sign(val)*_betas_m, _Km, opt=True, reflect=True)
+                DBS.append(copy.deepcopy(ds_Bs))
 
-            mALPHA0.append(val * _alpha0) 
+            ALPHA0.append(_np.sign(val) * _alpha0) 
             mval.append(val)
             if val > 0:
                 nds_As = reflect_dataset(ds_As, k=False, Pe=True, symmetry = 'even')
@@ -3093,7 +3094,7 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
                     nds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, - _betas_m, _Km, dBs = nds_Bs)
                     nDBS.append(copy.deepcopy(nds_Bs))
                     nds_Bs = 0
-                nALPHA0.append(-val * _alpha0)
+                nALPHA0.append(-_np.sign(val) * _alpha0)
                 nds_As = 0
                 nval.append(-val)
             ds_As = 0
@@ -3108,7 +3109,7 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
         vals = nval[::-1] + mval
 
         if rotate:
-            if 'k' in nDAS[-1].dims:
+            if 'k' in DAS[-1].dims:
                 old_dim = 'k'
                 old_axis = 'y'
                 new_dim = 'l'
@@ -3130,7 +3131,7 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
                         DBS[i].to_zarr(path+'_ds_Bs_Pe'+str(vals[i]*_Pe), mode='w')
                         DBS[i] = _xr.open_zarr(path+'_ds_Bs_Pe'+str(vals[i]*_Pe))
 
-    return DAS, DBS, ALPHA0, vals
+    return DAS, DBS, ALPHA0, _vals
 
 
 
