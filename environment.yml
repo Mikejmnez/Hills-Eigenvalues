@@ -25,3 +25,4 @@ dependencies:
   - xrft
   - hvplot
   - datashader
+  - tqdm
