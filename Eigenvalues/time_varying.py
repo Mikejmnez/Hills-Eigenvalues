@@ -274,7 +274,7 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 			PHI2n_o = _xr.dot(ndBs, _DBS[_order[i]]['phi_2n'], dims='n')
 			Phi2n = PHI2n_e + PHI2n_o
 		else:
-			t0 =_t[_indt[i - 1][1]-1]
+			t0 =_t[_indt[i - 1][1] - 1]
 			t1 = _t[_indt[i][0]-1:_indt[i][1]]
 			ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _y/2, phi_old=phi_old, phi_new=phi_new)  # will have to modify here
 		ds, Phi2n = evolve_ds_off(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Kn, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, _afacs, ocoeffs, _bfacs,  _x, _y, t1, t0)
@@ -366,7 +366,8 @@ def evolve_off_ds_rot_time(_DAS, _DBS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, 
 	for i in range(len(_indt)):
 		phi_new = _shift[_indt[i][0]]  # only sample first - they are all the same
 		if i == 0:
-			tf = 0
+			t0 = 0
+			t1 = _t[_indt[i][0]:_indt[i][1]]
 			phi_old = _np.pi
 			ndAs = _xr.dot(_afacs * ecoeffs, _DAS[_order[i]]['A_2r'])
 			ndBs = _xr.dot(_bfacs * ocoeffs, _DBS[_order[i]]['B_2r'])
@@ -374,9 +375,10 @@ def evolve_off_ds_rot_time(_DAS, _DBS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, 
 			PHI2n_o = _xr.dot(ndBs, _DBS[_order[i]]['phi_2n'], dims='n')
 			Phi2n = PHI2n_e + PHI2n_o
 		else:
-			tf =_t[_indt[i - 1][1] - 1]
+			t0 =_t[_indt[i - 1][1] - 1]
+			t1 = _t[_indt[i][0]-1:_indt[i][1]]
 		ecoeffs, ocoeffs, phi_new, phi_old  = coeff_project(Phi2n, _x/2, phi_old=phi_old, phi_new=phi_new, dim='x')  # will have to modify here
-		ds, Phi2n = evolve_ds_off_rot(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Ln, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, _afacs, ocoeffs, _bfacs,  _x, _y, _t[_indt[i][0]:_indt[i][1]], tf)
+		ds, Phi2n = evolve_ds_off_rot(_DAS[_order[i]], _DBS[_order[i]], _da_dft, _Ln, _ALPHA0[_order[i]], abs(_vals[_order[i]])*_Pe, ecoeffs, _afacs, ocoeffs, _bfacs,  _x, _y, t1, t0)
 		DS.append(_copy.deepcopy(ds))
 		PHI_NEW.append(phi_new)
 		PHI_OLD.append(phi_old)
@@ -581,7 +583,8 @@ def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _o
 		alpha0 = _ALPHA0[ORDER[ii][jj]]
 		nPe = abs(_vals[ORDER[ii][jj]]) * _Pe
 		t0 = _t[IND[ii][jj-1][-1]-1]
-		t1 = _t[IND[ii][jj][0]:IND[ii][jj][-1]]
+		t1 = _t[IND[ii][jj][0]:IND[ii][jj][-1]] #?
+
 		# evolve
 		d1 = evolve_ds_serial_off(dsA, dsB, Kn, alpha0, nPe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0)
 		dstep = d1['Theta'].isel(time=-1)
@@ -625,7 +628,7 @@ def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _o
 				even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, _coor, dim=_dimf)
 			else:
 				t0 = _t[IND[ii][jj-1][-1]-1]
-			t1 = _t[IND[ii][jj][0]:IND[ii][jj][-1]]
+			t1 = _t[IND[ii][jj][0]:IND[ii][jj][-1]] # ?
 			alpha0 = _ALPHA0[ORDER[ii][jj]]
 			nPe = abs(_vals[ORDER[ii][jj]]) * _Pe
 			dsA = _DA[ORDER[ii][jj]]
