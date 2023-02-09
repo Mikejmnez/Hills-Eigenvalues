@@ -231,7 +231,7 @@ class planarflows:
 			time_osc = True
 			steady_flow = False
 			
-			nft, vals, ivals = re_sample(Amp, nt=2)  # make this flexible
+			nft, vals, ivals = re_sample(Amp, nt=1)  # make this flexible
 			indt = indt_intervals(ivals)
 			order = get_order(nft, indt, vals)
 
