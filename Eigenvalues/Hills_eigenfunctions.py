@@ -218,7 +218,8 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
         lll = _np.where(_K >= 0)[0]
         _K = _K[lll]
         q = q[lll]
-        R = _np.round(_np.sqrt(35 * (q.imag) * abs(coeffs[0]) / 4))
+        max_coeff = _np.max(abs(coeffs))
+        R = _np.round(_np.sqrt(35 * (q.imag) * max_coeff / 4))
         Rmax = int(_np.max(R))
         if Rmax < 75:  # case where q is very small and Rmax is less than (arbitrary) minimum
             Rmax = 75  # always set the minimum size of matrix
