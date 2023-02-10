@@ -98,6 +98,30 @@ def coeff_project(_phi, _y, dim='y', phi_old=_np.pi, phi_new=0):
 	return even_coeffs, odd_coeffs, phi_new, phi_old
 
 
+def _new_gamma(_gammas, _L, _M):
+    """Defines the Fourier coefficients of a rotated shear flow based on the aspect ratio of domain. It 
+    does so by keeping the scale of the original shear flow intact, albeit on a different (scaled) domain.
+    Parameter:
+        _gammas: 1d-array like.
+            original Fourier coefficients that defined (via Fourier series) a shear flow.
+        _L: Int.
+            Lenght of (new) rotated coordinate.
+        _M: Int.
+            Length of (old) coordinate.
+    Output:
+        _gamma_new: 1d array-like.
+            New Fourier coefficients that defined a rotated (by 90 degres) shear flow. Its dimensional scale
+            remains invariant. In the trivial case M=L, gammas_new = gammas
+    """
+    ll = int(_L / _M) # must be an integer!
+    
+    _gammas_new = [0*m for m in range(ll*len(_gammas))]
+    
+    for i in range(len(_gammas)):
+        _gammas_new[int((i+1)*ll) -1] = _gammas[i]
+    return _gammas_new
+
+
 def evolve_ds_modal_uniform(_dAs, _K, _alpha0, _Pe, _X, _Y, _t, _tf=0):
     """Constructs the modal solution to the IVP with uniform cross-jet initial condition """
     # something wrong is hapenning?
