@@ -3021,7 +3021,7 @@ def reflect_dataset(ds, k=True, Pe=False, symmetry='even'):
         Pe: bool. `False` by default. When `True`, the complete dataset must be reflected for all values
             of `k`. The returned dataset
     """
-    if symmetry is 'even':
+    if symmetry == 'even':
         _eigs = 'a_2n'
         _eigv = 'A_2r'
     else:
