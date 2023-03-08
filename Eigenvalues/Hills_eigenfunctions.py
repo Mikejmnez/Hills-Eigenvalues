@@ -219,21 +219,21 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
         _K = _K[lll]
         q = q[lll]
         max_coeff = _np.max(abs(coeffs))
-        R = _np.round(_np.sqrt(35 * (q.imag) * max_coeff / 4))
+        R = _np.round(_np.sqrt(100 * (q.imag) * max_coeff / 4))
         Rmax = int(_np.max(R))
         if Rmax < 75:  # case where q is very small and Rmax is less than (arbitrary) minimum
             Rmax = 75  # always set the minimum size of matrix
-        N = Rmax + 5
+        _N = Rmax + 5
         ll = _np.where(R < Rmax)[0]
         R[ll] = Rmax # set minimum value
     
-    As_ds = phi_array(N, _K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
+    As_ds = phi_array(_N, _K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
 
     for k in range(len(q)):
         if opt:
             Nr = int(R[k])  # must be integer
         else:
-            Nr = N  # matrix size constant for all q
+            Nr = _N  # matrix size constant for all q
         if abs(q[k].imag) > 0:
             ak, Ak = eig_pairs(matrix_system(q[k], Nr + 5, coeffs, _Km, symmetry), symmetry)
             for n in range(Nr - _r0):
