@@ -26,3 +26,4 @@ dependencies:
   - hvplot
   - datashader
   - tqdm
+  - xhistogram
