@@ -235,13 +235,13 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
         else:
             Nr = _N  # matrix size constant for all q
         if abs(q[k].imag) > 0:
-            ak, Ak = eig_pairs(matrix_system(q[k], Nr + 5, coeffs, _Km, symmetry), symmetry)
+            ak, Ak = eig_pairs(matrix_system(q[k], Nr, coeffs, _Km, symmetry), symmetry)
             for n in range(Nr - _r0):
-                if opt is True and (Nr + 5) < Rmax:
-                    As_ds[_eigv].isel(k=k, n=n, r=slice(Nr + 5 - _r0)).data[:] = Anorm(Ak[:, n], symmetry)
-                else:
-                    As_ds[_eigv].isel(k=k, n=n, r=slice(Nr - _r0)).data[:] = Anorm(Ak[:-5, n], symmetry)
-            As_ds[_eigs].isel(k=k, n=slice(Nr - _r0)).data[:] = ak[:-5]
+                # if opt is True and Nr < Rmax:
+                As_ds[_eigv].isel(k=k, n=n, r=slice(Nr - _r0)).data[:] = Anorm(Ak[:, n], symmetry)
+                # else:
+                #     As_ds[_eigv].isel(k=k, n=n, r=slice(Nr - _r0)).data[:] = Anorm(Ak[:-5, n], symmetry)
+            As_ds[_eigs].isel(k=k, n=slice(Nr - _r0)).data[:] = ak
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
         As_dsc = reflect_dataset(As_ds, k=True, Pe=False, symmetry=symmetry)
@@ -437,7 +437,7 @@ def cCoeffs(A, n, q):
             if n == 3:
                 m0 = _np.where(A[ll[-1]+1:, 0].real > 0)[0]  # never changes sign
                 A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
-                mm = _np.where(A[:ll[-1]+1, n].real<0)[0]  # should be >0
+                mm = _np.where(A[:ll[-1]+1, n].real<0)[0]  # should be > 0
                 A[mm, :] = -A[mm, :]
     if n in [4, 5] and q[0].imag < qs[2]:
         if q.imag[-1] > qs[2]:
