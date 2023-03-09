@@ -177,7 +177,7 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True):
+def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, case=None):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -237,11 +237,16 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
         if abs(q[k].imag) > 0:
             ak, Ak = eig_pairs(matrix_system(q[k], Nr, coeffs, _Km, symmetry), symmetry)
             for n in range(Nr - _r0):
-                # if opt is True and Nr < Rmax:
-                As_ds[_eigv].isel(k=k, n=n, r=slice(Nr - _r0)).data[:] = Anorm(Ak[:, n], symmetry)
-                # else:
-                #     As_ds[_eigv].isel(k=k, n=n, r=slice(Nr - _r0)).data[:] = Anorm(Ak[:-5, n], symmetry)
+                An = Anorm(Ak[:, n], symmetry)
+                As_ds[_eigv].isel(k=k, n=n, r=slice(Nr - _r0)).data[:] = An
             As_ds[_eigs].isel(k=k, n=slice(Nr - _r0)).data[:] = ak
+
+    if case in ['cosine']:
+        for n in range(Nr - _r0):
+            An = As_ds[_eigv].isel(k=slice(len(q)), r=slice(Nr - _r0), n=n).data
+            An = Fcoeffs(An, n, q, case)
+            As_ds[_eigv].isel(k=slice(len(q)), r=slice(Nr - _r0), n=n).data[:] = An
+
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
         As_dsc = reflect_dataset(As_ds, k=True, Pe=False, symmetry=symmetry)
