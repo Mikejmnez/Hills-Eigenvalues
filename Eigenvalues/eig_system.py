@@ -1,4 +1,4 @@
-from numpy import linalg as LA
+from scipy import linalg as LA
 import numpy as _np
 import copy as _copy
 
