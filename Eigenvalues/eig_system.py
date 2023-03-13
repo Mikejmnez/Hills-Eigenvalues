@@ -113,7 +113,6 @@ def odd_matrix(q, N, alphas, K):
             and a purely reakl diagonal term that increases with the size of A.
     '''
     # make sure q is purely imaginary, N is an integer.
-    # make sure q is purely imaginary, N is an integer.
     diag = [4 * (k**2) for k in range(N)] # diagonal of A.
     A = _np.diag(diag, 0)
     nA = _np.zeros(_np.shape(A))*1j
@@ -181,7 +180,7 @@ def order_check(a, v, symmetry = 'even'):
         ordered_a = a
         nv = v
     else:
-        Ind = _np.argsort(_np.round(a, 1))  # sorting through 1 decimal
+        Ind = _np.argsort(_np.round(a, 4))  # sorting through 1 decimal
         ordered_a = a[Ind]
         nv = 0 * _np.copy(v)
         for k in range(len(Ind)):
