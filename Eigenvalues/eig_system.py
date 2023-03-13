@@ -1,4 +1,6 @@
 from scipy import linalg as LA
+import math
+from scipy.sparse.linalg import eigs as eigs_sp
 import numpy as _np
 import copy as _copy
 
@@ -151,18 +153,49 @@ def FFH_matrix(q, N, gammas, K):
     return A
 
 
-def eig_pairs(A, symmetry='even'):
-    """ Calculates the characteristic value (eigenvalue) and the Fourier
-    coefficients of Matrix A (particular Hills equation). Both eigenvals and
-    Eigenvectors are sorted in ascending order.
+def eig_pairs(A, symmetry='even', sparse=False, Ne=10):
+    """ Computes and orders in ascending order the eigenvalues and eigenvector of
+    matrices resulting from Hills equation. Eigenvectors are normalized according to
+    (non-definite) norm.
 
-    Input:
-        A: Matrix, output from matrix_system.
+        2[A_{0}]^2 + \sum_{r=1}^{\infty}[A_{2r}]^2 = 1,
+
+    if eigenvectors correspond to an even eig system. Or
+
+        \sum_{r=1}^{\infty}[B_{2r+2}]^2 = 1,
+    if eigenvectors correspond to an odd- eigenvalue system.
+
+    Parameters:
+    ------------
+        A: np.ndarray.
+            Square matrix, mostly sparse, output from matrix_system.
+        symmetry: str.
+            'even' (default) or 'odd'.
+        sparse: bool
+            when `False` (default), all eigenvalues and eigenvectors are computed
+            using scipy.linalg.eigs. When `True`, the lowest eigenvalues are `Ne`
+            computed using `scipy.sparse.linalg.eigs`.
+        Ne: int.
+            10 (default) is only used when sparse is `True`. When sparse is 1True`,
+            Ne must be smaller than number of columns of A.
 
     Output:
         w: sorted eigenvalues.
     """
     w, V = LA.eig(A)  # calculates the eigenvalue and eigenvector
+
+    if sparse:
+        N = len(A)
+        if Ne - N > 0:
+            ke = Ne 
+        else:
+            ke = math.ceil(N / 3)
+        if ke < 2:
+            ke = 2  # minimum eig to be calc
+        wsp, Vsp = eigs_sp(A, k=Ne, which='SR')
+        w[:Ne] = wsp
+        Vsp[:, :Ne] = Vsp
+
     if symmetry =='even':
         V[0, :] = _copy.deepcopy(V[0, :]) / _np.sqrt(2)
     ord_w, V = order_check(w, V)
