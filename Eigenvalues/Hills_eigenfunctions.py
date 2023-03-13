@@ -241,18 +241,6 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
                 As_ds[_eigv].isel(k=k, n=n, r=slice(Nr - _r0)).data[:] = An
             As_ds[_eigs].isel(k=k, n=slice(Nr - _r0)).data[:] = ak
 
-    # Anorm_ = (As_ds[_eigv]**2).sum(dim='n').real  # norm with n-sum
-
-    # for n in range(Nr - _r0):
-    #     An = As_ds[_eigv].isel(n=n).squeeze().data
-    #     An = An / Anorm_
-    #     for k in range(len(q)):
-    #         As = Anorm(An[k, :], symmetry)
-    #     As_ds[_eigv].isel(k=k, r=slice(Nr - _r0), n=n).data[:] = As
-
-
-
-
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
         As_dsc = reflect_dataset(As_ds, k=True, Pe=False, symmetry=symmetry)
         As_ds = As_dsc.combine_first(As_ds)  # combine along k values.
