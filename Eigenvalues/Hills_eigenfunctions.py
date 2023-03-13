@@ -37,6 +37,7 @@ class eigenfunctions:
         opt=False,
         dAs=None,
         reflect=True,
+        sparse=False,
     ):
         """Even eigenfunctions that solve Hill's equation associated with
         the case where Neumann BC and coeffs are associated with a purely
@@ -44,7 +45,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dAs is None:
-            dAs = A_coefficients(_Kn, _Pe, _N, _betas_m, _Km, 'even', opt, reflect)
+            dAs = A_coefficients(_Kn, _Pe, _N, _betas_m, _Km, 'even', opt, reflect, sparse)
         # initialize a dataarray with right dimensions
         N = len(dAs.n)  # update the size of the array
         cos_coords = {'r':range(N), 'y':_y}
@@ -73,6 +74,7 @@ class eigenfunctions:
         opt=False,
         dBs=None,
         reflect=True,
+        sparse=False,
     ):
         """Even eigenfunctions that solve Hill's equation associated with
         the case where Neumann BC and coeffs are associated with a purely
@@ -80,7 +82,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dBs is None:
-            dBs = A_coefficients(_Kn, _Pe, _N, _betas_m, _Km, 'odd', opt, reflect)
+            dBs = A_coefficients(_Kn, _Pe, _N, _betas_m, _Km, 'odd', opt, reflect, sparse)
         # initialize a dataarray with right dimensions
         _range = dBs.n.data  # update the size of the array
         sin_coords = {'r':_range, 'y':_y}
@@ -177,7 +179,7 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True):
+def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, Ne=10):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -198,6 +200,10 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
             and thus performing eigenvalue calculation on a submatrix, supplementing the rest with theoretical 
             limiting values a_2n -> 4n^2 and A_{2n}^{(2n)} --> 1, zero otherwise.
         reflect: True
+        sparse: bool
+            if `False` (default) all eigs and eig vectors are calculated using 
+            `numpy.linal.eigs`. If `True`, the gravest eigs are calculated using 
+            `scipy.sparse.linalg.eigs`.
 
     Output:
         xarray.Dataset: 'a_{2n}(q)' (dims: n, k) and 'A^{2n}_{2r}(q)' with dims
@@ -236,7 +242,7 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
         else:
             Nr = _N  # matrix size constant for all q
         if abs(q[k].imag) > 0:
-            ak, Ak = eig_pairs(matrix_system(q[k], Nr + _r0, coeffs, _Km, symmetry), symmetry)
+            ak, Ak = eig_pairs(matrix_system(q[k], Nr + _r0, coeffs, _Km, symmetry), symmetry, sparse, Ne)
             for n in range(Nr):
                 An = Anorm(Ak[:, n], symmetry)
                 As_ds[_eigv].isel(k=k, n=n, r=slice(Nr)).data[:] = An
