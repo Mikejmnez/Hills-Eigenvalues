@@ -177,7 +177,7 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, case=None):
+def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -241,11 +241,16 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
                 As_ds[_eigv].isel(k=k, n=n, r=slice(Nr - _r0)).data[:] = An
             As_ds[_eigs].isel(k=k, n=slice(Nr - _r0)).data[:] = ak
 
-    if case in ['cosine']:
-        for n in range(Nr - _r0):
-            An = As_ds[_eigv].isel(k=slice(len(q)), r=slice(Nr - _r0), n=n).data
-            An = Fcoeffs(An, n, q, case)
-            As_ds[_eigv].isel(k=slice(len(q)), r=slice(Nr - _r0), n=n).data[:] = An
+    # Anorm_ = (As_ds[_eigv]**2).sum(dim='n').real  # norm with n-sum
+
+    # for n in range(Nr - _r0):
+    #     An = As_ds[_eigv].isel(n=n).squeeze().data
+    #     An = An / Anorm_
+    #     for k in range(len(q)):
+    #         As = Anorm(An[k, :], symmetry)
+    #     As_ds[_eigv].isel(k=k, r=slice(Nr - _r0), n=n).data[:] = As
+
+
 
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
@@ -596,9 +601,9 @@ def cCoeffs(A, n, q):
                 A[m0+ll[-1]+1, :] = -A[m0+ll[-1]+1, :]
                 mm = _np.where(A[:ll[-1]+1, n].real < 0)[0]  # always positive
                 A[mm, :] = -A[mm, :]
-    # if q.imag[-1] >= qs[-1]:
-    #     raise ValueError("Not yet implemented for values of Mathieu`s"
-    #                      "canonical parameter q>95i")
+    if q.imag[-1] >= qs[-1]:
+        raise ValueError("Not yet implemented for values of Mathieu`s"
+                         "canonical parameter q>"+str(qs[-1]))
     return A
 
 
