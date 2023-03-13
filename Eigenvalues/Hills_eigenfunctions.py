@@ -214,6 +214,7 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
         _eigv = 'B_2r'
         _eigs = 'b_2n'
         _r0 = 1
+    _N = _N - _r0
     if opt:  # perform this calculation
         lll = _np.where(_K >= 0)[0]
         _K = _K[lll]
@@ -227,7 +228,7 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
         ll = _np.where(R < Rmax)[0]
         R[ll] = Rmax # set minimum value
     
-    As_ds = phi_array(_N, _K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
+    As_ds = phi_array(_N + _r0, _K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
 
     for k in range(len(q)):
         if opt:
@@ -235,11 +236,11 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
         else:
             Nr = _N  # matrix size constant for all q
         if abs(q[k].imag) > 0:
-            ak, Ak = eig_pairs(matrix_system(q[k], Nr, coeffs, _Km, symmetry), symmetry)
-            for n in range(Nr - _r0):
+            ak, Ak = eig_pairs(matrix_system(q[k], Nr + _r0, coeffs, _Km, symmetry), symmetry)
+            for n in range(Nr):
                 An = Anorm(Ak[:, n], symmetry)
-                As_ds[_eigv].isel(k=k, n=n, r=slice(Nr - _r0)).data[:] = An
-            As_ds[_eigs].isel(k=k, n=slice(Nr - _r0)).data[:] = ak
+                As_ds[_eigv].isel(k=k, n=n, r=slice(Nr)).data[:] = An
+            As_ds[_eigs].isel(k=k, n=slice(Nr)).data[:] = ak
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
         As_dsc = reflect_dataset(As_ds, k=True, Pe=False, symmetry=symmetry)
