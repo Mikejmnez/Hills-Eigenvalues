@@ -179,7 +179,7 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, Ne=10):
+def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, eig_vectors=True):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -233,8 +233,11 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
         _N = Rmax + 5
         ll = _np.where(R < Rmax)[0]
         R[ll] = Rmax # set minimum value
-    
-    As_ds = phi_array(_N + _r0, _K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
+
+    if eig_vectors:
+        As_ds = phi_array(_N + _r0, _K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
+    else:
+        As_ds = phi_array(_N + _r0, _K, symmetry, coeffs=False)
 
     for k in range(len(q)):
         if opt:
@@ -242,10 +245,11 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
         else:
             Nr = _N  # matrix size constant for all q
         if abs(q[k].imag) > 0:
-            ak, Ak = eig_pairs(matrix_system(q[k], Nr + _r0, coeffs, _Km, symmetry), symmetry, sparse, Ne)
-            for n in range(Nr):
-                An = Anorm(Ak[:, n], symmetry)
-                As_ds[_eigv].isel(k=k, n=n, r=slice(Nr)).data[:] = An
+            ak, Ak = eig_pairs(matrix_system(q[k], Nr + _r0, coeffs, _Km, symmetry), symmetry, sparse)
+            if eig_vectors:
+                for n in range(Nr):
+                    An = Anorm(Ak[:, n], symmetry)
+                    As_ds[_eigv].isel(k=k, n=n, r=slice(Nr)).data[:] = An
             As_ds[_eigs].isel(k=k, n=slice(Nr)).data[:] = ak
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
@@ -2944,7 +2948,7 @@ def phi_array(N, K, symmetry='even', y = 0, coeffs=True, eigs=True, phis=False):
     if phis:
         data_vars = {**data_vars, **{'phi_2n': phi_2n}}
     eig_fns =  _xr.Dataset(data_vars)
-    if symmetry == 'even':
+    if symmetry == 'even' and coeffs:
         eig_fns['A_2r'].isel(n=0, r=0).data[:] = (1/_np.sqrt(2)) * _np.ones(_np.shape(K))
     return eig_fns
 
