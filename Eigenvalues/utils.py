@@ -45,8 +45,8 @@ def norm_min(fn, ki=0, kf=-1):
 			location with the minimum (in the sum) of fn in k-index.
 	"""
 	if ki == 0 and kf == -1:
-		_normr = abs(fn.sel(k=slice(ki, kf)).real).sum(dim='r')
-		_normi = abs(fn.sel(k=slice(ki, kf)).imag).sum(dim='r')
+		_normr = abs(fn.isel(k=slice(ki, kf)).real).sum(dim='r')
+		_normi = abs(fn.isel(k=slice(ki, kf)).imag).sum(dim='r')
 	else:
 		_normr = abs(fn.sel(k=slice(ki, kf)).real).sum(dim='r')
 		_normi = abs(fn.sel(k=slice(ki, kf)).imag).sum(dim='r')
