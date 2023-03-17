@@ -16,8 +16,8 @@ def cosine_shear(n=1):
 			  	2519.69, 2941.22, 3395.896, 3883.9679
 		]
 		# 
-		# odd eigenvalues too
-		qs_b = [0
+		# odd eigenvalues too (begining with n=14,15)
+		qs_b = [1024.5409, 1299.4, 1947.59759, 2370.17,
 
 		]
 
@@ -25,3 +25,40 @@ def cosine_shear(n=1):
 		qs = 0
 
 	return qs
+
+
+def norm_min(fn, ki=0, kf=-1):
+	"""
+	Finds the location of minima from the array of (row-)squared sums.
+	Parameters:
+	-----------
+		fn: xarray.DataArray.
+			must have `r` and `k` dimensions.
+		ki: float
+			minimum wavenumber to evaluate
+		kf: float
+			maximum wavenumber to evaluate. The rannge slice(ki, kf) must be within the dataarray.
+	
+	Returns:
+	--------
+		n0: int
+			location with the minimum (in the sum) of fn in k-index.
+	"""
+	if ki == 0 and kf == -1:
+		_normr = abs(fn.sel(k=slice(ki, kf)).real).sum(dim='r')
+		_normi = abs(fn.sel(k=slice(ki, kf)).imag).sum(dim='r')
+	else:
+		_normr = abs(fn.sel(k=slice(ki, kf)).real).sum(dim='r')
+		_normi = abs(fn.sel(k=slice(ki, kf)).imag).sum(dim='r')
+
+	_norm = _normr + _normi
+	n0 = _np.where(_norm.data == _np.min(_norm.data))[0][0]
+
+	return n0
+
+
+
+
+
+
+
