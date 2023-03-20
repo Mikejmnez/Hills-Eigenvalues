@@ -153,7 +153,7 @@ def FFH_matrix(q, N, gammas, K):
     return A
 
 
-def eig_pairs(A, symmetry='even', sparse=False, Ne=10):
+def eig_pairs(A, symmetry='even', sparse=False, Ne=10, right=True):
     """ Computes and orders in ascending order the eigenvalues and eigenvector of
     matrices resulting from Hills equation. Eigenvectors are normalized according to
     (non-definite) norm.
@@ -182,7 +182,7 @@ def eig_pairs(A, symmetry='even', sparse=False, Ne=10):
     Output:
         w: sorted eigenvalues.
     """
-    w, V = LA.eig(A)  # calculates the eigenvalue and eigenvector
+    w, V = LA.eig(A, right=right)  # calculates the eigenvalue and eigenvector
 
     if sparse:
         N = len(A)

@@ -13,13 +13,10 @@ def cosine_shear(n=1):
 		# EPs up to q = 4000 (a_2n = )
 		qs_a = [2.938438, 32.942942, 95.613113, 190.950950, 318.959459, 479.636636,
 			  	672.983483, 898.998498, 1157.684684, 1449.039039, 1773.061561, 2129.755255,
-			  	2519.69, 2941.22, 3395.896, 3883.9679
-		]
+			  	2519.69, 2941.22, 3395.896, 3883.9679]  # higher values, error is too large.
 		# 
 		# odd eigenvalues too (begining with n=14,15)
-		qs_b = [1024.5409, 1299.4, 1947.59759, 2370.17,
-
-		]
+		qs_b = [1024.5409, 1299.4, 1947.59759, 2370.17]
 
 	else:
 		qs = 0
@@ -52,9 +49,10 @@ def norm_min(fn, ki=0, kf=-1):
 		_normi = abs(fn.sel(k=slice(ki, kf)).imag).sum(dim='r')
 
 	_norm = _normr + _normi
-	n0 = _np.where(_norm.data == _np.min(_norm.data))[0][0]
+	k0 = _np.where(_norm.data == _np.min(_norm.data))[0][0]
+	vals = [_np.max(fn.isel(k=k0).real.data), _np.max(fn.isel(k=k0).imag.data)]
 
-	return n0
+	return k0, vals
 
 
 
