@@ -182,7 +182,11 @@ def eig_pairs(A, symmetry='even', sparse=False, Ne=10, right=True):
     Output:
         w: sorted eigenvalues.
     """
-    w, V = LA.eig(A, right=right)  # calculates the eigenvalue and eigenvector
+    if right:
+        w, V = LA.eig(A)  # calculates the eigenvalue and eigenvector
+    else:
+        w = LA.eig(A, right=right)
+        V = 0
 
     if sparse:
         N = len(A)
