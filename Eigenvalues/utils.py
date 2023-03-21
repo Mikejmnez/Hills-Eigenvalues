@@ -56,6 +56,11 @@ def norm_min(fn, ki=0, kf=-1):
 
 
 
+def _find_nearest(array, value):
+    array = _np.asarray(array)
+    idx = (_np.abs(array - value)).argmin()
+    return idx, array[idx]
+
 
 
 
