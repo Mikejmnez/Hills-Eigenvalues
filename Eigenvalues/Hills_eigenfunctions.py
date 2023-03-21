@@ -179,7 +179,7 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, eig_vectors=True):
+def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, eig_vectors=True, qmax=1e10):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -233,6 +233,8 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
         _N = Rmax + 5
         ll = _np.where(R < Rmax)[0]
         R[ll] = Rmax # set minimum value
+    
+    ii = 0
 
     if eig_vectors:
         As_ds = phi_array(_N + _r0, _K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
@@ -244,13 +246,30 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
             Nr = int(R[k])  # must be integer
         else:
             Nr = _N  # matrix size constant for all q
-        if abs(q[k].imag) > 0:
+        if abs(q[k].imag) >= 0 and abs(q[k].imag) < qmax:
             ak, Ak = eig_pairs(matrix_system(q[k], Nr + _r0, coeffs, _Km, symmetry), symmetry, sparse)
+            As_ds[_eigs].isel(k=k, n=slice(Nr)).data[:] = ak
             if eig_vectors:
                 for n in range(Nr):
                     An = Anorm(Ak[:, n], symmetry)
                     As_ds[_eigv].isel(k=k, n=n, r=slice(Nr)).data[:] = An
-            As_ds[_eigs].isel(k=k, n=slice(Nr)).data[:] = ak
+        elif abs(q[k].imag) >= qmax: # this value is different for different shear flows
+            N0 = 200
+            if ii == 0:
+                ak, A0 = eig_pairs(matrix_system(qmax*(1j), N0 + _r0, coeffs, _Km, symmetry), symmetry, sparse)
+                As_ds[_eigs].isel(k=k, n=slice(N0)).data[:] = ak
+                for n in range(N0):
+                    An = Anorm(A0[:, n], symmetry)
+                    As_ds[_eigv].isel(k=k, n=n, r=slice(N0)).data[:] = An
+                ii = ii + 1
+            else:
+                As_ds[_eigs].isel(k=k, n=slice(N0)).data[:] = ak
+                An = _copy.deepcopy(As_ds[_eigv].isel(k=k-1, n=slice(N0), r=slice(N0)).data[:])
+                As_ds[_eigv].isel(k=k, n=slice(N0), r=slice(N0)).data[:] = An
+
+
+
+
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
         As_dsc = reflect_dataset(As_ds, k=True, Pe=False, symmetry=symmetry)
