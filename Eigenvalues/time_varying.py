@@ -417,12 +417,12 @@ def evolve_off_ds_rot_time(_DAS, _DBS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, 
 		if i == 0:
 			ds_f = DS[i]
 		else:
-			jump = abs(PHI_OLD[i] - PHI_OLD[0])
-			dsign = int(_np.sign(PHI_OLD[i] - PHI_OLD[0]))
-			diff = abs(_y - jump)
+			jump = abs(PHI_OLD[i] - (PHI_OLD[0] - _np.pi))
+			dsign = int(_np.sign(PHI_OLD[i] - (PHI_OLD[0] - _np.pi)))
+			diff = abs(_x - jump)
 			ii = dsign * _np.where(diff == _np.min(diff))[0][0]
-			ds_f = ds_f.combine_first(DS[i].roll(y=ii, roll_coords=False))
-	return ds_f, PHI_NEW, PHI_OLD
+			ds_f = ds_f.combine_first(DS[i].roll(x=ii, roll_coords=False))
+	return ds_f, DS, PHI_NEW, PHI_OLD
 
 
 def evolve_ds_serial(_dAs, _Kn, _alpha0, _Pe, _gauss_alps, _facs, _x, _y, _t, _tf=0, _dim='k'):
