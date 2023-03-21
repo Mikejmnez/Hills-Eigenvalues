@@ -17,6 +17,8 @@ from time_varying import (
 	coeff_project,
 )
 
+from utils import _find_nearest
+
 
 t = _np.linspace(0, 1, 100)
 sine_func = _np.sin((2*_np.pi)*t)
@@ -102,24 +104,16 @@ def test_indt_intervals(ft, nt):
 		assert 0 == max(nlist)  # assert all elements are the same
 
 
-alpha = 1/2
-Pe = 100  # Peclet number
-Ny = 251
-Nx = 251
-x = _np.linspace(-alpha * (_np.pi * 2), alpha * (_np.pi* 2), Nx, endpoint=False)
-y = _np.linspace(0, (_np.pi * 2), Ny, endpoint=False)  # \tilde{y} in paper.
-L = len(y)
-nL = int(L/2)
-yt = y / 2
 
-# ============= \Phi(y) ==========
+y = _np.linspace(0, (_np.pi * 2), 1001, endpoint=False)
+
 Ld1 = 1/4
-phi0 = 1 * _np.pi  # shift
+
 
 @pytest.mark.parametrize(
 	"phi_new, phi_old, y, values",
 	[
-		(0.0*_np.pi, 0*_np.pi, y, _np.exp(-0.5*((y - 0.0*_np.pi)**2)/(0.5*Ld1**2))),
+		(0, 0, y, _np.exp(-0.5*((y - 0)**2)/(0.5*Ld1**2))),
 		(0.25*_np.pi, 0.5*_np.pi, y, _np.exp(-0.5*((y - 0.25*_np.pi)**2)/(0.5*Ld1**2))),
 		(0.5*_np.pi, 1.5*_np.pi, y, _np.exp(-0.5*((y - _np.pi)**2)/(0.5*Ld1**2))),
 
@@ -128,6 +122,8 @@ phi0 = 1 * _np.pi  # shift
 def test_coeff_project(phi_new, phi_old, y, values):
 	Phi = _np.exp(-0.5*((y - phi_old)**2)/(0.5*Ld1**2))
 	da_phi = _xr.DataArray(Phi, dims=('y',), coords={'y': y})
+
+
 
 	args = {'_phi': da_phi,
 			'phi_new': phi_new,
@@ -140,7 +136,7 @@ def test_coeff_project(phi_new, phi_old, y, values):
 	gaussian_y_o = sum([odd_coeffs_n.data[n-1] * _np.sin(n * y) for n in range(1,len(odd_coeffs_n.data))])
 
 	gaussian_y = gaussian_y_e + gaussian_y_o
-	assert _np.max(abs(values - gaussian_y)) < 1e-3
+	assert _np.max(abs(values - gaussian_y)) < 1e-4
 
 
 
