@@ -547,12 +547,12 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 		t0 = Time[i-1][-1]
 		t1 = Time[i]
 		if i % 2 != 0:  # if odd number.
-			da_dft = _xrft.fft(da_step, dim='y', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
+			da_dft = _xrft.fft(da_step, dim='y', true_phase=True, true_amplitude=True)
 			da_dft = da_dft.rename({'freq_y':'l'})
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, dim='x')
 			d1 = evolve_ds_serial_off(_dAs_rot, _dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='l')
 		else:
-			da_dft = _xrft.fft(da_step.transpose(), dim='x', true_phase=True, true_amplitude=True) # Fourier Transform w/ consideration of phase
+			da_dft = _xrft.fft(da_step.transpose(), dim='x', true_phase=True, true_amplitude=True)
 			da_dft = da_dft.rename({'freq_x':'k'})
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
 			d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='k')
