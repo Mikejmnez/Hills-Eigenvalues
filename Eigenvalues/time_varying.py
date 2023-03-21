@@ -391,8 +391,9 @@ def evolve_off_ds_rot_time(_DAS, _DBS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, 
 	PHI_OLD = []
 	ecoeffs = _copy.deepcopy(_a_alps)
 	ocoeffs = _copy.deepcopy(_b_alps)
-	if _shift == 0:
-		_shift = [0 for i in range(len(_t))]
+	if len(_shift) == 1:
+		val = _shift[0]
+		_shift = [val for i in range(len(_t))]
 	for i in range(len(_indt)):
 		phi_new = _shift[_indt[i][0]]  # only sample first - they are all the same
 		if i == 0:
