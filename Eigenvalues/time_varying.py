@@ -278,14 +278,20 @@ def evolve_ds_time(_DAS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _a_al
 
 
 def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_dft, _a_alps, _afacs, _b_alps, _bfacs, _x, _y, _t, _shift=0):
-	"""evolves a localized initial condition defined by its 2d Fourier coefficients."""
+	"""evolves a localized initial condition defined by its 2d Fourier coefficients.
+
+	shift must be a list
+
+
+	"""
 	DS = []
 	PHI_NEW = []
 	PHI_OLD = []
 	ecoeffs = _copy.deepcopy(_a_alps)
 	ocoeffs = _copy.deepcopy(_b_alps)
-	if _shift == 0:
-		_shift = [0 for i in range(len(_t))]
+	if len(_shift) == 1:
+		val = _shift[0]
+		_shift = [val for i in range(len(_t))]
 	for i in range(len(_indt)):
 		phi_new = _shift[_indt[i][0]]  # only sample first - they are all the same
 		if i == 0:
