@@ -38,6 +38,7 @@ class eigenfunctions:
         dAs=None,
         reflect=True,
         sparse=False,
+        qmax=1e7,
     ):
         """Even eigenfunctions that solve Hill's equation associated with
         the case where Neumann BC and coeffs are associated with a purely
@@ -45,7 +46,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dAs is None:
-            dAs = A_coefficients(_Kn, _Pe, _N, _betas_m, _Km, 'even', opt, reflect, sparse)
+            dAs = A_coefficients(_Kn, _Pe, _N, _betas_m, _Km, 'even', opt, reflect, sparse, eig_vectors=True, qmax=qmax)
         # initialize a dataarray with right dimensions
         N = len(dAs.n)  # update the size of the array
         cos_coords = {'r':range(N), 'y':_y}
@@ -75,6 +76,7 @@ class eigenfunctions:
         dBs=None,
         reflect=True,
         sparse=False,
+        qmax=1e7,
     ):
         """Even eigenfunctions that solve Hill's equation associated with
         the case where Neumann BC and coeffs are associated with a purely
@@ -82,7 +84,7 @@ class eigenfunctions:
         associates with coeffs = 1. when K =1, otherwise coeffs =0. Th
         """
         if dBs is None:
-            dBs = A_coefficients(_Kn, _Pe, _N, _betas_m, _Km, 'odd', opt, reflect, sparse)
+            dBs = A_coefficients(_Kn, _Pe, _N, _betas_m, _Km, 'odd', opt, reflect, sparse, eig_vectors=True,qmax=qmax)
         # initialize a dataarray with right dimensions
         _range = dBs.n.data  # update the size of the array
         sin_coords = {'r':_range, 'y':_y}
@@ -179,7 +181,7 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, eig_vectors=True, qmax=1e10):
+def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, eig_vectors=True, qmax=1e7):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
