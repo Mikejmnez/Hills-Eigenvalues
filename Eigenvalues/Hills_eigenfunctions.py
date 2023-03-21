@@ -3076,7 +3076,7 @@ def reflect_dataset(ds, k=True, Pe=False, symmetry='even'):
 
 
 
-def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rotate=False, write=False, load=False, path=None):
+def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rotate=False, write=False, load=False, path=None, qmax=1e10):
     """Creates a list of datasets in which each element contains the spectra of the governing operator.
     """            
     _betas_m = _np.array(_betas_m)
@@ -3108,10 +3108,10 @@ def spectra_list(_Kn, _vals, _Pe, _alpha0, _N, _betas_m, _Km, _y, both=True, rot
 
         ll = _np.where(_np.array(_vals)==0)[0][0]
         for val in _vals[ll:]:
-            ds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, _betas_m, _Km, opt=True, reflect=True)
+            ds_As = eigenfunctions.phi_even(_Kn, val * _Pe, _y, _N, _betas_m, _Km, opt=True, reflect=True, qmax=qmax)
             mDAS.append(copy.deepcopy(ds_As))
             if both:
-                ds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, _betas_m, _Km, opt=True, reflect=True)
+                ds_Bs = eigenfunctions.phi_odd(_Kn, val * _Pe, _y, _N, _betas_m, _Km, opt=True, reflect=True, qmax=qmax)
                 mDBS.append(copy.deepcopy(ds_Bs))
 
             mALPHA0.append(_np.sign(val) * _alpha0) 
