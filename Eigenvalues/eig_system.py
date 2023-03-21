@@ -201,12 +201,13 @@ def eig_pairs(A, symmetry='even', sparse=False, Ne=10, right=True):
         Vsp[:, :Ne] = Vsp
 
     if symmetry =='even':
-        V[0, :] = _copy.deepcopy(V[0, :]) / _np.sqrt(2)
-    ord_w, V = order_check(w, V)
+        if right:
+            V[0, :] = _copy.deepcopy(V[0, :]) / _np.sqrt(2)
+    ord_w, V = order_check(w, V, right)
     return ord_w, V
 
 
-def order_check(a, v, symmetry = 'even'):
+def order_check(a, v, right=True):
     """ Check the ordering of the eigenvalue array, from smaller to larger. If
     true, return a unchanged. Ordering also matters if a is complex. If a is
     complex, ordering again is first set according to real(a). If two
@@ -220,6 +221,7 @@ def order_check(a, v, symmetry = 'even'):
         Ind = _np.argsort(_np.round(a, 4))  # sorting through 1 decimal
         ordered_a = a[Ind]
         nv = 0 * _np.copy(v)
-        for k in range(len(Ind)):
-            nv[:, k] = v[:, Ind[k]]
+        if right:
+            for k in range(len(Ind)):
+                nv[:, k] = v[:, Ind[k]]
     return ordered_a, nv
