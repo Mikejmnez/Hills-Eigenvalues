@@ -32,10 +32,17 @@ def coeff_project(_phi, _y, dim='y', phi_old=_np.pi, phi_new=0):
 	frac = round((_y[-1] - _y[0]) / (2 * _np.pi), 1)  # unity if y in [0, 2\pi].
 
 	phi_old = phi_old + phi_new
-	if phi_old > 2*_np.pi:
-		phi_old = phi_old - 2*_np.pi
-	elif phi_old < 0:
-		phi_old = phi_old + 2*_np.pi
+	if dim == 'y':
+		if phi_old > 2*_np.pi:
+			phi_old = phi_old - 2*_np.pi
+		elif phi_old < 0:
+			phi_old = phi_old + 2*_np.pi
+	elif dim=='x':
+		if phi_old > _np.pi:
+			phi_old = phi_old - 2*_np.pi
+		elif phi_old < -_np.pi:
+			phi_old = phi_old + 2*_np.pi
+
 
 	fac = _np.pi * frac   # divides the Fourier coefficients (xrft scales them).
 
@@ -44,12 +51,12 @@ def coeff_project(_phi, _y, dim='y', phi_old=_np.pi, phi_new=0):
 		nL = int((L - 1) / 2)
 
 	da_phi = _xr.DataArray(_phi, dims=_phi.dims, coords=_phi.coords)
-	da_dft_phi = _xrft.fft(da_phi, dim=dim, true_phase=True, true_amplitude=True)
+	da_dft_phi = _xrft.fft(da_phi, dim=dim)
 	da_dft_phi = da_dft_phi.rename({'freq_'+dim:'r'})
 
 	_dims = da_dft_phi.dims
     
-	if len(da_dft_phi.dims) == 1:  # no k dependence 
+	if len(da_dft_phi.dims) == 1:  # no k dependence
 
 		e_coeffs = 0.5 * (da_dft_phi.isel(r=slice(nL, L)).data + da_dft_phi.isel(r=slice(0, nL+1)).data[::-1]) / fac
 		e_coeffs[0] = e_coeffs[0] / 2
@@ -417,8 +424,8 @@ def evolve_off_ds_rot_time(_DAS, _DBS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, 
 		if i == 0:
 			ds_f = DS[i]
 		else:
-			jump = abs(PHI_OLD[i] - (PHI_OLD[0] - _np.pi))
-			dsign = int(_np.sign(PHI_OLD[i] - (PHI_OLD[0] - _np.pi)))
+			jump = abs(PHI_OLD[i] - PHI_OLD[0])
+			dsign = int(_np.sign(PHI_OLD[i] - PHI_OLD[0]))
 			diff = abs(_x - jump)
 			ii = dsign * _np.where(diff == _np.min(diff))[0][0]
 			ds_f = ds_f.combine_first(DS[i].roll(x=ii, roll_coords=False))
@@ -466,7 +473,7 @@ def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps
 	"""Constructs the modal solution to the IVP that is localized across the jet."""
 	coords = {"t": _t, "y": _y, _dim: _Kn, 'x': _x}
 	_X, _Y = _np.meshgrid(_x, _y)
-	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["t", 'y', 'x', _dim])
+	Temp = _xr.DataArray(coords=coords, dims=["t", 'y', 'x', _dim])
 	DS = []
 	if _dim == 'k':
 		phi_arg = {'x':_x}
