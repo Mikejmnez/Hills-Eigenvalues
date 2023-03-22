@@ -327,7 +327,7 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 			diff = abs(_y - jump)
 			ii = dsign * _np.where(diff == _np.min(diff))[0][0]
 			ds_f = ds_f.combine_first(DS[i].roll(y=ii, roll_coords=False))
-	return ds_f, PHI_NEW, PHI_OLD
+	return ds_f, DS, PHI_NEW, PHI_OLD
 
 
 def evolve_ds_rot(_dAs, _da_xrft, _L, _alpha0, _Pe, _a_alps, _afacs, _x, _y, _t,  _tf=0):
@@ -406,7 +406,7 @@ def evolve_off_ds_rot_time(_DAS, _DBS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, 
 		if i == 0:
 			t0 = 0
 			t1 = _t[_indt[i][0]:_indt[i][1]]
-			phi_old = _np.pi
+			phi_old = 0
 			ndAs = _xr.dot(_afacs * ecoeffs, _DAS[_order[i]]['A_2r'])
 			ndBs = _xr.dot(_bfacs * ocoeffs, _DBS[_order[i]]['B_2r'])
 			PHI2n_e = _xr.dot(ndAs, _DAS[_order[i]]['phi_2n'], dims='n')
