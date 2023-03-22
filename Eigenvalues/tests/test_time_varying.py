@@ -106,34 +106,57 @@ def test_indt_intervals(ft, nt):
 
 
 y = _np.linspace(0, (_np.pi * 2), 1001, endpoint=False)
+x = _np.linspace(-_np.pi, _np.pi, 1001, endpoint=False)
+
+X, Y = _np.meshgrid(x, y)
+
 
 Ld1 = 1/4
 
 
 @pytest.mark.parametrize(
-	"phi_new, phi_old, y, values",
+	"phi_new, phi_old, _y, values",
 	[
 		(0, 0, y, _np.exp(-0.5*((y - 0)**2)/(0.5*Ld1**2))),
 		(0.25*_np.pi, 0.5*_np.pi, y, _np.exp(-0.5*((y - 0.25*_np.pi)**2)/(0.5*Ld1**2))),
 		(0.5*_np.pi, 1.5*_np.pi, y, _np.exp(-0.5*((y - _np.pi)**2)/(0.5*Ld1**2))),
-
+		(0.75*_np.pi, _np.pi, Y, _np.exp(-0.5*((y - 0.25*_np.pi)**2/(0.5*Ld1**2)))),
 	]
 )
-def test_coeff_project(phi_new, phi_old, y, values):
-	Phi = _np.exp(-0.5*((y - phi_old)**2)/(0.5*Ld1**2))
-	da_phi = _xr.DataArray(Phi, dims=('y',), coords={'y': y})
+def test_coeff_project(phi_new, phi_old, _y, values):
+
+	Phi = _np.exp(-0.5*((_y - phi_old)**2)/(0.5*Ld1**2))
+
+	if len(_np.shape(_y)) == 2:
+		dims = ('y', 'x')
+		coords = {'y': _y[:, 0], 'x': x}
+		ny = _y[:, 0]
+		rargs = {'x':0}
+	else:
+		dims = ('y',)
+		coords = {'y': _y}
+		ny = _y
+		rargs = {}
 
 
+	da_phi = _xr.DataArray(Phi, dims=dims, coords=coords)
+
+	if len(_np.shape(da_phi))==2:
+		da_phi = da_phi.transpose()
 
 	args = {'_phi': da_phi,
 			'phi_new': phi_new,
 			'phi_old': phi_old,
-			'_y': y}
+			'_y': ny}
+
 
 	even_coeffs_n, odd_coeffs_n, phi_new, phi_old = coeff_project(**args)
 
-	gaussian_y_e = sum([even_coeffs_n.data[n] * _np.cos(n * y) for n in range(len(even_coeffs_n.data))])
-	gaussian_y_o = sum([odd_coeffs_n.data[n-1] * _np.sin(n * y) for n in range(1,len(odd_coeffs_n.data))])
+
+	Nr = len(even_coeffs_n.isel(rargs).data)
+
+	gaussian_y_e = sum([even_coeffs_n.isel({**rargs, **{'r':n}}).data * _np.cos(n * ny) for n in range(Nr)])
+	gaussian_y_o = sum([odd_coeffs_n.isel({**rargs, **{'r':n-1}}).data * _np.sin(n * ny) for n in range(1, Nr)])
 
 	gaussian_y = gaussian_y_e + gaussian_y_o
 	assert _np.max(abs(values - gaussian_y)) < 1e-4
