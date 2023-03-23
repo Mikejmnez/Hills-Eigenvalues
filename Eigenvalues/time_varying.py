@@ -426,7 +426,7 @@ def evolve_off_ds_rot_time(_DAS, _DBS, _indt, _order, _vals, _Ln, _ALPHA0, _Pe, 
 		else:
 			jump = abs(PHI_OLD[i] - PHI_OLD[0])
 			dsign = int(_np.sign(PHI_OLD[i] - PHI_OLD[0]))
-			diff = abs(_x - jump)
+			diff = abs(_y - jump)  # not x, since range must be 0 to 2pi. ONLY WORKS IF DOMAINS SQUARE
 			ii = dsign * _np.where(diff == _np.min(diff))[0][0]
 			ds_f = ds_f.combine_first(DS[i].roll(x=ii, roll_coords=False))
 	return ds_f, DS, PHI_NEW, PHI_OLD
@@ -512,7 +512,7 @@ def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps
 	return ds_final
 
 
-def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals, _order, _indt, _x, _y, _t):
+def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals, _order, _indt, _x, _y, _t, _shift=[0]):
 	"""Computes the evolution of a passive scalar in the case the velocity field is renewing. Square domain.
 	By construction, the velocity field begins with an along- x orientation.
 	Input:
@@ -521,17 +521,36 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 		_alpha0: Mean velocity.
 		_Pe: float. Peclet number.
 		_Theta0: Initial condition. xarray.DataArray.
-		_X, _Y: 2d arrays (each). Together define the grid, assumed to be square domains
+		_vals: list.
+			Values in increasing order from a stepwise approx to a time-varying function that 
+			crosses zero N times. len(_vals) indicated the distinct values used. 
+			Min(len)=3:  [-max, 0, max].
+		_order: array, list.
+			Indicates the order in which the elements of _vals approx the periodic signal. Assuming 
+			a cos(t) periodic signal, _order[0] = _vals[-1] (the maximum amplitide of cosine).
+		_indt: list
+			Indicates the index range for which _vals approximates stepwise a continuous function. 
+			_indt[0] = [0, 10] implies that for first 10 elements of time, the value _vals[-1] 
+			is used to approximate the periodic signal.
+
+		_X, _Y: 1d arrays (each). Together define the grid, assumed to be square domains
 		_t: 1d array. Time with t[0]=0.
-		_tau: float, element of _t. defines the frequency of velocity rotation.
 	Output:
 		ds: xarray.dataset 
 	"""
 	xt = _x / 2
 	yt = _y / 2
 
-	IND, ORDER, Time = split_signal(_vals, _order, _indt, _t)
+	DS = []
+	PHI_NEW = []
+	PHI_OLD = []
+
+	IND, ORDER, Time = split_signal(_vals, _order, _indt, _t, n=1)
 	NT = len(ORDER)
+
+	if len(_shift)==1:
+		val = _shift[0]
+		_shift = [val for i in range(len(_t))]
     
 	da_dft = _xrft.fft(_Theta0.transpose(), dim='x', true_phase=True, true_amplitude=True)
 	da_dft = da_dft.rename({'freq_x':'k'})
@@ -555,23 +574,45 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 
 #     Initialize evolution
 	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, Time[0])
-    
+
+	DS.append(d0)
+	PHI_NEW.append(phi_new)
+	PHI_OLD.append(phi_old)
+
 	for i in range(1, NT):
+		phi_new = _np.pi * _shift[_indt[2*i][0]] # should be all same (multiply by \pi?)
 		da_step = d0['Theta'].isel(time=-1)
+
 		t0 = Time[i-1][-1]
 		t1 = Time[i]
+
 		if i % 2 != 0:  # if odd number.
-			da_dft = _xrft.fft(da_step, dim='y', true_phase=True, true_amplitude=True)
+			da_dft = _xrft.fft(da_step, dim='y')
 			da_dft = da_dft.rename({'freq_y':'l'})
-			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, dim='x')
+			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, phi_new=phi_new, phi_old=0, dim='x')
 			d1 = evolve_ds_serial_off(_dAs_rot, _dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='l')
+			jump = abs(phi_old - 0)
+			dsign = int(_np.sign(phi_old - 0))
+			diff = abs(_y - jump)
+			ii = dsign * _np.where(diff == _np.min(diff))[0][0]
+			d1 = d1.roll(x=ii, roll_coords=False)
+
 		else:
-			da_dft = _xrft.fft(da_step.transpose(), dim='x', true_phase=True, true_amplitude=True)
+			# phi_old = PHI_OLD[i-2]
+			da_dft = _xrft.fft(da_step.transpose(), dim='x')
 			da_dft = da_dft.rename({'freq_x':'k'})
-			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
+			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt, phi_new=phi_new, phi_old=_np.pi)
 			d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='k')
+			jump = abs(phi_old - _np.pi)
+			dsign = int(_np.sign(phi_old - _np.pi))
+			diff = abs(_y - jump)
+			ii = dsign * _np.where(diff == _np.min(diff))[0][0]
+			d1 = d1.roll(y=ii, roll_coords=False)
+
 		d0 = d0.combine_first(d1)
-	return d0,
+		PHI_OLD.append(phi_old)
+
+	return d0, DS, PHI_OLD
 
 
 def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _order, _indt, _Theta0,  _x, _y, _t):
