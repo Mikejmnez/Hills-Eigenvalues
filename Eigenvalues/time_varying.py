@@ -612,7 +612,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 		d0 = d0.combine_first(d1)
 		PHI_OLD.append(phi_old)
 
-	return d0, DS, PHI_OLD
+	return d0, PHI_OLD
 
 
 def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _order, _indt, _Theta0,  _x, _y, _t):
