@@ -377,6 +377,103 @@ def A_coefficients_old(q, N, coeffs, K, symmetry='even', case='None'):
     return vals
 
 
+def A_coefficients_exp(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, eig_vectors=True, qmax=1e7, q=None):
+    """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
+    Hill's equation.
+
+    Parameters
+    ----------
+        K: 1d-array, all along-jet (x) wavenumbers.
+        Pe: Peclet number.
+        N: size of (square) Matrix
+        betas_m: 1d-array, containing Fourier coefficients associated with
+            periodic coefficient in Hill's equation.
+        Kj: range(1, M, d) defining the jet. M is highest harmonic in coeffs. d is either 1 or
+            two. if d=1, Fourier sum is : cos(y)+cos(2*y)+... if d=2, the sum
+            : cos(y)+cos(3*y)+cos(5*y)... 
+        symmetry: `even` (default). Implies solution has even periodic solutions. If `odd`, 
+            then periodic coeff has a sine Fourier series.
+        opt: `False` (default): If `True`, optimizes the calculation of the eigenvalues. This is achieved
+            by truncating the matrix differently at each value of q (while making matrix is diagonally dominant)
+            and thus performing eigenvalue calculation on a submatrix, supplementing the rest with theoretical 
+            limiting values a_2n -> 4n^2 and A_{2n}^{(2n)} --> 1, zero otherwise.
+        reflect: True
+        sparse: bool
+            if `False` (default) all eigs and eig vectors are calculated using 
+            `numpy.linal.eigs`. If `True`, the gravest eigs are calculated using 
+            `scipy.sparse.linalg.eigs`.
+
+    Output:
+        xarray.Dataset: 'a_{2n}(q)' (dims: n, k) and 'A^{2n}_{2r}(q)' with dims
+            (n, k, r).
+    """
+    coeffs = _np.array(_betas_m, dtype=_np.float64)
+    if q is None:  # when not given.
+        q = _np.empty((_K.size), _np.complex128)
+        q = (1j) * (2 * 2 * _np.pi * _K * _Pe)  # canonical parameter - note the scaling consistent with xrft
+
+    if symmetry=='even':
+        _eigv = 'A_2r'
+        _eigs = 'a_2n'
+        _r0 = 0
+    elif symmetry=='odd':
+        _eigv = 'B_2r'
+        _eigs = 'b_2n'
+        _r0 = 1
+    _N = _N - _r0
+    if opt:  # perform this calculation
+        lll = _np.where(_K >= 0)[0]
+        _K = _K[lll]
+        q = q[lll]
+        max_coeff = _np.max(abs(coeffs))
+        R = _np.round(_np.sqrt(50 * (q.imag) * max_coeff / 4))
+        Rmax = int(_np.max(R))
+        if Rmax < 75:  # case where q is very small and Rmax is less than (arbitrary) minimum
+            Rmax = 75  # always set the minimum size of matrix
+        _N = Rmax + 5
+        ll = _np.where(R < Rmax)[0]
+        R[ll] = Rmax # set minimum value
+    
+    ii = 0
+
+    if eig_vectors:
+        As_ds = phi_array(_N + _r0, _K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
+    else:
+        As_ds = phi_array(_N + _r0, _K, symmetry, coeffs=False)
+
+    for k in range(len(q)):
+        if opt:
+            Nr = int(R[k])  # must be integer
+        else:
+            Nr = _N  # matrix size constant for all q
+        if abs(q[k].imag) >= 0 and abs(q[k].imag) < qmax:
+            ak, Ak = eig_pairs(matrix_system(q[k], Nr + _r0, coeffs, _Km, symmetry), symmetry, sparse)
+            As_ds[_eigs].isel(k=k, n=slice(Nr)).data[:] = ak
+            if eig_vectors:
+                for n in range(Nr):
+                    An = Anorm(Ak[:, n], symmetry)
+                    As_ds[_eigv].isel(k=k, n=n, r=slice(Nr)).data[:] = An
+        elif abs(q[k].imag) >= qmax: # this value is different for different shear flows
+            N0 = 200
+            if ii == 0:
+                ak, A0 = eig_pairs(matrix_system(qmax*(1j), N0 + _r0, coeffs, _Km, symmetry), symmetry, sparse)
+                As_ds[_eigs].isel(k=k, n=slice(N0)).data[:] = ak
+                for n in range(N0):
+                    An = Anorm(A0[:, n], symmetry)
+                    As_ds[_eigv].isel(k=k, n=n, r=slice(N0)).data[:] = An
+                ii = ii + 1
+            else:
+                As_ds[_eigs].isel(k=k, n=slice(N0)).data[:] = ak
+                An = _copy.deepcopy(As_ds[_eigv].isel(k=k-1, n=slice(N0), r=slice(N0)).data[:])
+                As_ds[_eigv].isel(k=k, n=slice(N0), r=slice(N0)).data[:] = An
+
+
+    if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
+        As_dsc = reflect_dataset(As_ds, k=True, Pe=False, symmetry=symmetry)
+        As_ds = As_dsc.combine_first(As_ds)  # combine along k values.
+
+    return As_ds
+
 def continuation_dataset(ds1, ds2, n0=2, m0=10, even=True):
     """
     """
