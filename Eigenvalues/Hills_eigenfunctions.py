@@ -377,6 +377,38 @@ def A_coefficients_old(q, N, coeffs, K, symmetry='even', case='None'):
     return vals
 
 
+def continuation_dataset(ds1, ds2, n0=2, m0=10, even=True):
+    """
+    """
+    if even:
+        vec = 'A_2r'
+        eig = 'a_2n'
+    else:
+        vec = 'B_2r'
+        eig = 'b_2n'
+    ik0 = len(ds1.k.values)
+    N0 = len(ds1.r.values)
+    kf = len(ds2.k.values)
+    
+    ds = ds1.combine_first(ds2.isel(k=slice(1, kf), r=slice(0, N0), n=slice(0, N0)))
+    
+    nds = _xr.ones_like(ds)
+    
+    nds[vec].isel(k=slice(0, ik0)).data[:] = ds[vec].isel(k=slice(0, ik0)).data[:]
+    nds[eig].isel(k=slice(0, ik0)).data[:] = ds[eig].isel(k=slice(0, ik0)).data[:]
+
+    
+    
+    for ii in range(kf-1):
+        nds[vec].isel(n=slice(n0, N0), k=ik0 + ii).data[:] = ds[vec].isel(n=slice(n0, N0), k=ik0-1).data[:]
+        nds[eig].isel(n=slice(m0, N0), k=ik0 + ii).data[:] = ds[eig].isel(n=slice(m0, N0), k=ik0-1).data[:]
+    
+    nds[vec].isel(n=slice(0, n0), k=slice(ik0, ik0+kf)).data[:] = ds[vec].isel(n=slice(0, n0), k=slice(ik0,ik0+ kf)).data[:]
+    nds[eig].isel(n=slice(0, m0), k=slice(ik0, ik0+kf)).data[:] = ds[eig].isel(n=slice(0, m0), k=slice(ik0,ik0+ kf)).data[:]
+    
+    return nds
+
+
 def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
     """ Returns the Fourier coefficient of the Mathieu functions for given
     parameter q. Makes sure the coefficients are continuous (in q). Numerical
