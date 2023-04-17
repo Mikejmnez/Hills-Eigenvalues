@@ -456,11 +456,11 @@ def A_coefficients_exp(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, r
             Nr = _N  # matrix size constant for all q
         if abs(q[k].imag) >= 0 and abs(q[k].imag) < qmax:
             ak, Ak = eig_pairs(matrix_system(q[k], Nr + _r0, coeffs, _Km, symmetry), symmetry, sparse)
-            As_ds[_eigs].isel(k=k, n=slice(Nr + 1)).data[:] = ak
+            As_ds[_eigs].isel(k=k, n=slice(Nr)).data[:] = ak
             if eig_vectors:
-                for n in range(Nr + 1):
+                for n in range(Nr):
                     An = Anorm(Ak[:, n], symmetry)
-                    As_ds[_eigv].isel(k=k, n=n, r=slice(Nr + 1)).data[:] = An
+                    As_ds[_eigv].isel(k=k, n=n, r=slice(Nr)).data[:] = An
         elif abs(q[k].imag) >= qmax: # this value is different for different shear flows
             if ii == 0: # evaluate exacly at a q-value with _N predefined.
                 ak, A0 = eig_pairs(matrix_system(qmax*(1j), _N + _r0, coeffs, _Km, symmetry), symmetry, sparse)
