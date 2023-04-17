@@ -377,7 +377,7 @@ def A_coefficients_old(q, N, coeffs, K, symmetry='even', case='None'):
     return vals
 
 
-def A_coefficients_exp(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, eig_vectors=True, qmax=1e7, q=None):
+def A_coefficients_exp(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, eig_vectors=True, qmax=1e7, q=None, qint=None):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -436,6 +436,14 @@ def A_coefficients_exp(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, r
     
     ii = 0
 
+    if qint is not None:
+        qmax = qint
+        _N = 5 + _np.round(_np.sqrt(50 * qmax * max_coeff / 4))
+        ll = _np.where(R > _N)[0]
+        R[ll] = _N  # set upper cap
+    else:
+        _N = 200  # set upper cap of matrix evaluation. q-values above this size of matrix are unreliable
+
     if eig_vectors:
         As_ds = phi_array(_N + _r0, _K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
     else:
@@ -448,24 +456,23 @@ def A_coefficients_exp(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, r
             Nr = _N  # matrix size constant for all q
         if abs(q[k].imag) >= 0 and abs(q[k].imag) < qmax:
             ak, Ak = eig_pairs(matrix_system(q[k], Nr + _r0, coeffs, _Km, symmetry), symmetry, sparse)
-            As_ds[_eigs].isel(k=k, n=slice(Nr)).data[:] = ak
+            As_ds[_eigs].isel(k=k, n=slice(Nr + 1)).data[:] = ak
             if eig_vectors:
-                for n in range(Nr):
+                for n in range(Nr + 1):
                     An = Anorm(Ak[:, n], symmetry)
-                    As_ds[_eigv].isel(k=k, n=n, r=slice(Nr)).data[:] = An
+                    As_ds[_eigv].isel(k=k, n=n, r=slice(Nr + 1)).data[:] = An
         elif abs(q[k].imag) >= qmax: # this value is different for different shear flows
-            N0 = 200
-            if ii == 0:
-                ak, A0 = eig_pairs(matrix_system(qmax*(1j), N0 + _r0, coeffs, _Km, symmetry), symmetry, sparse)
-                As_ds[_eigs].isel(k=k, n=slice(N0)).data[:] = ak
-                for n in range(N0):
+            if ii == 0: # evaluate exacly at a q-value with _N predefined.
+                ak, A0 = eig_pairs(matrix_system(qmax*(1j), _N + _r0, coeffs, _Km, symmetry), symmetry, sparse)
+                As_ds[_eigs].isel(k=k, n=slice(_N)).data[:] = ak
+                for n in range(_N):
                     An = Anorm(A0[:, n], symmetry)
-                    As_ds[_eigv].isel(k=k, n=n, r=slice(N0)).data[:] = An
+                    As_ds[_eigv].isel(k=k, n=n, r=slice(_N)).data[:] = An
                 ii = ii + 1
             else:
-                As_ds[_eigs].isel(k=k, n=slice(N0)).data[:] = ak
-                An = _copy.deepcopy(As_ds[_eigv].isel(k=k-1, n=slice(N0), r=slice(N0)).data[:])
-                As_ds[_eigv].isel(k=k, n=slice(N0), r=slice(N0)).data[:] = An
+                As_ds[_eigs].isel(k=k, n=slice(_N)).data[:] = ak
+                An = _copy.deepcopy(As_ds[_eigv].isel(k=k-1, n=slice(_N), r=slice(_N+1)).data[:])
+                As_ds[_eigv].isel(k=k, n=slice(_N), r=slice(_N)).data[:] = An
 
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
