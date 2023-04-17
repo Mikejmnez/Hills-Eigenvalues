@@ -181,7 +181,7 @@ class eigenfunctions:
         return vals
 
 
-def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, eig_vectors=True, qmax=1e7):
+def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, eig_vectors=True, qmax=1e7, q=None):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -212,8 +212,10 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
             (n, k, r).
     """
     coeffs = _np.array(_betas_m, dtype=_np.float64)
-    q = _np.empty((_K.size), _np.complex128)
-    q = (1j) * (2 * 2 * _np.pi * _K * _Pe)  # canonical parameter - note the scaling consistent with xrft
+    if q is None:  # when not given.
+        q = _np.empty((_K.size), _np.complex128)
+        q = (1j) * (2 * 2 * _np.pi * _K * _Pe)  # canonical parameter - note the scaling consistent with xrft
+
     if symmetry=='even':
         _eigv = 'A_2r'
         _eigs = 'a_2n'
@@ -228,7 +230,7 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
         _K = _K[lll]
         q = q[lll]
         max_coeff = _np.max(abs(coeffs))
-        R = _np.round(_np.sqrt(100 * (q.imag) * max_coeff / 4))
+        R = _np.round(_np.sqrt(50 * (q.imag) * max_coeff / 4))
         Rmax = int(_np.max(R))
         if Rmax < 75:  # case where q is very small and Rmax is less than (arbitrary) minimum
             Rmax = 75  # always set the minimum size of matrix
@@ -268,9 +270,6 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
                 As_ds[_eigs].isel(k=k, n=slice(N0)).data[:] = ak
                 An = _copy.deepcopy(As_ds[_eigv].isel(k=k-1, n=slice(N0), r=slice(N0)).data[:])
                 As_ds[_eigv].isel(k=k, n=slice(N0), r=slice(N0)).data[:] = An
-
-
-
 
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs

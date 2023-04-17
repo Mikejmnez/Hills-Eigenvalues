@@ -735,7 +735,6 @@ def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t
 	
 	Parameters
 	----------
-
 		_da_xrft: xarray.dataarray.
 			Contains the Fourier coefficients in x, and has dimension `k`. Output of xrft.fft(da).
 		_dAs: xarray.dataset.
@@ -761,8 +760,8 @@ def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t
 		_ds: xarray.dataset
 			Contains Theta the analytical solution. 
 	"""
-	coords = {"time": _t, "y": 2 * _Y, "x": _X}
-	Temp = _xr.DataArray(coords=coords, dims=["time", 'y', 'x'])
+	coords = {"time": _t, "y": 2 * _Y[:, 0], "x": _X[0, :]}
+	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
 	ds = _xr.Dataset({'Theta_p': Temp, 'Theta_h': Temp, 'Theta': Temp})
 	exp_arg = (1j)*_Ubar*(2* _np.pi*_K)*_Pe + (2* _np.pi*_K)**2
 	exp2 = _dAs['a_2n'] + 4*(1j)*(2*_np.pi*_K)*_Pe * _Ubar + 4*(2* _np.pi*_K)**2 + 4*(1j) * _delta
