@@ -27,3 +27,4 @@ dependencies:
   - datashader
   - tqdm
   - xhistogram
+  - numpy-groupies
