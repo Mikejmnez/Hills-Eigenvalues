@@ -300,7 +300,7 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 		val = _shift[0]
 		_shift = [val for i in range(len(_t))]
 	for i in range(len(_indt)):
-		phi_new = _shift[_indt[i][0]]  # only sample first - they are all the same
+		phi_new = _np.pi * _shift[_indt[i][0]]  # only sample first - they are all the same
 		if i == 0:
 			t1 = _t[_indt[i][0]:_indt[i][1]]
 			t0 = 0
