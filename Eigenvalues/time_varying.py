@@ -760,11 +760,11 @@ def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t
 	ndAs_p =  4*_Q0 * _dAs['A_2r'].isel(r=1) / exp2  # this defines a single mode.
 	ndAs_h =  -ndAs_p
 	for i in range(len(_t)):
-		PHI2n_h = _xr.dot(ndAs_h, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*_t[i]), dims='n')
-		PHI2n_p = _xr.dot(ndAs_p, _dAs['phi_2n'] * _np.exp((1j)* _delta * _t[i]), dims='n')
-		T0 = _xrft.ifft(_da_xrft * PHI2n_h, dim='k', true_phase=True, true_amplitude=True).real
+		PHI2n_h = _xr.dot(ndAs_h, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_t[i]-_tf)), dims='n')
+		PHI2n_p = _xr.dot(ndAs_p, _dAs['phi_2n'] * _np.exp((1j)* _delta * (_t[i]-_tf)), dims='n')
+		T0 = _xrft.ifft(_da_xrft * PHI2n_h, dim='k').real
 		T0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
-		Tp = _xrft.ifft(_da_xrft * PHI2n_p, dim='k', true_phase=True, true_amplitude=True).real
+		Tp = _xrft.ifft(_da_xrft * PHI2n_p, dim='k').real
 		Tp = Tp.rename({'freq_k':'x'}).transpose('y', 'x')
 		ds['Theta_h'].data[i, :, :] = T0.data
 		ds['Theta_p'].data[i, :, :] = Tp.data
@@ -833,13 +833,13 @@ def evolve_forcing(_da_xrft, _dAs, _dBs, _K, _a_alps, _afacs, _b_alps, _bfacs, _
 	ndBs_h = -ndBs_p 
 
 	for i in range(len(_t)):
-		PHI2n_he = _xr.dot(ndAs_h, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*_t[i]), dims='n')
-		PHI2n_ho = _xr.dot(ndBs_h, _dBs['phi_2n'] * _np.exp(-(0.25*_dBs['b_2n'] + exp_arg)*_t[i]), dims='n')
+		PHI2n_he = _xr.dot(ndAs_h, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*(_t[i]-_tf)), dims='n')
+		PHI2n_ho = _xr.dot(ndBs_h, _dBs['phi_2n'] * _np.exp(-(0.25*_dBs['b_2n'] + exp_arg)*(_t[i]-_tf)), dims='n')
 
 		PHI2n_h = PHI2n_he + PHI2n_ho
 
-		PHI2n_pe = _xr.dot(ndAs_p, _dAs['phi_2n'] * _np.exp((1j)* _delta * _t[i]), dims='n')
-		PHI2n_po = _xr.dot(ndBs_p, _dBs['phi_2n'] * _np.exp((1j)* _delta * _t[i]), dims='n')
+		PHI2n_pe = _xr.dot(ndAs_p, _dAs['phi_2n'] * _np.exp((1j)* _delta * (_t[i]-_tf)), dims='n')
+		PHI2n_po = _xr.dot(ndBs_p, _dBs['phi_2n'] * _np.exp((1j)* _delta * (_t[i]-_tf)), dims='n')
 
 		PHI2n_p = PHI2n_pe + PHI2n_po
 
