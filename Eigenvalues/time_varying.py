@@ -212,7 +212,7 @@ def evolve_ds_off(_dAs, _dBs, _da_xrft, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_a
     """Constructs the solution to the IVP"""
     ## Initialize the array
     coords = {"time": _t, "y": _y, "x": _x}
-    Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
+    Temp = _xr.DataArray(, coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
     _ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
     _ndBs = _xr.dot(_bfacs * _b_alps, _dBs['B_2r'], dims='r')
@@ -587,8 +587,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 		t1 = Time[i]
 
 		if i % 2 != 0:  # if odd number.
-			da_dft = _xrft.fft(da_step, dim='y')
-			da_dft = da_dft.rename({'freq_y':'l'})
+			da_dft = _xrft.fft(da_step, dim='y').rename({'freq_y':'l'})
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, phi_new=phi_new, phi_old=0, dim='x')
 			d1 = evolve_ds_serial_off(_dAs_rot, _dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='l')
 			jump = abs(phi_old - 0)
@@ -599,8 +598,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 
 		else:
 			# phi_old = PHI_OLD[i-2]
-			da_dft = _xrft.fft(da_step.transpose(), dim='x')
-			da_dft = da_dft.rename({'freq_x':'k'})
+			da_dft = _xrft.fft(da_step.transpose(), dim='x').rename({'freq_x':'k'})
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt, phi_new=phi_new, phi_old=_np.pi)
 			d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='k')
 			jump = abs(phi_old - _np.pi)
@@ -623,12 +621,10 @@ def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _o
 	IND, ORDER, Time = split_signal(_vals, _order, _indt, _t)
 	NT = len(ORDER)
     
-	da_dft = _xrft.fft(_Theta0.transpose(), dim='x', true_phase=True, true_amplitude=True)
-	da_dft = da_dft.rename({'freq_x':'k'})
+	da_dft = _xrft.fft(_Theta0.transpose(), dim='x').rename({'freq_x':'k'})
 	Kn = _copy.deepcopy(da_dft['k'].values)
     
-	da_y = _xrft.fft(_Theta0, dim='y', true_phase=True, true_amplitude=True)
-	da_y = da_y.rename({'freq_y':'l'})
+	da_y = _xrft.fft(_Theta0, dim='y').rename({'freq_y':'l'})
 	Ln = _copy.deepcopy(da_y['l'].values)
     
 	even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
@@ -652,8 +648,7 @@ def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _o
 	nPe = abs(_vals[ORDER[ii][0]]) * _Pe
 	d0 = evolve_ds_serial_off(dsA, dsB, Kn, alpha0, nPe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1)
 	dstep = d0['Theta'].isel(time=-1)
-	da_dft = _xrft.fft(dstep.transpose(), dim='x', true_phase=True, true_amplitude=True)
-	da_dft = da_dft.rename({'freq_x':'k'})
+	da_dft = _xrft.fft(dstep.transpose(), dim='x').rename({'freq_x':'k'})
 	even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
 
 	for jj in range(1, len(IND[ii])): # iterates over elements
@@ -668,8 +663,7 @@ def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _o
 		d1 = evolve_ds_serial_off(dsA, dsB, Kn, alpha0, nPe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0)
 		dstep = d1['Theta'].isel(time=-1)
 		if jj < len(IND[ii])-1:
-			da_dft = _xrft.fft(dstep.transpose(), dim='x', true_phase=True, true_amplitude=True)
-			da_dft = da_dft.rename({'freq_x':'k'})
+			da_dft = _xrft.fft(dstep.transpose(), dim='x').rename({'freq_x':'k'})
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
 
 		d0 = d0.combine_first(d1)
@@ -702,8 +696,7 @@ def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _o
 				t0 = _t[IND[ii-1][-1][-1]-1]  # last from previous iter
 				if _tp:
 					dstep = dstep.transpose()
-				da_dft = _xrft.fft(dstep, dim=_dim, true_phase=True, true_amplitude=True)
-				da_dft = da_dft.rename(_rename)
+				da_dft = _xrft.fft(dstep, dim=_dim).rename(_rename)
 				even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, _coor, dim=_dimf)
 			else:
 				t0 = _t[IND[ii][jj-1][-1]-1]
