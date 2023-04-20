@@ -289,7 +289,6 @@ def evolve_off_ds_time(_DAS, _DBS, _indt, _order, _vals, _Kn, _ALPHA0, _Pe, _da_
 
 	shift must be a list
 
-
 	"""
 	DS = []
 	PHI_NEW = []
@@ -774,7 +773,7 @@ def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t
 
 
 
-def evolve_forcing(_da_xrft, _dAs, _dBs, _K, _a_alps, _afacs, _b_alps, _bfacs, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t, _tf=0):
+def evolve_forcing(_da_xrft, _dAs, _dBs, _K, _a_alps, _afacs, _b_alps, _bfacs, _Ubar, _Pe, _delta, _Q0, _x, _y, _t, _tf=0):
 	"""Evolves the solution to the advection diffusion eqn for a steady shear flow in the presence of 
 	external forcing Q(x,y). The shear flow is defined solely by a cosine Fourier series and so
 	is the forcing. The forcing is no longer a single mode, but generally has the form
@@ -818,7 +817,7 @@ def evolve_forcing(_da_xrft, _dAs, _dBs, _K, _a_alps, _afacs, _b_alps, _bfacs, _
 		_ds: xarray.dataset
 			Contains Theta the analytical solution. Also, Theta_h and Theta_p. 
     """
-	coords = {"time": _t, "y": 2 * _Y[:, 0], "x": _X[0, :]}
+	coords = {"time": _t, "y": 2 * _y, "x": _x}
 	Temp = _xr.DataArray(coords=coords, dims=["time", 'y', 'x'])
 	ds = _xr.Dataset({'Theta_p': Temp, 'Theta_h': Temp, 'Theta': Temp})
 	exp_arg = (1j)*_Ubar*(2* _np.pi*_K)*_Pe + (2* _np.pi*_K)**2
@@ -844,9 +843,9 @@ def evolve_forcing(_da_xrft, _dAs, _dBs, _K, _a_alps, _afacs, _b_alps, _bfacs, _
 
 		PHI2n_p = PHI2n_pe + PHI2n_po
 
-		T0 = _xrft.ifft(_da_xrft * PHI2n_h, dim='k', true_phase=True, true_amplitude=True).real
+		T0 = _xrft.ifft(_da_xrft * PHI2n_h, dim='k').real
 		T0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
-		Tp = _xrft.ifft(_da_xrft * PHI2n_p, dim='k', true_phase=True, true_amplitude=True).real
+		Tp = _xrft.ifft(_da_xrft * PHI2n_p, dim='k').real
 		Tp = Tp.rename({'freq_k':'x'}).transpose('y', 'x')
 		ds['Theta_h'].data[i, :, :] = T0.data
 		ds['Theta_p'].data[i, :, :] = Tp.data
