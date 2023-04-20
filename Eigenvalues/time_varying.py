@@ -488,7 +488,7 @@ def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps
 			ndBs = _xr.dot(_bfacs * _b_alps.isel(**k_args), _dBs['B_2r'].isel(**k_args))
 		else:
 			ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'].isel(**k_args))
-			ndBs = _xr.dot(_bfacs * _b_alps, _dAs['B_2r'].isel(**k_args))
+			ndBs = _xr.dot(_bfacs * _b_alps, _dBs['B_2r'].isel(**k_args))
 		exp_arg_e =  0.25*_dAs['a_2n'].isel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
 		exp_arg_o =  0.25*_dBs['b_2n'].isel(**k_args) + (1j)*_alpha0*(2*_np.pi*_K)*_Pe + (2*_np.pi*_K)**2
 		for i in range(len(_t)):
