@@ -212,7 +212,7 @@ def evolve_ds_off(_dAs, _dBs, _da_xrft, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_a
     """Constructs the solution to the IVP"""
     ## Initialize the array
     coords = {"time": _t, "y": _y, "x": _x}
-    Temp = _xr.DataArray(, coords=coords, dims=["time", 'y', 'x'])
+    Temp = _xr.DataArray(coords=coords, dims=["time", 'y', 'x'])
     ds = _xr.Dataset({'Theta': Temp})
     _ndAs = _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r')
     _ndBs = _xr.dot(_bfacs * _b_alps, _dBs['B_2r'], dims='r')
