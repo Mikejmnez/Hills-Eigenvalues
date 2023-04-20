@@ -761,7 +761,7 @@ def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t
 			Contains Theta the analytical solution. 
 	"""
 	coords = {"time": _t, "y": 2 * _Y[:, 0], "x": _X[0, :]}
-	Temp = _xr.DataArray(_np.nan, coords=coords, dims=["time", 'y', 'x'])
+	Temp = _xr.DataArray(coords=coords, dims=["time", 'y', 'x'])
 	ds = _xr.Dataset({'Theta_p': Temp, 'Theta_h': Temp, 'Theta': Temp})
 	exp_arg = (1j)*_Ubar*(2* _np.pi*_K)*_Pe + (2* _np.pi*_K)**2
 	exp2 = _dAs['a_2n'] + 4*(1j)*(2*_np.pi*_K)*_Pe * _Ubar + 4*(2* _np.pi*_K)**2 + 4*(1j) * _delta
@@ -770,6 +770,87 @@ def evolve_forcing_modal(_da_xrft, _dAs, _K, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t
 	for i in range(len(_t)):
 		PHI2n_h = _xr.dot(ndAs_h, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*_t[i]), dims='n')
 		PHI2n_p = _xr.dot(ndAs_p, _dAs['phi_2n'] * _np.exp((1j)* _delta * _t[i]), dims='n')
+		T0 = _xrft.ifft(_da_xrft * PHI2n_h, dim='k', true_phase=True, true_amplitude=True).real
+		T0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
+		Tp = _xrft.ifft(_da_xrft * PHI2n_p, dim='k', true_phase=True, true_amplitude=True).real
+		Tp = Tp.rename({'freq_k':'x'}).transpose('y', 'x')
+		ds['Theta_h'].data[i, :, :] = T0.data
+		ds['Theta_p'].data[i, :, :] = Tp.data
+		ds['Theta'].data[i, :, :] = (Tp + T0).data
+	return ds
+
+
+
+def evolve_forcing(_da_xrft, _dAs, _dBs, _K, _a_alps, _afacs, _b_alps, _bfacs, _Ubar, _Pe, _delta, _Q0, _X, _Y, _t, _tf=0):
+	"""Evolves the solution to the advection diffusion eqn for a steady shear flow in the presence of 
+	external forcing Q(x,y). The shear flow is defined solely by a cosine Fourier series and so
+	is the forcing. The forcing is no longer a single mode, but generally has the form
+		Q(k, y) = \sum_{p} \chi^e_{p}\cos{(ny)} + \chi^o_{p}\sin{(ny)}
+
+
+	Parameters
+	----------
+		_da_xrft: xarray.dataarray.
+			Contains the Fourier coefficients in x, and has dimension `k`. Output of xrft.fft(da).
+		_dAs: xarray.dataset.
+			Contains even eigenvalues, eigenvectors and eigenfunctions associated with the operator.
+		_dBs: xarray.dataset.
+			Contains odd eigenvalues, eigenvectors and eigenfunctions associated with the operator.
+		_K: numpy.array (1D like).
+			array with all along-strong wavenumbers. Determined by the discretization of the domain.
+			Is calculated as output from xrft.fft(_da).
+		_a_alps: 1d array
+			even Fourier coefficients.
+		_a_facs: 1d array.
+			(1+delta_{p0}) = 2 when p=0, 1 otherwise.
+		_b_alps: 1d array.
+			odd Fourier coefficients.
+		_b_facs: 1d array.
+			array of ones.
+		_Ubar: float.
+			Mean velocity calculated as the numerical average of U(y, t_0). at t=t_0.
+		_Pe: float.
+			Peclet number.
+		_delta: float.
+			normalized frequency of forcing.
+		_Q0: float.
+			amplitude of forcing scaled by diffusive timescale t_d.
+		_X, _Y: 1d-array like (numpy)
+			Span the domain. Non-dimensional.
+		_time: 1d array-like (numpy)
+			Time array.
+		_tf: float.
+			Initial time. Default is zero, but can vary in case shear flow is time-dependent.
+	Returns:
+		_ds: xarray.dataset
+			Contains Theta the analytical solution. Also, Theta_h and Theta_p. 
+    """
+	coords = {"time": _t, "y": 2 * _Y[:, 0], "x": _X[0, :]}
+	Temp = _xr.DataArray(coords=coords, dims=["time", 'y', 'x'])
+	ds = _xr.Dataset({'Theta_p': Temp, 'Theta_h': Temp, 'Theta': Temp})
+	exp_arg = (1j)*_Ubar*(2* _np.pi*_K)*_Pe + (2* _np.pi*_K)**2
+	exp2_e = _dAs['a_2n'] + 4*(1j)*(2*_np.pi*_K)*_Pe * _Ubar + 4*(2* _np.pi*_K)**2 + 4*(1j) * _delta
+	exp2_o = _dBs['b_2n'] + 4*(1j)*(2*_np.pi*_K)*_Pe * _Ubar + 4*(2* _np.pi*_K)**2 + 4*(1j) * _delta
+    
+	ndAs_p = 4 *_Q0 * _xr.dot(_afacs * _a_alps, _dAs['A_2r'], dims='r') / exp2_e
+	ndBs_p = 4 *_Q0 * _xr.dot(_bfacs * _b_alps, _dBs['B_2r'], dims='r') / exp2_o
+    
+#     The homogeneous solution matches the forcing term.
+    
+	ndAs_h = -ndAs_p
+	ndBs_h = -ndBs_p 
+
+	for i in range(len(_t)):
+		PHI2n_he = _xr.dot(ndAs_h, _dAs['phi_2n'] * _np.exp(-(0.25*_dAs['a_2n'] + exp_arg)*_t[i]), dims='n')
+		PHI2n_ho = _xr.dot(ndBs_h, _dBs['phi_2n'] * _np.exp(-(0.25*_dBs['b_2n'] + exp_arg)*_t[i]), dims='n')
+
+		PHI2n_h = PHI2n_he + PHI2n_ho
+
+		PHI2n_pe = _xr.dot(ndAs_p, _dAs['phi_2n'] * _np.exp((1j)* _delta * _t[i]), dims='n')
+		PHI2n_po = _xr.dot(ndBs_p, _dBs['phi_2n'] * _np.exp((1j)* _delta * _t[i]), dims='n')
+
+		PHI2n_p = PHI2n_pe + PHI2n_po
+
 		T0 = _xrft.ifft(_da_xrft * PHI2n_h, dim='k', true_phase=True, true_amplitude=True).real
 		T0 = T0.rename({'freq_k':'x'}).transpose('y', 'x')
 		Tp = _xrft.ifft(_da_xrft * PHI2n_p, dim='k', true_phase=True, true_amplitude=True).real
