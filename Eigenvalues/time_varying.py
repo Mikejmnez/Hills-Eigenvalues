@@ -551,12 +551,10 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 		val = _shift[0]
 		_shift = [val for i in range(len(_t))]
     
-	da_dft = _xrft.fft(_Theta0.transpose(), dim='x', true_phase=True, true_amplitude=True)
-	da_dft = da_dft.rename({'freq_x':'k'})
+	da_dft = _xrft.fft(_Theta0.transpose(), dim='x').rename({'freq_x':'k'})
 	Kn = _copy.deepcopy(da_dft['k'].values)
     
-	da_y = _xrft.fft(_Theta0, dim='y', true_phase=True, true_amplitude=True)
-	da_y = da_y.rename({'freq_y':'l'})
+	da_y = _xrft.fft(_Theta0, dim='y').rename({'freq_y':'l'})
 	Ln = _copy.deepcopy(da_y['l'].values)
     
 	even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
