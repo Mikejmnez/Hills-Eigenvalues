@@ -511,7 +511,7 @@ def evolve_ds_serial_off(_dAs, _dBs, _Kn, _alpha0, _Pe, _a_alps, _afacs, _b_alps
 	return ds_final
 
 
-def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals, _order, _indt, _x, _y, _t, _shift=[0]):
+def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals, _order, _indt, _x, _y, _t, _shift=[0], _Fx=None, _Fy=None, _delta=None, _amp=None):
 	"""Computes the evolution of a passive scalar in the case the velocity field is renewing. Square domain.
 	By construction, the velocity field begins with an along- x orientation.
 	Input:
@@ -572,7 +572,25 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 #     Initialize evolution
 	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, Time[0])
 
-	DS.append(d0)
+	if _amp is not None:
+
+		Fx_da = xr.DataArray(_Fx, dims=('x',), coords={'x': _x})
+		Fy_da = xr.DataArray(_Fy, dims=('y',), coords={'y': _y})        
+		da_dft_fx = xrft.fft(Fx_da).rename({'freq_x':'k'})
+		da_dft_fy = xrft.fft(Fy_da).rename({'freq_y':'l'})
+
+		Fxt_da = xr.DataArray(_Fx, dims=('x',), coords={'x': xt})
+		Fyt_da = xr.DataArray(_Fy, dims=('y',), coords={'y': yt})
+
+		ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fyt_da, yt)
+
+		a_alps_fn = xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
+		b_alps_fn = xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
+
+		df_0 = evolve_forcing(da_dft_fx, _dAs, _dBs, Kn, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, Time[0])
+		d0['Theta'] = d0['Theta'] + df_0['Theta']  # update by including forcing
+
+	# DS.append(d0)
 	PHI_NEW.append(phi_new)
 	PHI_OLD.append(phi_old)
 
@@ -587,6 +605,12 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 			da_dft = _xrft.fft(da_step, dim='y').rename({'freq_y':'l'})
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, phi_new=phi_new, phi_old=0, dim='x')
 			d1 = evolve_ds_serial_off(_dAs_rot, _dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='l')
+			if _amp is not None:  # rot
+				ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fxt_da, xt, phi_new=phi_new, phi_old=0, dim='x')
+				a_alps_fn = xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
+				b_alps_fn = xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
+				df_0 = evolve_forcing(da_dft_fy, _dAs_rot, _dBs_rot, Ln, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, t1, t0, rot=True)
+				d1['Theta'] = d1['Theta'] + df_0['Theta']  # update by including forcing
 			jump = abs(phi_old - 0)
 			dsign = int(_np.sign(phi_old - 0))
 			diff = abs(_y - jump)
@@ -598,6 +622,12 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 			da_dft = _xrft.fft(da_step.transpose(), dim='x').rename({'freq_x':'k'})
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt, phi_new=phi_new, phi_old=_np.pi)
 			d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='k')
+			if _amp is not None:
+				ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fyt_da, yt, phi_new=phi_new, phi_old=np.pi)
+				a_alps_fn = xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
+				b_alps_fn = xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
+				df_0 = evolve_forcing(da_dft_fx, _dAs, _dBs, Kn, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, t1, t0)        
+				d1['Theta'] = d1['Theta'] + df_0['Theta']  # update by including forcing
 			jump = abs(phi_old - _np.pi)
 			dsign = int(_np.sign(phi_old - _np.pi))
 			diff = abs(_y - jump)
