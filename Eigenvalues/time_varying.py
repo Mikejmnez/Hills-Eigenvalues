@@ -574,18 +574,18 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 
 	if _amp is not None:
 
-		Fx_da = xr.DataArray(_Fx, dims=('x',), coords={'x': _x})
-		Fy_da = xr.DataArray(_Fy, dims=('y',), coords={'y': _y})        
-		da_dft_fx = xrft.fft(Fx_da).rename({'freq_x':'k'})
-		da_dft_fy = xrft.fft(Fy_da).rename({'freq_y':'l'})
+		Fx_da = _xr.DataArray(_Fx, dims=('x',), coords={'x': _x})
+		Fy_da = _xr.DataArray(_Fy, dims=('y',), coords={'y': _y})        
+		da_dft_fx = _xrft.fft(Fx_da).rename({'freq_x':'k'})
+		da_dft_fy = _xrft.fft(Fy_da).rename({'freq_y':'l'})
 
-		Fxt_da = xr.DataArray(_Fx, dims=('x',), coords={'x': xt})
-		Fyt_da = xr.DataArray(_Fy, dims=('y',), coords={'y': yt})
+		Fxt_da = _xr.DataArray(_Fx, dims=('x',), coords={'x': xt})
+		Fyt_da = _xr.DataArray(_Fy, dims=('y',), coords={'y': yt})
 
 		ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fyt_da, yt)
 
-		a_alps_fn = xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
-		b_alps_fn = xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
+		a_alps_fn = _xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
+		b_alps_fn = _xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
 
 		df_0 = evolve_forcing(da_dft_fx, _dAs, _dBs, Kn, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, Time[0])
 		d0['Theta'] = d0['Theta'] + df_0['Theta']  # update by including forcing
@@ -607,8 +607,8 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 			d1 = evolve_ds_serial_off(_dAs_rot, _dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='l')
 			if _amp is not None:  # rot
 				ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fxt_da, xt, phi_new=phi_new, phi_old=0, dim='x')
-				a_alps_fn = xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
-				b_alps_fn = xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
+				a_alps_fn = _xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
+				b_alps_fn = _xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
 				df_0 = evolve_forcing(da_dft_fy, _dAs_rot, _dBs_rot, Ln, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, t1, t0, rot=True)
 				d1['Theta'] = d1['Theta'] + df_0['Theta']  # update by including forcing
 			jump = abs(phi_old - 0)
@@ -624,8 +624,8 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 			d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='k')
 			if _amp is not None:
 				ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fyt_da, yt, phi_new=phi_new, phi_old=np.pi)
-				a_alps_fn = xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
-				b_alps_fn = xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
+				a_alps_fn = _xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
+				b_alps_fn = _xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
 				df_0 = evolve_forcing(da_dft_fx, _dAs, _dBs, Kn, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, t1, t0)        
 				d1['Theta'] = d1['Theta'] + df_0['Theta']  # update by including forcing
 			jump = abs(phi_old - _np.pi)
