@@ -559,12 +559,12 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
     
 	even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
 
-	acoords = {'r':range(len(even_coeffs))}
-	bcoords = {'r':range(len(odd_coeffs)-1)}
-	afacs = _np.ones(_np.shape(range(len(even_coeffs))))
+	acoords = {'r':range(len(even_coeffs[0, :]))}
+	bcoords = {'r':range(len(odd_coeffs[0, :])-1)}
+	afacs = _np.ones(_np.shape(range(len(even_coeffs[0, :]))))
 	afacs[0] = 2
 
-	bfacs = _np.ones(_np.shape(range(len(odd_coeffs) - 1)))
+	bfacs = _np.ones(_np.shape(range(len(odd_coeffs[0, :]) - 1)))
 
 	afacs = _xr.DataArray(afacs, coords=acoords, dims='r')
 	bfacs = _xr.DataArray(bfacs, coords=bcoords, dims='r')
@@ -623,7 +623,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt, phi_new=phi_new, phi_old=_np.pi)
 			d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='k')
 			if _amp is not None:
-				ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fyt_da, yt, phi_new=phi_new, phi_old=np.pi)
+				ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fyt_da, yt, phi_new=phi_new, phi_old=_np.pi)
 				a_alps_fn = _xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
 				b_alps_fn = _xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
 				df_0 = evolve_forcing(da_dft_fx, _dAs, _dBs, Kn, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, t1, t0)        

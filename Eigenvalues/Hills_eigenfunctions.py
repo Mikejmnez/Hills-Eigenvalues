@@ -258,7 +258,7 @@ def A_coefficients(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, refle
                     An = Anorm(Ak[:, n], symmetry)
                     As_ds[_eigv].isel(k=k, n=n, r=slice(Nr)).data[:] = An
         elif abs(q[k].imag) >= qmax: # this value is different for different shear flows
-            N0 = 200
+            N0 = 111
             if ii == 0:
                 ak, A0 = eig_pairs(matrix_system(qmax*(1j), N0 + _r0, coeffs, _Km, symmetry), symmetry, sparse)
                 As_ds[_eigs].isel(k=k, n=slice(N0)).data[:] = ak
@@ -377,7 +377,7 @@ def A_coefficients_old(q, N, coeffs, K, symmetry='even', case='None'):
     return vals
 
 
-def A_coefficients_exp(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, eig_vectors=True, qmax=1e7, q=None, qint=None):
+def A_coefficients_exp(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, reflect=True, sparse=False, eig_vectors=True, qmax=1e7, qvals=None, qint=None):
     """ Returns the (sorted) eigenvalues and orthonormal eigenvectors of
     Hill's equation.
 
@@ -408,10 +408,11 @@ def A_coefficients_exp(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, r
             (n, k, r).
     """
     coeffs = _np.array(_betas_m, dtype=_np.float64)
-    if q is None:  # when not given.
+    if qvals is None:  # when not given.
         q = _np.empty((_K.size), _np.complex128)
         q = (1j) * (2 * 2 * _np.pi * _K * _Pe)  # canonical parameter - note the scaling consistent with xrft
-
+    else:
+        q = qvals
     if symmetry=='even':
         _eigv = 'A_2r'
         _eigs = 'a_2n'
@@ -433,16 +434,21 @@ def A_coefficients_exp(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, r
         _N = Rmax + 5
         ll = _np.where(R < Rmax)[0]
         R[ll] = Rmax # set minimum value
-    
+
     ii = 0
+    ki = 0
 
     if qint is not None:
+        ki = None
         qmax = qint
-        _N = 5 + _np.round(_np.sqrt(50 * qmax * max_coeff / 4))
+        if symmetry == 'even':  
+            q[_np.where(_np.logical_and(1201<q.imag, q.imag < qmax))[0]] = 1500.0000000000207*(1j)
+        else:
+            q[_np.where(_np.logical_and(1201<q.imag, q.imag < qmax))[0]] = 1500.0000000000207*(1j)
+        _N = int(_np.max(_np.round(_np.sqrt(50 * qmax * max_coeff / 4))))
+        print(_N)
         ll = _np.where(R > _N)[0]
         R[ll] = _N  # set upper cap
-    else:
-        _N = 200  # set upper cap of matrix evaluation. q-values above this size of matrix are unreliable
 
     if eig_vectors:
         As_ds = phi_array(_N + _r0, _K, symmetry)  # initializes with the theoretical values in the limit q=0 (k=0).
@@ -462,17 +468,24 @@ def A_coefficients_exp(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, r
                     An = Anorm(Ak[:, n], symmetry)
                     As_ds[_eigv].isel(k=k, n=n, r=slice(Nr)).data[:] = An
         elif abs(q[k].imag) >= qmax: # this value is different for different shear flows
-            if ii == 0: # evaluate exacly at a q-value with _N predefined.
+            if ii == 0: # evaluate exaclty at a pre-determined q-value with _N predefined.
+                ki = k
                 ak, A0 = eig_pairs(matrix_system(qmax*(1j), _N + _r0, coeffs, _Km, symmetry), symmetry, sparse)
-                As_ds[_eigs].isel(k=k, n=slice(_N)).data[:] = ak
-                for n in range(_N):
-                    An = Anorm(A0[:, n], symmetry)
-                    As_ds[_eigv].isel(k=k, n=n, r=slice(_N)).data[:] = An
-                ii = ii + 1
+                ii += 1
             else:
-                As_ds[_eigs].isel(k=k, n=slice(_N)).data[:] = ak
-                An = _copy.deepcopy(As_ds[_eigv].isel(k=k-1, n=slice(_N), r=slice(_N+1)).data[:])
-                As_ds[_eigv].isel(k=k, n=slice(_N), r=slice(_N)).data[:] = An
+                ak, A0 = eig_pairs(matrix_system(q[k], _N + _r0, coeffs, _Km, symmetry), symmetry, sparse)
+            As_ds[_eigs].isel(k=k, n=slice(_N)).data[:] = ak
+            for n in range(_N):
+                An = Anorm(A0[:, n], symmetry)
+                As_ds[_eigv].isel(k=k, n=n, r=slice(_N)).data[:] = An
+
+    if ki is not None:
+        if symmetry == 'even':
+            symm = True
+        # else:
+        #     symm = False
+            print('here', ki)
+            As_ds = continuation_dataset(As_ds, ik0 = ki-1, even=symm)
 
 
     if reflect:  # Using symmetry, complete for k<0 values. For now, only for \{A_2r, a_2n\} pairs
@@ -481,36 +494,46 @@ def A_coefficients_exp(_K, _Pe, _N, _betas_m, _Km, symmetry='even', opt=False, r
 
     return As_ds
 
-def continuation_dataset(ds1, ds2, n0=2, m0=10, even=True):
+
+def continuation_dataset(ds, ik0, n0=0, m0=2, even=True):
     """
     """
     if even:
         vec = 'A_2r'
         eig = 'a_2n'
+        n0 = n0 + 2
     else:
         vec = 'B_2r'
         eig = 'b_2n'
-    ik0 = len(ds1.k.values)
-    N0 = len(ds1.r.values)
-    kf = len(ds2.k.values)
-    
-    ds = ds1.combine_first(ds2.isel(k=slice(1, kf), r=slice(0, N0), n=slice(0, N0)))
-    
-    nds = _xr.ones_like(ds)
-    
-    nds[vec].isel(k=slice(0, ik0)).data[:] = ds[vec].isel(k=slice(0, ik0)).data[:]
-    nds[eig].isel(k=slice(0, ik0)).data[:] = ds[eig].isel(k=slice(0, ik0)).data[:]
 
+    Nk = len(ds.k.values)
+
+    ds2 = ds.isel(k=slice(ik0 + 1, Nk))
+
+    N0 = len(ds.r.values)
+    kf = len(ds2.k.values)
+        
+    nds = _xr.ones_like(ds)  # will populate with values - return
     
+    # everything the same for small q<~2000
     
-    for ii in range(kf-1):
-        nds[vec].isel(n=slice(n0, N0), k=ik0 + ii).data[:] = ds[vec].isel(n=slice(n0, N0), k=ik0-1).data[:]
-        nds[eig].isel(n=slice(m0, N0), k=ik0 + ii).data[:] = ds[eig].isel(n=slice(m0, N0), k=ik0-1).data[:]
+    nds[vec].isel(k=slice(0, ik0+1)).data[:] = ds[vec].isel(k=slice(0, ik0 +1)).data[:]
+    nds[eig].isel(k=slice(0, ik0+1)).data[:] = ds[eig].isel(k=slice(0, ik0 + 1)).data[:]
     
-    nds[vec].isel(n=slice(0, n0), k=slice(ik0, ik0+kf)).data[:] = ds[vec].isel(n=slice(0, n0), k=slice(ik0,ik0+ kf)).data[:]
-    nds[eig].isel(n=slice(0, m0), k=slice(ik0, ik0+kf)).data[:] = ds[eig].isel(n=slice(0, m0), k=slice(ik0,ik0+ kf)).data[:]
+    # freeze the upper n0 < n < N0 eigenvalues and m0 < m < N0. Set equal to previous k-evals.
+    
+    for ii in range(1, kf+1):
+        nds[vec].isel(n=slice(n0, N0), k=ik0 + ii).data[:] = ds[vec].isel(n=slice(n0, N0), k=ik0).data[:]
+        nds[eig].isel(n=slice(m0, N0), k=ik0 + ii).data[:] = ds[eig].isel(n=slice(m0, N0), k=ik0).data[:]
+    
+    # update / allow correct evaluation of greavest n0 eigenvalues and m0 eigenvectrors. Usually n0 >= m0.
+
+    if n0 > 0:
+        nds[vec].isel(n=slice(0, n0), k=slice(ik0+1, ik0+1 + kf)).data[:] = ds2[vec].isel(n=slice(0, n0), k=slice(kf)).data[:]
+    nds[eig].isel(n=slice(0, m0), k=slice(ik0+1, ik0+1 + kf)).data[:] = ds2[eig].isel(n=slice(0, m0), k=slice(kf)).data[:]
     
     return nds
+
 
 
 def Fcoeffs(As, n=0, q=0.00001 * (1j), case='None'):
