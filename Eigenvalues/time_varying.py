@@ -640,7 +640,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 	return d0, PHI_OLD
 
 
-def renewing_evolve_exp(_dAS, _dBS, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals, _order, _indt, _x, _y, _t, _shift=[0], _Fx=None, _Fy=None, _delta=None, _amp=None):
+def renewing_evolve_exp(_DAS, _DBS, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals, _order, _indt, _x, _y, _t, _shift=[0], _Fx=None, _Fy=None, _delta=None, _amp=None):
 	"""Computes the evolution of a passive scalar in the case the velocity field is renewing. Square domain.
 	By construction, the velocity field begins with an along- x orientation.
 	Parameters:
@@ -703,7 +703,7 @@ def renewing_evolve_exp(_dAS, _dBS, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _v
 	bfacs = _xr.DataArray(bfacs, coords=bcoords, dims='r')
 
 #     Initialize evolution
-	if type(_dAS) == list:
+	if type(_DAS) == list:
 		if _iter % 2 == 0: # even - first is always even
 			_dAs = _DAS[0]
 			_dBs = _DBS[0]
@@ -763,14 +763,14 @@ def renewing_evolve_exp(_dAS, _dBS, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _v
 			d1 = d1.roll(x=ii, roll_coords=False)
 
 		else:
-			if type(_dAS) == list:
+			if type(_DAS) == list:
 				if _iter % 2 == 0: # even - first is always even . Must make shift =0
 					_dAs = _DAS[0]
 					_dBs = _DBS[0]
 					_phi_new = 0
 				else: # odd - part of chaotic flow
 					_dAs = _DAS[1]
-					_dBs = _DBS[1]					
+					_dBs = _DBS[1]				
 					_phi_new = phi_new
 				_iter += 1 # changes for the next iteration, which will be odd.
 			else:  # only single element - make sure it is correctly being evaluated
