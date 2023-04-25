@@ -640,7 +640,7 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 	return d0, PHI_OLD
 
 
-def renewing_evolve_exp(_DAS, _DBS, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals, _order, _indt, _x, _y, _t, _shift=[0], _Fx=None, _Fy=None, _delta=None, _amp=None):
+def renewing_evolve_exp(_DAS, _DBS, _dAs_rot,_dBs_rot, _ALPHA0, _Pe, _Theta0, _vals, _order, _indt, _x, _y, _t, _shift=[0], _Fx=None, _Fy=None, _delta=None, _amp=None):
 	"""Computes the evolution of a passive scalar in the case the velocity field is renewing. Square domain.
 	By construction, the velocity field begins with an along- x orientation.
 	Parameters:
@@ -707,13 +707,16 @@ def renewing_evolve_exp(_DAS, _DBS, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _v
 		if _iter % 2 == 0: # even - first is always even
 			_dAs = _DAS[0]
 			_dBs = _DBS[0]
+			_alpha0 = _ALPHA0[0][0]
 		else: # odd - part of chaotic flow
 			_dAs = _DAS[1]
-			_dBs = _DBS[1]					
+			_dBs = _DBS[1]			
+			_alpha0 = _ALPHA0[0][1]		
 		_iter += 1 # changes for the next iteration, which will be odd.
 	else:  # only single element - make sure it is correctly being evaluated
 		_dAs = _DAS
 		_dBs = _DBS
+		_alpha0 = _ALPHA0[0]
 
 	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, Time[0])
 
@@ -747,6 +750,7 @@ def renewing_evolve_exp(_DAS, _DBS, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _v
 		t1 = Time[i]
 
 		if i % 2 != 0:  # if odd number.
+			_alpha0 = _ALPHA0[1]
 			da_dft = _xrft.fft(da_step, dim='y').rename({'freq_y':'l'})
 			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, phi_new=phi_new, phi_old=0, dim='x')
 			d1 = evolve_ds_serial_off(_dAs_rot, _dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='l')
@@ -767,15 +771,18 @@ def renewing_evolve_exp(_DAS, _DBS, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _v
 				if _iter % 2 == 0: # even - first is always even . Must make shift =0
 					_dAs = _DAS[0]
 					_dBs = _DBS[0]
+					_alpha0 = _ALPHA0[0][0]		
 					_phi_new = 0
 				else: # odd - part of chaotic flow
 					_dAs = _DAS[1]
 					_dBs = _DBS[1]				
+					_alpha0 = _ALPHA0[0][1]
 					_phi_new = phi_new
 				_iter += 1 # changes for the next iteration, which will be odd.
 			else:  # only single element - make sure it is correctly being evaluated
 				_dAs = _DAS
 				_dBs = _DBS
+				_alpha0 = _ALPHA0[0]
 
 			# phi_old = PHI_OLD[i-2]
 			da_dft = _xrft.fft(da_step.transpose(), dim='x').rename({'freq_x':'k'})
@@ -797,6 +804,7 @@ def renewing_evolve_exp(_DAS, _DBS, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _v
 		PHI_OLD.append(phi_old)
 
 	return d0, PHI_OLD
+
 
 
 def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _order, _indt, _Theta0,  _x, _y, _t):
