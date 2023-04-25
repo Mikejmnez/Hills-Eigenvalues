@@ -640,11 +640,14 @@ def renewing_evolve(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals,
 	return d0, PHI_OLD
 
 
-def renewing_evolve_exp(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals, _order, _indt, _x, _y, _t, _shift=[0], _Fx=None, _Fy=None, _delta=None, _amp=None):
+def renewing_evolve_exp(_dAS, _dBS, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _vals, _order, _indt, _x, _y, _t, _shift=[0], _Fx=None, _Fy=None, _delta=None, _amp=None):
 	"""Computes the evolution of a passive scalar in the case the velocity field is renewing. Square domain.
 	By construction, the velocity field begins with an along- x orientation.
-	Input:
-		_dAs, _dBs: datasets of non-rotated spectra associated with non-rotated shear flow.
+	Parameters:
+	-----------
+		_dAs, _dBs: list, xr.dataArray (default)
+			datasets of non-rotated spectra associated with non-rotated shear flow. If list, len=2, 
+			means iterating between two options.
 		_dAs_rot, _dBs_rot: datasets with spectra associated with rotatede shear flows.
 		_alpha0: Mean velocity.
 		_Pe: float. Peclet number.
@@ -668,6 +671,7 @@ def renewing_evolve_exp(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _v
 	"""
 	xt = _x / 2
 	yt = _y / 2
+	_iter = 0  # initialize
 
 	DS = []
 	PHI_NEW = []
@@ -699,6 +703,18 @@ def renewing_evolve_exp(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _v
 	bfacs = _xr.DataArray(bfacs, coords=bcoords, dims='r')
 
 #     Initialize evolution
+	if type(_dAS) == list:
+		if _iter % 2 == 0: # even - first is always even
+			_dAs = _DAS[0]
+			_dBs = _DBS[0]
+		else: # odd - part of chaotic flow
+			_dAs = _DAS[1]
+			_dBs = _DBS[1]					
+		_iter += 1 # changes for the next iteration, which will be odd.
+	else:  # only single element - make sure it is correctly being evaluated
+		_dAs = _DAS
+		_dBs = _DBS
+
 	d0 = evolve_ds_serial_off(_dAs, _dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, Time[0])
 
 	if _amp is not None:
@@ -747,12 +763,26 @@ def renewing_evolve_exp(_dAs, _dBs, _dAs_rot,_dBs_rot, _alpha0, _Pe, _Theta0, _v
 			d1 = d1.roll(x=ii, roll_coords=False)
 
 		else:
+			if type(_dAS) == list:
+				if _iter % 2 == 0: # even - first is always even . Must make shift =0
+					_dAs = _DAS[0]
+					_dBs = _DBS[0]
+					_phi_new = 0
+				else: # odd - part of chaotic flow
+					_dAs = _DAS[1]
+					_dBs = _DBS[1]					
+					_phi_new = phi_new
+				_iter += 1 # changes for the next iteration, which will be odd.
+			else:  # only single element - make sure it is correctly being evaluated
+				_dAs = _DAS
+				_dBs = _DBS
+
 			# phi_old = PHI_OLD[i-2]
 			da_dft = _xrft.fft(da_step.transpose(), dim='x').rename({'freq_x':'k'})
-			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt, phi_new=phi_new, phi_old=_np.pi)
+			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt, phi_new=_phi_new, phi_old=_np.pi)
 			d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='k')
 			if _amp is not None:
-				ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fyt_da, yt, phi_new=phi_new, phi_old=_np.pi)
+				ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fyt_da, yt, phi_new=_phi_new, phi_old=_np.pi)
 				a_alps_fn = _xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
 				b_alps_fn = _xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
 				df_0 = evolve_forcing(da_dft_fx, _dAs, _dBs, Kn, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, t1, t0)        
