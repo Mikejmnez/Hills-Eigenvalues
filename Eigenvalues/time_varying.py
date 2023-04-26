@@ -806,6 +806,191 @@ def renewing_evolve_exp(_DAS, _DBS, _dAs_rot,_dBs_rot, _ALPHA0, _Pe, _Theta0, _v
 	return d0, PHI_OLD
 
 
+def renewing_evolve_exp2(_dAs_jet,_dBs_jet, _DAS, _DBS, _ALPHA0,  _Pe, _Theta0, _vals, _order, _indt, _x, _y, _t, _shift=[0], _Fx=None, _Fy=None, _delta=None, _amp=None):
+	"""Computes the evolution of a passive scalar in the case the velocity field is renewing. Square domain.
+	By construction, the velocity field begins with an along- x orientation.
+	Input:
+		_dAs_jet, _dBs_jet: xarray.datasets
+			Associated with background flow
+		_DAS, _DBS: .xarray.datasets (default) or list of xr.datasets
+			If list, len =2 . If not list, each is associated with rotated shear flow.
+			If list, 1st element (even iterations) is non-rotated. 2nd element is rotated (odd iter)
+		_alpha0: Mean velocity. list
+		_Pe: float. Peclet number.
+		_Theta0: Initial condition. xarray.DataArray.
+		_vals: list.
+			Values in increasing order from a stepwise approx to a time-varying function that 
+			crosses zero N times. len(_vals) indicated the distinct values used. 
+			Min(len)=3:  [-max, 0, max].
+		_order: array, list.
+			Indicates the order in which the elements of _vals approx the periodic signal. Assuming 
+			a cos(t) periodic signal, _order[0] = _vals[-1] (the maximum amplitide of cosine).
+		_indt: list
+			Indicates the index range for which _vals approximates stepwise a continuous function. 
+			_indt[0] = [0, 10] implies that for first 10 elements of time, the value _vals[-1] 
+			is used to approximate the periodic signal.
+
+		_X, _Y: 1d arrays (each). Together define the grid, assumed to be square domains
+		_t: 1d array. Time with t[0]=0.
+	Output:
+		ds: xarray.dataset 
+	"""
+	xt = _x / 2
+	yt = _y / 2
+
+	DS = []
+	PHI_NEW = []
+	PHI_OLD = []
+
+	IND, ORDER, Time = split_signal(_vals, _order, _indt, _t, n=1)
+	NT = len(ORDER)
+
+	if len(_shift)==1:
+		val = _shift[0]
+		_shift = [val for i in range(len(_t))]
+    
+	da_dft = _xrft.fft(_Theta0.transpose(), dim='x').rename({'freq_x':'k'})
+	Kn = _copy.deepcopy(da_dft['k'].values)
+    
+	da_y = _xrft.fft(_Theta0, dim='y').rename({'freq_y':'l'})
+	Ln = _copy.deepcopy(da_y['l'].values)
+    
+	even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt)
+
+	acoords = {'r':range(len(even_coeffs[0, :]))}
+	bcoords = {'r':range(len(odd_coeffs[0, :])-1)}
+	afacs = _np.ones(_np.shape(range(len(even_coeffs[0, :]))))
+	afacs[0] = 2
+
+	bfacs = _np.ones(_np.shape(range(len(odd_coeffs[0, :]) - 1)))
+
+	afacs = _xr.DataArray(afacs, coords=acoords, dims='r')
+	bfacs = _xr.DataArray(bfacs, coords=bcoords, dims='r')
+
+	_alpha0 = _ALPHA0[0]
+
+	_iter = 0  # counter.starts with even.
+
+
+#     Initialize evolution
+	d0 = evolve_ds_serial_off(_dAs_jet, _dBs_jet, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, Time[0])
+
+	if _amp is not None:
+
+		Fx_da = _xr.DataArray(_Fx, dims=('x',), coords={'x': _x})
+		Fy_da = _xr.DataArray(_Fy, dims=('y',), coords={'y': _y})        
+		da_dft_fx = _xrft.fft(Fx_da).rename({'freq_x':'k'})
+		da_dft_fy = _xrft.fft(Fy_da).rename({'freq_y':'l'})
+
+		Fxt_da = _xr.DataArray(_Fx, dims=('x',), coords={'x': xt})
+		Fyt_da = _xr.DataArray(_Fy, dims=('y',), coords={'y': yt})
+
+		ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fyt_da, yt)
+
+		a_alps_fn = _xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
+		b_alps_fn = _xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
+
+		df_0 = evolve_forcing(da_dft_fx, _dAs_jet, _dBs_jet, Kn, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, Time[0])
+		d0['Theta'] = d0['Theta'] + df_0['Theta']  # update by including forcing
+
+	# DS.append(d0)
+	PHI_NEW.append(phi_new)
+	PHI_OLD.append(phi_old)
+
+	for i in range(1, NT):
+		phi_new = _np.pi * _shift[_indt[2*i][0]] # should be all same (multiply by \pi?)
+		da_step = d0['Theta'].isel(time=-1)
+
+		t0 = Time[i-1][-1]
+		t1 = Time[i]
+
+		if i % 2 != 0:  # if odd number. # here I must alternate
+			if type(_DAS) == list:
+				if _iter % 2 == 0: # odd iteration - start with rotated
+				# select spectra
+					_dAs_rot = _DAS[0]
+					_dBs_rot = _DBS[0]
+					_alpha0 = _ALPHA0[1][0] # first element
+					da_dft = _xrft.fft(da_step, dim='y').rename({'freq_y':'l'})
+
+					even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, phi_new=phi_new, phi_old=0, dim='x')
+					d1 = evolve_ds_serial_off(_dAs_rot, _dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='l')
+					if _amp is not None:  # rot
+						ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fxt_da, xt, phi_new=phi_new, phi_old=0, dim='x')
+						a_alps_fn = _xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
+						b_alps_fn = _xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
+						df_0 = evolve_forcing(da_dft_fy, _dAs_rot, _dBs_rot, Ln, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, t1, t0, rot=True)
+						d1['Theta'] = d1['Theta'] + df_0['Theta']  # update by including forcing
+					jump = abs(phi_old - 0)
+					dsign = int(_np.sign(phi_old - 0))
+					diff = abs(_y - jump)
+					ii = dsign * _np.where(diff == _np.min(diff))[0][0]
+					d1 = d1.roll(x=ii, roll_coords=False)
+					_iter +=1
+
+				else: # odd - unrotated shear flow part of chaotic flow
+					_dAs = _DAS[1]
+					_dBs = _DBS[1]
+					_alpha0 = _ALPHA0[1][1] # first element
+					da_dft = _xrft.fft(da_step.transpose(), dim='x').rename({'freq_x':'k'})
+					even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt, phi_new=phi_new, phi_old=_np.pi)
+					d1 = evolve_ds_serial_off(_dAs,_dBs, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='k')
+					if _amp is not None:
+						ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fyt_da, yt, phi_new=phi_new, phi_old=_np.pi)
+						a_alps_fn = _xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
+						b_alps_fn = _xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
+						df_0 = evolve_forcing(da_dft_fx, _dAs, _dBs, Kn, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, t1, t0)        
+						d1['Theta'] = d1['Theta'] + df_0['Theta']  # update by including forcing
+					jump = abs(phi_old - _np.pi)
+					dsign = int(_np.sign(phi_old - _np.pi))
+					diff = abs(_y - jump)
+					ii = dsign * _np.where(diff == _np.min(diff))[0][0]
+					d1 = d1.roll(y=ii, roll_coords=False)
+					_iter +=1
+
+			else: # entry is not a list.
+				_dAs_rot = _DAS
+				_dBs_rot = _DBS
+				_alpha0 = _ALPHA0[1] # first element
+				da_dft = _xrft.fft(da_step, dim='y').rename({'freq_y':'l'})
+
+				even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, xt, phi_new=phi_new, phi_old=0, dim='x')
+				d1 = evolve_ds_serial_off(_dAs_rot, _dBs_rot, Ln, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='l')
+				if _amp is not None:  # rot
+					ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fxt_da, xt, phi_new=phi_new, phi_old=0, dim='x')
+					a_alps_fn = _xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
+					b_alps_fn = _xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
+					df_0 = evolve_forcing(da_dft_fy, _dAs_rot, _dBs_rot, Ln, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, t1, t0, rot=True)
+					d1['Theta'] = d1['Theta'] + df_0['Theta']  # update by including forcing
+				jump = abs(phi_old - 0)
+				dsign = int(_np.sign(phi_old - 0))
+				diff = abs(_y - jump)
+				ii = dsign * _np.where(diff == _np.min(diff))[0][0]
+				d1 = d1.roll(x=ii, roll_coords=False)
+
+		else:  # background jet
+			_alpha0 = _ALPHA0[0] # first element
+			da_dft = _xrft.fft(da_step.transpose(), dim='x').rename({'freq_x':'k'})
+			even_coeffs, odd_coeffs, phi_new, phi_old = coeff_project(da_dft, yt, phi_new=0, phi_old=_np.pi)
+			d1 = evolve_ds_serial_off(_dAs_jet, _dBs_jet, Kn, _alpha0, _Pe, even_coeffs, afacs, odd_coeffs, bfacs, _x, _y, t1, t0, _dim='k')
+			if _amp is not None:
+				ecoeffs_fn, ocoeffs_fn, _, _ = coeff_project(Fyt_da, yt, phi_new=0, phi_old=_np.pi)
+				a_alps_fn = _xr.DataArray(ecoeffs_fn, coords=acoords, dims='r')
+				b_alps_fn = _xr.DataArray(ocoeffs_fn[1:], coords=bcoords, dims='r')
+				df_0 = evolve_forcing(da_dft_fx, _dAs_jet, _dBs_jet, Kn, a_alps_fn, afacs, b_alps_fn, afacs, _alpha0, _Pe, _delta, _amp, _x, _y, t1, t0)        
+				d1['Theta'] = d1['Theta'] + df_0['Theta']  # update by including forcing
+			jump = abs(phi_old - _np.pi)
+			dsign = int(_np.sign(phi_old - _np.pi))
+			diff = abs(_y - jump)
+			ii = dsign * _np.where(diff == _np.min(diff))[0][0]
+			d1 = d1.roll(y=ii, roll_coords=False)
+
+		d0 = d0.combine_first(d1)
+		PHI_OLD.append(phi_old)
+
+	return d0, PHI_OLD
+
+
 
 def renewing_evolve_new(_DAS, _DBS, _DAS_rot, _DBS_rot, _ALPHA0,  _Pe, _vals, _order, _indt, _Theta0,  _x, _y, _t):
 
