@@ -19,6 +19,7 @@ dependencies:
   - dask
   - numba
   - holoviews
+  - xgcm
   - bokeh
   - pillow
   - zarr
