@@ -1680,8 +1680,8 @@ def Anorm(A, symmetry='even'):
         fac = 2
     else:
         fac = 1
-    norm = _np.sqrt((fac * (A[0] * A0star)) + _np.sum(A[1:] * Astar))
-    A = _copy.deepcopy(A) / norm
+    norm = (fac * (A[0] * A0star)) + _np.dot(A[1:] , Astar)
+    A = _copy.deepcopy(A) / _np.sqrt(norm)
     return A
 
 
