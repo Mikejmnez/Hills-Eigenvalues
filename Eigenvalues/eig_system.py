@@ -117,7 +117,7 @@ def odd_matrix(q, N, alphas, K):
     # make sure q is purely imaginary, N is an integer.
     diag = [4 * (k**2) for k in range(N)] # diagonal of A.
     A = _np.diag(diag, 0)
-    nA = _np.zeros(_np.shape(A))*1j
+    nA = _np.zeros(A.shape, dtype= _np.complex128)
     for k in range(len(K)):
         a = q * alphas[k] * _np.ones(N - int(K[k]))  # defines the off-diagonal term
         A = A + _np.diag(a, int(K[k])) + _np.diag(a, -int(K[k]))  # adds off-diagonals
@@ -125,6 +125,65 @@ def odd_matrix(q, N, alphas, K):
         nA[1: len(K) + (1 - n), n] = -_copy.deepcopy(1j*(q.imag * alphas[n:]))
     odd_A = A[1:, 1:] + nA[1:, 1:]
     return odd_A
+
+
+
+
+def new_even_matrix(q, N, alphas, K):
+    ''' Creates a matrix of order NxN. The size N is
+    determined (for now) outside, but it should be larger than the order of
+    approximation of the Fourier series.
+
+    Input:
+        q: 1d-array. Canonical parameter, purely imaginary.
+        N: int. Size of (square) matrix, and thus determines the order of the
+            highest harmonic in the trigonometric series that defines each
+            eigen-function (must be a higher harmonic than that used in
+            approximating the periodic coefficient in ODE).
+        alphas: 1d array.  Fourier coefficients (convergent, thus decreasing
+            in order)
+        cosine: `True` (default), `False`. Type of Fourier approximation of
+            the periodic coefficient. `True` implies it is a cosine Fourier
+            series.
+        K: range(1, M, d). Represents the ordering of Fourier coefficients
+            alphas when writing the Fourier sum. if d=1, then a sum of the form
+            cos(2*y) + cos(4*y) + .... If d=2 sum is: cos(2*y) + cos(6*y).
+        case: `None` (default), 'mathieu'. If mathieu, the matrix is modified
+            by introducing a factor of sqrt(2) on the first element of the
+            first off-diagonal row and column in accordance to Mathieu's
+            eigenvalue matrix
+    Output:
+        A: nd-array. Square matrix with off-diagonal terms that are purely imag
+            and a purely real diagonal term that increases with the size of A.
+    '''
+    # make sure q is purely imaginary, N is an integer.
+    # Create diagonal directly using numpy
+    alphas = alphas.astype(_np.complex128)
+
+    diag = 4 * _np.arange(N) ** 2
+    A = _np.diag(diag, 0).astype(_np.complex128)
+
+    # Preallocate a complex array
+    nA = _np.zeros_like(A, dtype=_np.complex128)
+
+    # Compute off-diagonals
+    for k in K:
+        a = q * alphas[k - 1]  # Use k-1 to index alphas since K starts from 1
+        # In-place addition of off-diagonal elements
+        _np.fill_diagonal(A[k:], a)
+        _np.fill_diagonal(A[:, k:], a)
+
+    # Compute nA matrix
+    for n in range(1, len(K)):
+        nA[1: len(K) + (1 - n), n] = q * alphas[n:]
+
+    # In-place addition of nA to A
+    A += nA
+    A[0, 1:] = _copy.deepcopy(A[0, 1:]) * _np.sqrt(2)
+    A[1:, 0] = _copy.deepcopy(A[1:, 0]) * _np.sqrt(2)
+
+
+    return A
 
 
 def FFH_matrix(q, N, gammas, K):
